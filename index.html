@@ -349,8 +349,8 @@
         function isStaticMode() {
             if (currentMode === 'static') return true;
             if (currentMode === 'server') return false;
-            // auto-detect: if we're on github pages, or if we have no backend server
-            return window.location.hostname.includes('github.io') || window.location.hostname.includes('github.preview');
+            // auto-detect: only default to static mode on actual GitHub Pages (github.io)
+            return window.location.hostname.includes('github.io');
         }
 
         // Kontrola ciemnego motywu
