@@ -79,6 +79,18 @@
             </div>
             
             <div class="flex items-center gap-2">
+                <!-- Status trybu połączenia -->
+                <div id="connectionStatusIndicator" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-full text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" id="connectionStatusDot"></span>
+                    <span id="connectionStatusText">Serwerowy</span>
+                </div>
+
+                <!-- Przycisk Ustawienia połączenia -->
+                <button id="settingsToggle" class="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all relative" title="Ustawienia połączenia / GitHub Pages">
+                    <i class="fa-solid fa-sliders text-base"></i>
+                    <span id="settingsAlertDot" class="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full hidden"></span>
+                </button>
+
                 <!-- Przycisk zmiany motywu -->
                 <button id="themeToggle" class="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all">
                     <i class="fa-solid fa-moon dark:hidden text-lg"></i>
@@ -273,9 +285,73 @@
     <!-- Powiadomienia -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
 
+    <!-- Modal Ustawień Połączenia (GitHub Pages / Direct API) -->
+    <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div id="settingsModalContainer" class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full border border-slate-200 dark:border-slate-800 p-6 shadow-2xl transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                <h3 class="font-bold text-base text-slate-800 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-nodes text-brand-500"></i> Ustawienia połączenia
+                </h3>
+                <button id="closeSettingsBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Tryb pracy aplikacji</label>
+                    <select id="connModeSelect" class="w-full text-xs font-semibold py-2.5 px-4 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl transition-all focus:border-brand-500 outline-none text-slate-800 dark:text-slate-200">
+                        <option value="auto">Inteligentna auto-detekcja (Zalecana)</option>
+                        <option value="server">Chmura Sawtrak (Serwer Cloud Run)</option>
+                        <option value="static">GitHub Pages (Bezpośredni / Bezserwerowy)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                        W trybie <b>GitHub Pages</b> zapytania do bazy Supabase oraz modelu AI wykonywane są bezpośrednio z przeglądarki użytkownika, co pozwala na pełne działanie aplikacji na hostingu statycznym.
+                    </p>
+                </div>
+
+                <div id="geminiKeyContainer" class="border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <label for="geminiApiKeyInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between mb-1.5">
+                        <span>Klucz API Gemini (Własny)</span>
+                        <span id="keyStatusBadge" class="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">Brak klucza</span>
+                    </label>
+                    <div class="relative">
+                        <input type="password" id="geminiApiKeyInput" placeholder="Wklej klucz AIzaSy..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
+                        <button id="toggleKeyVisibility" class="absolute right-3 top-3 text-xs text-slate-400 hover:text-slate-600 transition-colors">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
+                        Bezpiecznie zapisany lokalnie w Twojej przeglądarce. Pobierz bezpłatny klucz na <a href="https://aistudio.google.com/" target="_blank" class="text-brand-500 font-bold hover:underline inline-flex items-center gap-0.5">Google AI Studio <i class="fa-solid fa-up-right-from-square text-[8px]"></i></a>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button id="saveSettingsBtn" class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/15 hover:shadow-brand-500/25 transition-all">
+                    Zapisz ustawienia
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let uploadedFileBase64 = "";
         let parsedResults = null;
+
+        // --- Connection Mode Setup & Variables ---
+        let currentMode = localStorage.getItem('sawtrak_conn_mode') || 'auto';
+        let geminiApiKey = localStorage.getItem('sawtrak_gemini_key') || '';
+        const supabaseUrl = "https://nhqambvmghlhzjtdvljz.supabase.co";
+        const supabaseAnonKey = "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+
+        // Determine if we are in direct-client (static) mode
+        function isStaticMode() {
+            if (currentMode === 'static') return true;
+            if (currentMode === 'server') return false;
+            // auto-detect: if we're on github pages, or if we have no backend server
+            return window.location.hostname.includes('github.io') || window.location.hostname.includes('github.preview');
+        }
 
         // Kontrola ciemnego motywu
         const themeToggle = document.getElementById('themeToggle');
@@ -310,6 +386,109 @@
         const stateResults = document.getElementById('stateResults');
         const resultsBody = document.getElementById('resultsBody');
 
+        // Settings Modal references
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsModalContainer = document.getElementById('settingsModalContainer');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const connModeSelect = document.getElementById('connModeSelect');
+        const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+        const toggleKeyVisibility = document.getElementById('toggleKeyVisibility');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const keyStatusBadge = document.getElementById('keyStatusBadge');
+        const settingsAlertDot = document.getElementById('settingsAlertDot');
+        const connectionStatusIndicator = document.getElementById('connectionStatusIndicator');
+        const connectionStatusDot = document.getElementById('connectionStatusDot');
+        const connectionStatusText = document.getElementById('connectionStatusText');
+
+        // Update connection status UI
+        function updateConnectionStatusUI() {
+            const staticActive = isStaticMode();
+            connectionStatusIndicator.classList.remove('hidden');
+
+            if (staticActive) {
+                connectionStatusDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse";
+                connectionStatusText.textContent = "GitHub Pages (Bezserwerowy)";
+                connectionStatusText.className = "text-amber-500 dark:text-amber-400 font-bold";
+                
+                if (!geminiApiKey) {
+                    settingsAlertDot.classList.remove('hidden');
+                    keyStatusBadge.textContent = "Brak klucza";
+                    keyStatusBadge.className = "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400";
+                } else {
+                    settingsAlertDot.classList.add('hidden');
+                    keyStatusBadge.textContent = "Zapisany";
+                    keyStatusBadge.className = "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400";
+                }
+            } else {
+                connectionStatusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
+                connectionStatusText.textContent = "Serwerowy (Cloud Run)";
+                connectionStatusText.className = "text-slate-500 dark:text-slate-400 font-bold";
+                settingsAlertDot.classList.add('hidden');
+                
+                if (geminiApiKey) {
+                    keyStatusBadge.textContent = "Zapisany";
+                    keyStatusBadge.className = "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400";
+                } else {
+                    keyStatusBadge.textContent = "Opcjonalny";
+                    keyStatusBadge.className = "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+                }
+            }
+        }
+
+        // Settings Modal toggle handlers
+        settingsToggle.addEventListener('click', () => {
+            connModeSelect.value = currentMode;
+            geminiApiKeyInput.value = geminiApiKey;
+            
+            settingsModal.classList.remove('hidden');
+            setTimeout(() => {
+                settingsModal.classList.remove('opacity-0');
+                settingsModalContainer.classList.remove('scale-95');
+            }, 10);
+        });
+
+        function closeSettings() {
+            settingsModal.classList.add('opacity-0');
+            settingsModalContainer.classList.add('scale-95');
+            setTimeout(() => {
+                settingsModal.classList.add('hidden');
+            }, 300);
+        }
+
+        closeSettingsBtn.addEventListener('click', closeSettings);
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) closeSettings();
+        });
+
+        // Toggle Key Visibility
+        toggleKeyVisibility.addEventListener('click', () => {
+            if (geminiApiKeyInput.type === 'password') {
+                geminiApiKeyInput.type = 'text';
+                eyeIcon.className = "fa-solid fa-eye-slash";
+            } else {
+                geminiApiKeyInput.type = 'password';
+                eyeIcon.className = "fa-solid fa-eye";
+            }
+        });
+
+        // Save settings handler
+        saveSettingsBtn.addEventListener('click', () => {
+            currentMode = connModeSelect.value;
+            geminiApiKey = geminiApiKeyInput.value.trim();
+            
+            localStorage.setItem('sawtrak_conn_mode', currentMode);
+            localStorage.setItem('sawtrak_gemini_key', geminiApiKey);
+            
+            updateConnectionStatusUI();
+            closeSettings();
+            showToast("Ustawienia zostały pomyślnie zapisane!", "success");
+            
+            // Reload database catalog to reflect possible source changes
+            loadDbCatalog();
+        });
+
         dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-brand-500', 'bg-brand-50/10'); });
         dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('border-brand-500', 'bg-brand-50/10'); });
         dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('border-brand-500', 'bg-brand-50/10'); handleFile(e.dataTransfer.files[0]); });
@@ -342,6 +521,62 @@
             stateResults.classList.add('hidden');
         }
 
+        // Direct Client-side Gemini API Caller (Solution B / Static Pages)
+        async function performClientSideOcr(mimeType, base64Data, model) {
+            if (!geminiApiKey) {
+                throw new Error("Wymagany jest klucz API Gemini w trybie statycznym! Kliknij ikonę ustawień w prawym górnym rogu i wprowadź klucz.");
+            }
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
+            
+            const promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
+Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
+- Klucze JSON w języku polskim, np. 'Model', 'Numer seryjny', 'Udźwig', 'Rok produkcji', 'Masa własna'.
+- Wartości dokładnie jak na tabliczce, razem z jednostkami, np. '5000 Kg', '54.6 KW', '2025-06'.
+- Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
+
+            const body = {
+                contents: [{
+                    parts: [
+                        { text: promptText },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            if (!res.ok) {
+                const errJson = await res.json().catch(() => ({}));
+                throw new Error(errJson?.error?.message || `Błąd połączenia z Gemini API (${res.status})`);
+            }
+
+            const data = await res.json();
+            const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!responseText) {
+                throw new Error("Model Gemini nie zwrócił poprawnej odpowiedzi.");
+            }
+
+            try {
+                return JSON.parse(responseText.trim());
+            } catch (e) {
+                console.error("JSON parsing error of response:", responseText);
+                throw new Error("Sztuczna inteligencja zwróciła dane w niepoprawnym formacie. Spróbuj ponownie.");
+            }
+        }
+
         processBtn.addEventListener('click', async () => {
             if (!uploadedFileBase64) { showToast("Wybierz zdjęcie!", "error"); return; }
             
@@ -362,22 +597,29 @@
 
             try {
                 const mimeType = imageInput.files[0] ? imageInput.files[0].type : "image/jpeg";
-                const response = await fetch("/api/analyze", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        mimeType: mimeType,
-                        imageBase64: uploadedFileBase64,
-                        model: selectedModel
-                    })
-                });
+                
+                let resData;
+                if (isStaticMode()) {
+                    const parsed = await performClientSideOcr(mimeType, uploadedFileBase64, selectedModel);
+                    resData = { data: parsed };
+                } else {
+                    const response = await fetch("/api/analyze", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            mimeType: mimeType,
+                            imageBase64: uploadedFileBase64,
+                            model: selectedModel
+                        })
+                    });
 
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    throw new Error(errData.error || `Błąd serwera (${response.status})`);
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        throw new Error(errData.error || `Błąd serwera (${response.status})`);
+                    }
+                    resData = await response.json();
                 }
 
-                const resData = await response.json();
                 parsedResults = resData.data;
                 renderResults(parsedResults);
 
@@ -394,10 +636,10 @@
                 }
 
             } catch (err) {
-                console.error("API Error: ", err);
+                console.error("OCR Error: ", err);
                 stateLoading.classList.add('hidden'); 
                 stateIdle.classList.remove('hidden');
-                showToast(err.message || `Nie udało się odczytać tabliczki. Spróbuj ponownie lub użyj modelu Pro.`, "error");
+                showToast(err.message || `Nie udało się odczytać tabliczki.`, "error");
             } finally { 
                 processBtn.disabled = false; 
             }
@@ -501,18 +743,70 @@
             badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Przeszukiwanie bazy...`;
             
             try {
-                const response = await fetch("/api/supabase/lookup", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ serialNumber })
-                });
-                
-                if (!response.ok) {
-                    throw new Error("Błąd podczas połączenia z bazą danych.");
+                let matchedRows = [];
+                const cleanSerial = String(serialNumber).trim();
+
+                if (isStaticMode()) {
+                    // Try direct exact query
+                    let response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=eq.${encodeURIComponent(cleanSerial)}&select=*`, {
+                        headers: {
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        matchedRows = await response.json();
+                    }
+
+                    // Try partial match if no exact match found
+                    if (!matchedRows || matchedRows.length === 0) {
+                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=ilike.*${encodeURIComponent(cleanSerial)}*&select=*`, {
+                            headers: {
+                                "apikey": supabaseAnonKey,
+                                "Authorization": `Bearer ${supabaseAnonKey}`
+                            }
+                        });
+                        if (response.ok) {
+                            matchedRows = await response.json();
+                        }
+                    }
+
+                    // Advanced Fallback in-memory matching (for space/dash discrepancy like 230352R7118 vs 230352 R7118)
+                    if (!matchedRows || matchedRows.length === 0) {
+                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=1000`, {
+                            headers: {
+                                "apikey": supabaseAnonKey,
+                                "Authorization": `Bearer ${supabaseAnonKey}`
+                            }
+                        });
+                        if (response.ok) {
+                            const allRows = await response.json();
+                            const normSearch = cleanSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
+                            if (normSearch) {
+                                const matched = allRows.filter(row => {
+                                    const dbSerial = String(row.NRKATALOGOWY || "").trim();
+                                    const normDbSerial = dbSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
+                                    return normDbSerial === normSearch || normDbSerial.includes(normSearch) || normSearch.includes(normDbSerial);
+                                });
+                                if (matched.length > 0) {
+                                    matchedRows = matched;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    const response = await fetch("/api/supabase/lookup", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ serialNumber })
+                    });
+                    
+                    if (!response.ok) throw new Error("Błąd podczas połączenia z bazą danych.");
+                    
+                    const result = await response.json();
+                    matchedRows = result.data;
                 }
-                
-                const result = await response.json();
-                const matchedRows = result.data;
                 
                 if (matchedRows && matchedRows.length > 0) {
                     const match = matchedRows[0];
@@ -581,23 +875,40 @@
             // Map scanned results to columns
             const record = {
                 NRKATALOGOWY: serialNumber,
-                MODEL: parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || "",
-                UDZWIG: parsedResults["Udźwig"] || parsedResults["Udźwig (kg)"] || parsedResults["Q"] || "",
-                ROK_PRODUKCJI: parsedResults["Rok produkcji"] || parsedResults["Rok"] || "",
-                MASA_WLASNA: parsedResults["Masa własna"] || parsedResults["Masa"] || ""
+                MODEL: parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || parsedResults["TYP"] || "",
+                UDZWIG: parsedResults["Udźwig"] || parsedResults["Udźwig (kg)"] || parsedResults["Q"] || parsedResults["Q (kg)"] || parsedResults["UDZWIG"] || "",
+                ROK_PRODUKCJI: parsedResults["Rok produkcji"] || parsedResults["Rok"] || parsedResults["ROK_PRODUKCJI"] || "",
+                MASA_WLASNA: parsedResults["Masa własna"] || parsedResults["Masa"] || parsedResults["MASA_WLASNA"] || ""
             };
             
             try {
-                const response = await fetch("/api/supabase/insert", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ record })
-                });
-                
-                const resData = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(resData.error || "Wystąpił błąd zapisu.");
+                if (isStaticMode()) {
+                    const response = await fetch(`${supabaseUrl}/rest/v1/wozki`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`,
+                            "Prefer": "return=representation"
+                        },
+                        body: JSON.stringify(record)
+                    });
+                    
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(errText || "Błąd zapisu w bazie danych.");
+                    }
+                } else {
+                    const response = await fetch("/api/supabase/insert", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ record })
+                    });
+                    
+                    const resData = await response.json();
+                    if (!response.ok) {
+                        throw new Error(resData.error || "Wystąpił błąd zapisu.");
+                    }
                 }
                 
                 showToast("Rekord został pomyślnie dodany do Supabase!", "success");
@@ -608,18 +919,35 @@
                 
             } catch (err) {
                 console.error(err);
-                // If it failed because of strict columns, attempt simple fallback insert (only NRKATALOGOWY)
+                // Try simple fallback insert (only NRKATALOGOWY)
                 try {
                     showToast("Próba zapisu uproszczonego (tylko NRKATALOGOWY)...", "info");
-                    const response = await fetch("/api/supabase/insert", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ record: { NRKATALOGOWY: serialNumber } })
-                    });
                     
-                    const resData = await response.json();
-                    if (!response.ok) {
-                        throw new Error(resData.error || "Wystąpił błąd zapisu.");
+                    if (isStaticMode()) {
+                        const response = await fetch(`${supabaseUrl}/rest/v1/wozki`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "apikey": supabaseAnonKey,
+                                "Authorization": `Bearer ${supabaseAnonKey}`,
+                                "Prefer": "return=representation"
+                            },
+                            body: JSON.stringify({ NRKATALOGOWY: serialNumber })
+                        });
+                        if (!response.ok) {
+                            const errText = await response.text();
+                            throw new Error(errText || "Błąd zapisu.");
+                        }
+                    } else {
+                        const response = await fetch("/api/supabase/insert", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ record: { NRKATALOGOWY: serialNumber } })
+                        });
+                        const resData = await response.json();
+                        if (!response.ok) {
+                            throw new Error(resData.error || "Wystąpił błąd zapisu.");
+                        }
                     }
                     
                     showToast("Dodano pomyślnie (tylko NRKATALOGOWY)!", "success");
@@ -627,7 +955,7 @@
                     await loadDbCatalog();
                 } catch (fallbackErr) {
                     console.error(fallbackErr);
-                    showToast(`Błąd zapisu: ${fallbackErr.message || "Brak uprawnień RLS lub niezgodna struktura tabeli."}`, "error");
+                    showToast(`Błąd zapisu: ${fallbackErr.message || "Brak uprawnień RLS."}`, "error");
                 }
             }
         }
@@ -638,11 +966,38 @@
             const recordCountBadge = document.getElementById('dbRecordCount');
             
             try {
-                const response = await fetch("/api/supabase/list");
-                if (!response.ok) throw new Error("Nie udało się pobrać katalogu.");
-                
-                const result = await response.json();
-                const list = result.data || [];
+                let list = [];
+                if (isStaticMode()) {
+                    const response = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&order=id.desc&limit=50`, {
+                        headers: {
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        list = await response.json();
+                    } else {
+                        // Fallback order-less select
+                        const altResponse = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=50`, {
+                            headers: {
+                                "apikey": supabaseAnonKey,
+                                "Authorization": `Bearer ${supabaseAnonKey}`
+                            }
+                        });
+                        if (altResponse.ok) {
+                            list = await altResponse.json();
+                        } else {
+                            throw new Error("Błąd podczas pobierania katalogu.");
+                        }
+                    }
+                } else {
+                    const response = await fetch("/api/supabase/list");
+                    if (!response.ok) throw new Error("Nie udało się pobrać katalogu.");
+                    
+                    const result = await response.json();
+                    list = result.data || [];
+                }
                 
                 recordCountBadge.textContent = list.length;
                 
@@ -670,7 +1025,7 @@
                                 <p class="text-[10px] text-slate-400 font-medium truncate">NR: <span class="text-slate-600 dark:text-slate-300 font-bold">${serialNum}</span></p>
                             </div>
                             ${subtitle ? `
-                                <span class="shrink-0 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md font-semibold animate-pulse">
+                                <span class="shrink-0 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md font-semibold">
                                     ${subtitle}
                                 </span>
                             ` : ""}
@@ -692,7 +1047,6 @@
 
         // View single catalog item from explorer list
         function selectCatalogItem(serialNumber) {
-            // Trigger a manual search in the explorer search box for the clicked item
             document.getElementById('dbSearchInput').value = serialNumber;
             searchDbCatalog(serialNumber);
         }
@@ -708,16 +1062,69 @@
             listContainer.innerHTML = `<p class="text-slate-400 text-center py-4 text-xs">Wyszukiwanie...</p>`;
             
             try {
-                const response = await fetch("/api/supabase/lookup", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ serialNumber: searchQuery })
-                });
-                
-                if (!response.ok) throw new Error("Błąd podczas wyszukiwania.");
-                
-                const result = await response.json();
-                const matched = result.data || [];
+                let matched = [];
+                const cleanQuery = searchQuery.trim();
+
+                if (isStaticMode()) {
+                    // Try exact matches first
+                    let response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=eq.${encodeURIComponent(cleanQuery)}&select=*`, {
+                        headers: {
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`
+                        }
+                    });
+                    if (response.ok) {
+                        matched = await response.json();
+                    }
+
+                    if (!matched || matched.length === 0) {
+                        // Try partial lookup
+                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=ilike.*${encodeURIComponent(cleanQuery)}*&select=*`, {
+                            headers: {
+                                "apikey": supabaseAnonKey,
+                                "Authorization": `Bearer ${supabaseAnonKey}`
+                            }
+                        });
+                        if (response.ok) {
+                            matched = await response.json();
+                        }
+                    }
+
+                    // Try in-memory fuzzy match fallback
+                    if (!matched || matched.length === 0) {
+                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=1000`, {
+                            headers: {
+                                "apikey": supabaseAnonKey,
+                                "Authorization": `Bearer ${supabaseAnonKey}`
+                            }
+                        });
+                        if (response.ok) {
+                            const allRows = await response.json();
+                            const normSearch = cleanQuery.toLowerCase().replace(/[^a-z0-9]/g, "");
+                            if (normSearch) {
+                                const matchedRows = allRows.filter(row => {
+                                    const dbSerial = String(row.NRKATALOGOWY || "").trim();
+                                    const normDbSerial = dbSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
+                                    return normDbSerial === normSearch || normDbSerial.includes(normSearch) || normSearch.includes(normDbSerial);
+                                });
+                                if (matchedRows.length > 0) {
+                                    matched = matchedRows;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    const response = await fetch("/api/supabase/lookup", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ serialNumber: searchQuery })
+                    });
+                    
+                    if (!response.ok) throw new Error("Błąd podczas wyszukiwania.");
+                    
+                    const result = await response.json();
+                    matched = result.data || [];
+                }
                 
                 if (matched.length === 0) {
                     listContainer.innerHTML = `
@@ -788,6 +1195,7 @@
 
         // Initialize Catalog on load
         window.addEventListener('DOMContentLoaded', () => {
+            updateConnectionStatusUI();
             loadDbCatalog();
         });
     </script>
