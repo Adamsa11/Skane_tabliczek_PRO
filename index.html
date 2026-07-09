@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skaner Tabliczek - Sawtrak AI OCR</title>
+    
+    <!-- Główne ikony przeglądarki (Favicon) zamiast standardowego globusa -->
+    <link rel="icon" type="image/png" href="Forklift.png">
+    <link rel="shortcut icon" type="image/png" href="Forklift.png">
+    
+    <!-- Ikona dla urządzeń mobilnych Apple (po dodaniu do ekranu początkowego) -->
+    <link rel="apple-touch-icon" href="Forklift.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',   // Ciepły pomarańczowy jasny (Sawtrak)
+                            100: '#ffedd5',
+                            500: '#f37021',  // Oficjalny pomarańczowy Sawtrak
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .dark .glass { background: rgba(15, 23, 42, 0.85); }
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23f37021' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.75rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-tr from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <header class="sticky top-0 z-30 w-full glass border-b border-slate-200/50 dark:border-slate-800/50 transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <!-- Kontener logo Sawtrak -->
+                <div class="flex items-center">
+                    <img src="logo-sawtrak.png" alt="Sawtrak Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('fallback-logo').classList.remove('hidden');">
+                    
+                    <!-- Fallback gdyby pliku logo-sawtrak.png jeszcze nie było w folderze -->
+                    <div id="fallback-logo" class="hidden bg-brand-500 text-white p-2.5 rounded-xl shadow-lg shadow-brand-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-truck-ramp-box text-xl"></i>
+                    </div>
+                </div>
+                
+                <div class="border-l border-slate-200 dark:border-slate-800 pl-4">
+                    <h1 class="font-extrabold text-lg tracking-tight flex items-center gap-2">
+                        Sawtrak <span class="text-brand-500 font-medium text-sm px-2 py-0.5 bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 rounded-md">AI OCR PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Profesjonalny Skaner Tabliczek</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Przycisk zmiany motywu -->
+                <button id="themeToggle" class="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all">
+                    <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            
+            <!-- Lewa strona: Wprowadzanie zdjęć i kontrolki -->
+            <div class="md:col-span-5 flex flex-col gap-6">
+                <!-- Dropzone / Wybór zdjęcia -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none">
+                    <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500">
+                        <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie
+                    </h3>
+                    
+                    <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center min-h-[220px]">
+                        <input type="file" id="imageInput" accept="image/*" class="hidden">
+                        
+                        <div id="uploadPlaceholder" class="flex flex-col items-center">
+                            <div class="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                            </div>
+                            <p class="text-sm font-semibold">Wybierz zdjęcie</p>
+                            <p class="text-xs text-slate-400 mt-1">z aparatu lub pamięci urządzenia</p>
+                        </div>
+
+                        <!-- Podgląd zdjęcia -->
+                        <div id="previewWrapper" class="hidden relative w-full h-full max-h-[260px] rounded-lg overflow-hidden">
+                            <img id="imagePreview" class="w-full h-full object-contain rounded-lg max-h-[200px]" alt="Podgląd">
+                            <button id="removeImageBtn" class="absolute top-2 right-2 bg-slate-900/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Wybór Modelu AI -->
+                    <div class="mt-4">
+                        <label for="modelSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
+                        <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
+                            <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash-Lite (Błyskawiczny odczyt - najszybszy)</option>
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash (Szybki i inteligentny - domyślny)</option>
+                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najwyższa dokładność OCR - wolniejszy)</option>
+                        </select>
+                    </div>
+
+                    <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
+                        <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie tabliczki
+                    </button>
+                </div>
+
+                <!-- Porada eksperta -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/40 dark:border-slate-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none">
+                    <h4 class="font-bold text-sm mb-3 text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-brand-500"></i> Porada eksperta
+                    </h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        Metalowe tabliczki odbijają światło. Staraj się robić zdjęcia pod lekkim kątem lub w cieniu, aby uniknąć białej plamy (refleksu) na tekście. Zawsze używaj domyślnego modelu <span class="font-semibold text-brand-600 dark:text-brand-400">Gemini 3.1 Pro</span> do precyzyjnych odczytów w trudnych warunkach oświetleniowych.
+                    </p>
+                </div>
+            </div>
+
+            <div class="md:col-span-7 flex flex-col gap-6">
+                <div id="stateContainer" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 p-8 shadow-xl shadow-slate-200/40 dark:shadow-none text-center min-h-[380px] flex flex-col items-center justify-center transition-all">
+                    
+                    <!-- Bezczynność -->
+                    <div id="stateIdle" class="flex flex-col items-center">
+                        <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 mb-5">
+                            <i class="fa-solid fa-truck-pickup text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold">Oczekiwanie na analizę</h3>
+                        <p class="text-sm text-slate-400 max-w-sm mt-2">
+                            Prześlij zdjęcie tabliczki znamionowej Sawtrak z lewej strony i kliknij przycisk analizy.
+                        </p>
+                    </div>
+
+                    <!-- Ładowanie -->
+                    <div id="stateLoading" class="hidden flex flex-col items-center w-full">
+                        <div class="relative w-20 h-20 mb-6">
+                            <div class="absolute inset-0 border-4 border-brand-500/10 rounded-full"></div>
+                            <div class="absolute inset-0 border-4 border-t-brand-500 rounded-full animate-spin"></div>
+                            <div class="absolute inset-0 flex items-center justify-center text-brand-500">
+                                <i class="fa-solid fa-brain text-2xl animate-pulse"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-bold">Trwa analiza AI...</h3>
+                        <p class="text-sm text-slate-400 mt-2 max-w-xs">
+                            Zaawansowany model sztucznej inteligencji skanuje obraz w poszukiwaniu danych technicznych, modeli oraz numerów seryjnych.
+                        </p>
+                        <div class="w-full max-w-xs bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-6 overflow-hidden">
+                            <div class="bg-brand-500 h-1.5 rounded-full animate-[loading-bar_2.5s_infinite]" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Wyniki -->
+                    <div id="stateResults" class="hidden w-full text-left">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Odczytane parametry</h3>
+                                <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="copyToClipboard()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-copy"></i> Kopiuj
+                                </button>
+                                <button onclick="downloadAsJSON()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 hover:border-brand-500/30 transition-colors duration-500">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-100/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr</th>
+                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsBody" class="divide-y divide-slate-200 dark:divide-slate-800">
+                                    <!-- Dane dynamiczne -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Stopka -->
+    <footer class="mt-auto border-t border-slate-200/60 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+        <p>© 2026 Skaner Tabliczek Znamionowych. Wykorzystano model Google Gemini AI Premium.</p>
+    </footer>
+
+    <!-- Powiadomienia -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+    <script>
+        const GEMINI_API_KEY = "AQ.Ab8RN6J0qY_xS8ALMulxVvzQ3U_FiXbw9dRqSGgj8f_qOf-pzA";
+        let uploadedFileBase64 = "";
+        let parsedResults = null;
+
+        // Kontrola ciemnego motywu
+        const themeToggle = document.getElementById('themeToggle');
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                showToast("Przełączono na tryb jasny", "info");
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                showToast("Przełączono na tryb ciemny", "info");
+            }
+        });
+
+        // DOM Referencje
+        const dropzone = document.getElementById('dropzone');
+        const imageInput = document.getElementById('imageInput');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const previewWrapper = document.getElementById('previewWrapper');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        const modelSelect = document.getElementById('modelSelect');
+        const processBtn = document.getElementById('processBtn');
+        const stateIdle = document.getElementById('stateIdle');
+        const stateLoading = document.getElementById('stateLoading');
+        const stateResults = document.getElementById('stateResults');
+        const resultsBody = document.getElementById('resultsBody');
+
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-brand-500', 'bg-brand-50/10'); });
+        dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('border-brand-500', 'bg-brand-50/10'); });
+        dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('border-brand-500', 'bg-brand-50/10'); handleFile(e.dataTransfer.files[0]); });
+        dropzone.addEventListener('click', () => { imageInput.click(); });
+        imageInput.addEventListener('change', (e) => { handleFile(e.target.files[0]); });
+        removeImageBtn.addEventListener('click', (e) => { e.stopPropagation(); resetUploader(); showToast("Usunięto zdjęcie", "info"); });
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) { showToast("Wybierz zdjęcie.", "error"); return; }
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imagePreview.src = event.target.result;
+                uploadedFileBase64 = event.target.result.split(',')[1];
+                uploadPlaceholder.classList.add('hidden'); 
+                previewWrapper.classList.remove('hidden'); 
+                processBtn.disabled = false;
+                showToast("Zdjęcie wczytane poprawnie", "success");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetUploader() {
+            imageInput.value = ''; 
+            uploadedFileBase64 = ""; 
+            previewWrapper.classList.add('hidden'); 
+            uploadPlaceholder.classList.remove('hidden'); 
+            processBtn.disabled = true;
+            stateIdle.classList.remove('hidden'); 
+            stateLoading.classList.add('hidden'); 
+            stateResults.classList.add('hidden');
+        }
+
+        processBtn.addEventListener('click', async () => {
+            if (!uploadedFileBase64) { showToast("Wybierz zdjęcie!", "error"); return; }
+            
+            const selectedModel = modelSelect.value;
+            let modelLabel = "3.5 Flash";
+            if (selectedModel === "gemini-3.1-pro-preview") {
+                modelLabel = "3.1 Pro (Najdokładniejszy)";
+            } else if (selectedModel === "gemini-3.1-flash-lite") {
+                modelLabel = "3.1 Flash-Lite (Błyskawiczny)";
+            } else {
+                modelLabel = "3.5 Flash (Szybki)";
+            }
+
+            stateIdle.classList.add('hidden'); 
+            stateResults.classList.add('hidden'); 
+            stateLoading.classList.remove('hidden'); 
+            processBtn.disabled = true;
+
+            const promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
+Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
+- Klucze JSON w języku polskim, np. 'Model', 'Numer seryjny', 'Udźwig', 'Rok produkcji', 'Masa własna'.
+- Wartości dokładnie jak na tabliczce, razem z jednostkami, np. '5000 Kg', '54.6 KW', '2025-06'.
+- Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
+
+            try {
+                const mimeType = imageInput.files[0] ? imageInput.files[0].type : "image/jpeg";
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${GEMINI_API_KEY}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [ { text: promptText }, { inlineData: { mimeType: mimeType, data: uploadedFileBase64 } } ] }] })
+                });
+
+                if (!response.ok) { throw new Error(`Błąd API (${response.status})`); }
+
+                const data = await response.json();
+                let resultText = data.candidates[0].content.parts[0].text.trim();
+                
+                // Oczyszczanie wyniku ze znaczników markdowna
+                resultText = resultText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+                
+                parsedResults = JSON.parse(resultText);
+                renderResults(parsedResults);
+
+                stateLoading.classList.add('hidden'); 
+                stateResults.classList.remove('hidden');
+                showToast(`Pomyślnie odczytano dane (Model: ${modelLabel})`, "success");
+
+            } catch (err) {
+                console.error("API Error: ", err);
+                stateLoading.classList.add('hidden'); 
+                stateIdle.classList.remove('hidden');
+                showToast(`Nie udało się odczytać tabliczki. Spróbuj ponownie lub użyj modelu Pro.`, "error");
+            } finally { 
+                processBtn.disabled = false; 
+            }
+        });
+
+        function renderResults(dataObj) {
+            resultsBody.innerHTML = '';
+            for (const [key, value] of Object.entries(dataObj)) {
+                resultsBody.innerHTML += `
+                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors">
+                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${key}</td>
+                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all">${value}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function copyToClipboard() {
+            if (!parsedResults) return;
+            let copyStr = "DANE TABLICZKI ZNAMIONOWEJ SAWTRAK\n--------------------------------\n";
+            for (const [key, value] of Object.entries(parsedResults)) copyStr += `${key}: ${value}\n`;
+            
+            // Bezpieczne kopiowanie kompatybilne z iFrame w podglądzie
+            const el = document.createElement('textarea');
+            el.value = copyStr;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            showToast("Skopiowano parametry do schowka", "success");
+        }
+
+        function downloadAsJSON() {
+            if (!parsedResults) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(parsedResults, null, 2));
+            const anchor = document.createElement('a'); 
+            anchor.href = dataStr; 
+            anchor.download = `odczyt-${Date.now()}.json`;
+            anchor.click(); 
+            anchor.remove(); 
+            showToast("Pobrano plik JSON", "success");
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            let bgClass = "bg-slate-900 text-white dark:bg-white dark:text-slate-900";
+            let icon = '<i class="fa-solid fa-circle-info"></i>';
+            if (type === "success") { bgClass = "bg-emerald-600 text-white"; icon = '<i class="fa-solid fa-circle-check"></i>'; }
+            else if (type === "error") { bgClass = "bg-red-600 text-white"; icon = '<i class="fa-solid fa-triangle-exclamation"></i>'; }
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl transition-all transform translate-y-5 opacity-0 ${bgClass} pointer-events-auto`;
+            toast.innerHTML = `<div class="text-lg">${icon}</div><div class="text-xs font-semibold">${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-5', 'opacity-0'); }, 10);
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-[-10px]'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+    </script>
+</body>
+</html>
