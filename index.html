@@ -134,15 +134,47 @@
                     </button>
                 </div>
 
-                <!-- Porada eksperta -->
-                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/40 dark:border-slate-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none">
-                    <h4 class="font-bold text-sm mb-3 text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                        <i class="fa-solid fa-lightbulb text-brand-500"></i> Porada eksperta
-                    </h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Metalowe tabliczki odbijają światło. Staraj się robić zdjęcia pod lekkim kątem lub w cieniu, aby uniknąć białej plamy (refleksu) na tekście. Zawsze używaj domyślnego modelu <span class="font-semibold text-brand-600 dark:text-brand-400">Gemini 3.1 Pro</span> do precyzyjnych odczytów w trudnych warunkach oświetleniowych.
+                <!-- Supabase Katalog Explorer -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none">
+                    <h3 class="font-bold text-base mb-2 flex items-center justify-between text-brand-500">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-database"></i> Katalog Supabase
+                        </span>
+                        <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md font-normal">wozki</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                        Przeglądaj lub przeszukuj bazę Sawtrak po parametrze <span class="font-semibold text-brand-500">NRKATALOGOWY</span>:
                     </p>
+                    
+                    <!-- Formularz wyszukiwania -->
+                    <div class="space-y-2.5 mb-4">
+                        <div class="relative">
+                            <input type="text" id="dbSearchInput" placeholder="Wpisz NRKATALOGOWY wózka..." class="w-full text-xs py-2.5 px-3 pl-8 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-xs text-slate-400"></i>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="btnDbSearch" class="flex-1 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-brand-500/10 hover:shadow-brand-500/20 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-magnifying-glass"></i> Szukaj
+                            </button>
+                            <button id="btnDbRefresh" title="Odśwież listę" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all flex items-center justify-center">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Podgląd bazy -->
+                    <div class="border-t border-slate-100 dark:border-slate-800/80 pt-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rekordy w bazie:</span>
+                            <span id="dbRecordCount" class="text-[10px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="dbListContainer" class="max-h-[160px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                            <p class="text-slate-400 text-center py-4 text-xs">Ładowanie katalogu...</p>
+                        </div>
+                    </div>
                 </div>
+
+
             </div>
 
             <div class="md:col-span-7 flex flex-col gap-6">
@@ -207,6 +239,25 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Dopasowanie z bazy danych Supabase -->
+                        <div id="supabaseMatchSection" class="mt-6 border-t border-slate-200 dark:border-slate-800 pt-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-link text-brand-500"></i> Status dopasowania Supabase
+                                </h4>
+                                <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                    Oczekiwanie
+                                </span>
+                            </div>
+
+                            <div id="supabaseMatchContent" class="bg-slate-100/45 dark:bg-slate-950/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 p-4 transition-all">
+                                <p class="text-xs text-slate-400 text-center py-2">
+                                    Odczytaj tabliczkę znamionową, aby automatycznie przeszukać bazę Supabase po numerze seryjnym.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -223,7 +274,6 @@
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
 
     <script>
-        const GEMINI_API_KEY = "AQ.Ab8RN6J0qY_xS8ALMulxVvzQ3U_FiXbw9dRqSGgj8f_qOf-pzA";
         let uploadedFileBase64 = "";
         let parsedResults = null;
 
@@ -310,42 +360,44 @@
             stateLoading.classList.remove('hidden'); 
             processBtn.disabled = true;
 
-            const promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
-Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
-- Klucze JSON w języku polskim, np. 'Model', 'Numer seryjny', 'Udźwig', 'Rok produkcji', 'Masa własna'.
-- Wartości dokładnie jak na tabliczce, razem z jednostkami, np. '5000 Kg', '54.6 KW', '2025-06'.
-- Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
-
             try {
                 const mimeType = imageInput.files[0] ? imageInput.files[0].type : "image/jpeg";
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${GEMINI_API_KEY}`;
-
-                const response = await fetch(url, {
+                const response = await fetch("/api/analyze", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [ { text: promptText }, { inlineData: { mimeType: mimeType, data: uploadedFileBase64 } } ] }] })
+                    body: JSON.stringify({
+                        mimeType: mimeType,
+                        imageBase64: uploadedFileBase64,
+                        model: selectedModel
+                    })
                 });
 
-                if (!response.ok) { throw new Error(`Błąd API (${response.status})`); }
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `Błąd serwera (${response.status})`);
+                }
 
-                const data = await response.json();
-                let resultText = data.candidates[0].content.parts[0].text.trim();
-                
-                // Oczyszczanie wyniku ze znaczników markdowna
-                resultText = resultText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-                
-                parsedResults = JSON.parse(resultText);
+                const resData = await response.json();
+                parsedResults = resData.data;
                 renderResults(parsedResults);
 
                 stateLoading.classList.add('hidden'); 
                 stateResults.classList.remove('hidden');
                 showToast(`Pomyślnie odczytano dane (Model: ${modelLabel})`, "success");
 
+                // Automatyczne dopasowanie w bazie Supabase po odczycie
+                const serialNum = findSerialNumber(parsedResults);
+                if (serialNum) {
+                    await searchSupabaseMatch(serialNum);
+                } else {
+                    showNoSerialFoundState();
+                }
+
             } catch (err) {
                 console.error("API Error: ", err);
                 stateLoading.classList.add('hidden'); 
                 stateIdle.classList.remove('hidden');
-                showToast(`Nie udało się odczytać tabliczki. Spróbuj ponownie lub użyj modelu Pro.`, "error");
+                showToast(err.message || `Nie udało się odczytać tabliczki. Spróbuj ponownie lub użyj modelu Pro.`, "error");
             } finally { 
                 processBtn.disabled = false; 
             }
@@ -403,6 +455,341 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             setTimeout(() => { toast.classList.remove('translate-y-5', 'opacity-0'); }, 10);
             setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-[-10px]'); setTimeout(() => toast.remove(), 300); }, 3000);
         }
+
+        // --- SUPABASE INTEGRATION SCRIPT ---
+
+        // Helper to find the serial number key in scanned results
+        function findSerialNumber(dataObj) {
+            if (!dataObj) return null;
+            const candidates = [
+                "numer seryjny", "nr seryjny", "numer fabryczny", "nr fabryczny", 
+                "serial number", "serial", "nr_seryjny", "nr seryjny/serial no",
+                "nr seryjny / serial no", "nr katlogowy", "nr katalogowy", "nrkatlogowy", "nrkatologowy"
+            ];
+            
+            for (const [key, val] of Object.entries(dataObj)) {
+                const lowerKey = key.toLowerCase().trim();
+                if (candidates.some(c => lowerKey.includes(c) || c.includes(lowerKey))) {
+                    return String(val).trim();
+                }
+            }
+            return null;
+        }
+
+        // Show state when no serial number is found in the scan
+        function showNoSerialFoundState() {
+            const badge = document.getElementById('supabaseStatusBadge');
+            const content = document.getElementById('supabaseMatchContent');
+            
+            badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
+            badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Brak klucza seryjnego`;
+            
+            content.innerHTML = `
+                <div class="text-center p-2 text-xs text-slate-500 dark:text-slate-400">
+                    <p class="font-bold mb-1">Nie wykryto jednoznacznego numeru seryjnego</p>
+                    <p class="text-[11px]">Skaner nie odczytał pola o nazwie "Numer seryjny". Możesz wyszukać wózek ręcznie w panelu po lewej stronie.</p>
+                </div>
+            `;
+        }
+
+        // Search Supabase for a match on scanned serial number
+        async function searchSupabaseMatch(serialNumber) {
+            const badge = document.getElementById('supabaseStatusBadge');
+            const content = document.getElementById('supabaseMatchContent');
+            
+            badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400";
+            badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Przeszukiwanie bazy...`;
+            
+            try {
+                const response = await fetch("/api/supabase/lookup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ serialNumber })
+                });
+                
+                if (!response.ok) {
+                    throw new Error("Błąd podczas połączenia z bazą danych.");
+                }
+                
+                const result = await response.json();
+                const matchedRows = result.data;
+                
+                if (matchedRows && matchedRows.length > 0) {
+                    const match = matchedRows[0];
+                    badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ZNAJDZIONO DOPASOWANIE`;
+                    
+                    let rowsHtml = "";
+                    for (const [key, val] of Object.entries(match)) {
+                        rowsHtml += `
+                            <tr class="hover:bg-slate-100/40 dark:hover:bg-slate-900/20 transition-colors">
+                                <td class="px-3 py-2 font-bold text-slate-500 dark:text-slate-400 border-r border-slate-200/40 dark:border-slate-800/40">${key}</td>
+                                <td class="px-3 py-2 text-slate-800 dark:text-slate-200 select-all">${val}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    content.innerHTML = `
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded-xl border border-emerald-200/30">
+                                <i class="fa-solid fa-circle-check text-sm"></i>
+                                <span>Sukces! Rekord powiązany po NRKATALOGOWY: ${serialNumber}</span>
+                            </div>
+                            <div class="overflow-x-auto rounded-xl border border-slate-200/50 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/40">
+                                <table class="w-full text-xs text-left">
+                                    <tbody class="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                                        ${rowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    showToast("Zlokalizowano rekord w bazie Supabase!", "success");
+                } else {
+                    badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> BRAK REKORDU W BAZIE`;
+                    
+                    content.innerHTML = `
+                        <div class="flex flex-col items-center text-center p-2 space-y-3">
+                            <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                <i class="fa-solid fa-circle-question text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Brak wózka w bazie danych</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Wózek o NRKATALOGOWY: <span class="font-bold text-brand-500 select-all">${serialNumber}</span> nie widnieje jeszcze w katalogu.</p>
+                            </div>
+                            <button onclick="insertCurrentRecordToSupabase('${serialNumber}')" class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/15 hover:shadow-brand-500/25 transition-all flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Dodaj ten wózek do katalogu Supabase
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error(err);
+                badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Błąd połączenia`;
+                content.innerHTML = `<p class="text-xs text-red-500 text-center py-2">Nie udało się nawiązać połączenia z bazą Supabase w celu weryfikacji.</p>`;
+            }
+        }
+
+        // Insert currently parsed record to Supabase
+        async function insertCurrentRecordToSupabase(serialNumber) {
+            if (!parsedResults) return;
+            
+            showToast("Trwa zapisywanie do bazy...", "info");
+            
+            // Map scanned results to columns
+            const record = {
+                NRKATALOGOWY: serialNumber,
+                MODEL: parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || "",
+                UDZWIG: parsedResults["Udźwig"] || parsedResults["Udźwig (kg)"] || parsedResults["Q"] || "",
+                ROK_PRODUKCJI: parsedResults["Rok produkcji"] || parsedResults["Rok"] || "",
+                MASA_WLASNA: parsedResults["Masa własna"] || parsedResults["Masa"] || ""
+            };
+            
+            try {
+                const response = await fetch("/api/supabase/insert", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ record })
+                });
+                
+                const resData = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(resData.error || "Wystąpił błąd zapisu.");
+                }
+                
+                showToast("Rekord został pomyślnie dodany do Supabase!", "success");
+                
+                // Refresh both current match and the catalog explorer list
+                await searchSupabaseMatch(serialNumber);
+                await loadDbCatalog();
+                
+            } catch (err) {
+                console.error(err);
+                // If it failed because of strict columns, attempt simple fallback insert (only NRKATALOGOWY)
+                try {
+                    showToast("Próba zapisu uproszczonego (tylko NRKATALOGOWY)...", "info");
+                    const response = await fetch("/api/supabase/insert", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ record: { NRKATALOGOWY: serialNumber } })
+                    });
+                    
+                    const resData = await response.json();
+                    if (!response.ok) {
+                        throw new Error(resData.error || "Wystąpił błąd zapisu.");
+                    }
+                    
+                    showToast("Dodano pomyślnie (tylko NRKATALOGOWY)!", "success");
+                    await searchSupabaseMatch(serialNumber);
+                    await loadDbCatalog();
+                } catch (fallbackErr) {
+                    console.error(fallbackErr);
+                    showToast(`Błąd zapisu: ${fallbackErr.message || "Brak uprawnień RLS lub niezgodna struktura tabeli."}`, "error");
+                }
+            }
+        }
+
+        // Load recent catalog from Supabase
+        async function loadDbCatalog() {
+            const listContainer = document.getElementById('dbListContainer');
+            const recordCountBadge = document.getElementById('dbRecordCount');
+            
+            try {
+                const response = await fetch("/api/supabase/list");
+                if (!response.ok) throw new Error("Nie udało się pobrać katalogu.");
+                
+                const result = await response.json();
+                const list = result.data || [];
+                
+                recordCountBadge.textContent = list.length;
+                
+                if (list.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="text-center py-6 text-slate-400 dark:text-slate-500">
+                            <i class="fa-solid fa-folder-open text-2xl mb-1.5 block"></i>
+                            <p class="text-xs font-semibold">Baza jest pusta</p>
+                            <p class="text-[10px] max-w-[180px] mx-auto mt-0.5">Użyj skanera, aby dodać pierwsze wózki do bazy danych.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let listHtml = "";
+                list.forEach(item => {
+                    const modelName = item.MODEL || item.model || "Brak modelu";
+                    const serialNum = item.NRKATALOGOWY || "Brak numeru";
+                    const subtitle = item.ROK_PRODUKCJI || item.rok || item.UDZWIG || "";
+                    
+                    listHtml += `
+                        <div onclick="selectCatalogItem('${serialNum}')" class="p-2.5 rounded-xl bg-slate-50 hover:bg-brand-50/40 dark:bg-slate-950/30 dark:hover:bg-brand-500/10 border border-slate-100 hover:border-brand-500/20 dark:border-slate-800/40 dark:hover:border-brand-500/20 cursor-pointer transition-all flex items-center justify-between gap-2">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-bold text-[11px] text-slate-700 dark:text-slate-200 truncate">${modelName}</p>
+                                <p class="text-[10px] text-slate-400 font-medium truncate">NR: <span class="text-slate-600 dark:text-slate-300 font-bold">${serialNum}</span></p>
+                            </div>
+                            ${subtitle ? `
+                                <span class="shrink-0 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md font-semibold animate-pulse">
+                                    ${subtitle}
+                                </span>
+                            ` : ""}
+                        </div>
+                    `;
+                });
+                
+                listContainer.innerHTML = listHtml;
+            } catch (err) {
+                console.error(err);
+                listContainer.innerHTML = `
+                    <p class="text-red-500 text-center py-4 text-[10px]">
+                        <i class="fa-solid fa-triangle-exclamation text-base block mb-1"></i>
+                        Błąd ładowania bazy
+                    </p>
+                `;
+            }
+        }
+
+        // View single catalog item from explorer list
+        function selectCatalogItem(serialNumber) {
+            // Trigger a manual search in the explorer search box for the clicked item
+            document.getElementById('dbSearchInput').value = serialNumber;
+            searchDbCatalog(serialNumber);
+        }
+
+        // Search the catalog manually
+        async function searchDbCatalog(searchQuery) {
+            const listContainer = document.getElementById('dbListContainer');
+            if (!searchQuery || !searchQuery.trim()) {
+                loadDbCatalog();
+                return;
+            }
+            
+            listContainer.innerHTML = `<p class="text-slate-400 text-center py-4 text-xs">Wyszukiwanie...</p>`;
+            
+            try {
+                const response = await fetch("/api/supabase/lookup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ serialNumber: searchQuery })
+                });
+                
+                if (!response.ok) throw new Error("Błąd podczas wyszukiwania.");
+                
+                const result = await response.json();
+                const matched = result.data || [];
+                
+                if (matched.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="text-center py-6 text-slate-400 dark:text-slate-500">
+                            <i class="fa-solid fa-magnifying-glass text-xl mb-1.5 block text-slate-300"></i>
+                            <p class="text-xs font-semibold">Brak wyników</p>
+                            <p class="text-[10px] max-w-[180px] mx-auto mt-0.5">Brak rekordu z NRKATALOGOWY pasującym do "${searchQuery}".</p>
+                            <button onclick="clearDbSearch()" class="mt-2 text-[10px] text-brand-500 font-bold hover:underline">Wyczyść filtry</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let listHtml = "";
+                matched.forEach(item => {
+                    const modelName = item.MODEL || item.model || "Brak modelu";
+                    const serialNum = item.NRKATALOGOWY || "Brak numeru";
+                    const subtitle = item.ROK_PRODUKCJI || item.rok || item.UDZWIG || "";
+                    
+                    listHtml += `
+                        <div class="p-2.5 rounded-xl bg-brand-50/30 dark:bg-brand-500/5 border border-brand-500/30 text-xs transition-all space-y-1.5">
+                            <div class="flex items-center justify-between gap-2 border-b border-brand-500/10 pb-1.5">
+                                <span class="font-bold text-[11px] text-slate-800 dark:text-white truncate">${modelName}</span>
+                                <span class="text-[9px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-md font-bold uppercase shrink-0">Wyszukano</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                                <div>NR: <span class="font-bold text-slate-800 dark:text-slate-200 select-all">${serialNum}</span></div>
+                                ${item.UDZWIG ? `<div>Udźwig: <span class="font-bold text-slate-800 dark:text-slate-200">${item.UDZWIG}</span></div>` : ""}
+                                ${item.ROK_PRODUKCJI ? `<div>Rok: <span class="font-bold text-slate-800 dark:text-slate-200">${item.ROK_PRODUKCJI}</span></div>` : ""}
+                                ${item.MASA_WLASNA ? `<div>Masa: <span class="font-bold text-slate-800 dark:text-slate-200">${item.MASA_WLASNA}</span></div>` : ""}
+                            </div>
+                            <button onclick="clearDbSearch()" class="w-full mt-1.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold transition-all">
+                                Powrót do pełnej listy
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                listContainer.innerHTML = listHtml;
+            } catch (err) {
+                console.error(err);
+                listContainer.innerHTML = `<p class="text-red-500 text-center py-4 text-xs">Błąd wyszukiwania.</p>`;
+            }
+        }
+
+        function clearDbSearch() {
+            document.getElementById('dbSearchInput').value = "";
+            loadDbCatalog();
+        }
+
+        // Attach listeners for Supabase Catalog
+        document.getElementById('btnDbSearch').addEventListener('click', () => {
+            const query = document.getElementById('dbSearchInput').value;
+            searchDbCatalog(query);
+        });
+
+        document.getElementById('dbSearchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = document.getElementById('dbSearchInput').value;
+                searchDbCatalog(query);
+            }
+        });
+
+        document.getElementById('btnDbRefresh').addEventListener('click', () => {
+            clearDbSearch();
+            showToast("Odświeżono bazę Supabase", "info");
+        });
+
+        // Initialize Catalog on load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDbCatalog();
+        });
     </script>
 </body>
 </html>
