@@ -24,6 +24,23 @@ try {
   console.error("Failed to initialize Supabase client:", err);
 }
 
+// Helper to determine if a Supabase error is due to a missing table
+function checkIfTableMissing(error: any): boolean {
+  if (!error) return false;
+  const code = String(error.code || "").toLowerCase();
+  const msg = String(error.message || "").toLowerCase();
+  return (
+    code === "42p01" ||
+    code.includes("42p01") ||
+    msg.includes("relation") ||
+    msg.includes("does not exist") ||
+    msg.includes("not found") ||
+    msg.includes("could not find") ||
+    msg.includes("schema cache") ||
+    (msg.includes("operacje") && msg.includes("find"))
+  );
+}
+
 // Initialize the Gemini client using the environment variable GEMINI_API_KEY
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = new GoogleGenAI({
@@ -221,6 +238,92 @@ app.post("/api/supabase/insert", async (req, res) => {
     return res.status(500).json({ 
       error: error.message || "Błąd dodawania rekordu. Upewnij się, że nie naruszasz reguł RLS w Supabase." 
     });
+  }
+});
+
+// 4. Endpoint to save operations/scans with client, topic, image and timestamp
+app.post("/api/supabase/save-operation", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client is not initialized." });
+    }
+
+    const { record } = req.body;
+    if (!record) {
+      return res.status(400).json({ error: "Brak danych operacji." });
+    }
+
+    // Ensure created_at is saved if provided, or handled by DB
+    const { data, error } = await supabase
+      .from("operacje")
+      .insert([record])
+      .select();
+
+    if (error) {
+      if (checkIfTableMissing(error)) {
+        return res.status(404).json({ 
+          error: "Tabela 'operacje' nie istnieje w bazie Supabase.",
+          code: "TABLE_NOT_FOUND" 
+        });
+      }
+      throw error;
+    }
+
+    return res.json({ success: true, data: data || [] });
+  } catch (error: any) {
+    console.error("Supabase save-operation error:", error);
+    if (checkIfTableMissing(error)) {
+      return res.status(404).json({ 
+        error: "Tabela 'operacje' nie istnieje w bazie Supabase.",
+        code: "TABLE_NOT_FOUND" 
+      });
+    }
+    return res.status(500).json({ error: error.message || "Błąd zapisu operacji." });
+  }
+});
+
+// 5. Endpoint to list and filter operations
+app.get("/api/supabase/list-operations", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client is not initialized." });
+    }
+
+    const { klient, temat, nrkatalogowy } = req.query;
+    let query = supabase.from("operacje").select("*");
+
+    if (klient) {
+      query = query.ilike("klient", `%${String(klient).trim()}%`);
+    }
+    if (temat) {
+      query = query.ilike("temat", `%${String(temat).trim()}%`);
+    }
+    if (nrkatalogowy) {
+      query = query.ilike("nrkatalogowy", `%${String(nrkatalogowy).trim()}%`);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(100);
+
+    if (error) {
+      if (checkIfTableMissing(error)) {
+        return res.status(404).json({ 
+          error: "Tabela 'operacje' nie istnieje w bazie Supabase.",
+          code: "TABLE_NOT_FOUND" 
+        });
+      }
+      throw error;
+    }
+
+    return res.json({ success: true, data: data || [] });
+  } catch (error: any) {
+    console.error("Supabase list-operations error:", error);
+    if (checkIfTableMissing(error)) {
+      return res.status(404).json({ 
+        error: "Tabela 'operacje' nie istnieje w bazie Supabase.",
+        code: "TABLE_NOT_FOUND" 
+      });
+    }
+    return res.status(500).json({ error: error.message || "Błąd pobierania operacji z bazy." });
   }
 });
 

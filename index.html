@@ -14,21 +14,28 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                        ubuntu: ['Ubuntu', 'sans-serif'],
+                    },
                     colors: {
                         brand: {
                             50: '#fff7ed',   // Ciepły pomarańczowy jasny (Sawtrak)
                             100: '#ffedd5',
-                            500: '#f37021',  // Oficjalny pomarańczowy Sawtrak
+                            500: '#f37021',  // Oficjalny Neon Orange Sawtrak (#F36F21)
                             600: '#ea580c',
                             700: '#c2410c',
+                        },
+                        obsidian: {
+                            900: '#161616',  // Obsidian Black from brand book
+                            950: '#0f0f0f',
                         }
                     }
                 }
@@ -36,13 +43,14 @@
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Poppins', sans-serif; }
+        h1, h2, h3, h4, .font-ubuntu { font-family: 'Ubuntu', sans-serif; }
         .glass {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }
-        .dark .glass { background: rgba(15, 23, 42, 0.85); }
+        .dark .glass { background: rgba(22, 22, 22, 0.85); }
         select {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23f37021' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-position: right 0.75rem center;
@@ -55,10 +63,10 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-tr from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+<body class="bg-gradient-to-b from-[#F9F9F9] to-[#FFFFFF] dark:from-obsidian-900 dark:to-obsidian-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
 
     <header class="sticky top-0 z-30 w-full glass border-b border-slate-200/50 dark:border-slate-800/50 transition-colors duration-300">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <!-- Kontener logo Sawtrak -->
                 <div class="flex items-center">
@@ -100,22 +108,22 @@
         </div>
     </header>
 
-    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+    <main class="flex-grow max-w-[1400px] w-full mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
-            <!-- Lewa strona: Wprowadzanie zdjęć i kontrolki -->
-            <div class="md:col-span-5 flex flex-col gap-6">
-                <!-- Dropzone / Wybór zdjęcia -->
-                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none">
-                    <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500">
+            <!-- Kolumna 1: Zdjęcie + Status dopasowania -->
+            <div class="flex flex-col gap-6">
+                <!-- 1. Wprowadź zdjęcie -->
+                <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                    <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
                         <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie
                     </h3>
                     
-                    <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center min-h-[220px]">
+                    <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
                         <input type="file" id="imageInput" accept="image/*" class="hidden">
                         
                         <div id="uploadPlaceholder" class="flex flex-col items-center">
-                            <div class="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
+                            <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
                                 <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
                             </div>
                             <p class="text-sm font-semibold">Wybierz zdjęcie</p>
@@ -125,7 +133,7 @@
                         <!-- Podgląd zdjęcia -->
                         <div id="previewWrapper" class="hidden relative w-full h-full max-h-[260px] rounded-lg overflow-hidden">
                             <img id="imagePreview" class="w-full h-full object-contain rounded-lg max-h-[200px]" alt="Podgląd">
-                            <button id="removeImageBtn" class="absolute top-2 right-2 bg-slate-900/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
+                            <button id="removeImageBtn" class="absolute top-2 right-2 bg-[#161616]/80 hover:bg-[#CC0000] text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
@@ -134,70 +142,70 @@
                     <!-- Wybór Modelu AI -->
                     <div class="mt-4">
                         <label for="modelSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
-                        <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
-                            <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash-Lite (Błyskawiczny odczyt - najszybszy)</option>
-                            <option value="gemini-3.5-flash">Gemini 3.5 Flash (Szybki i inteligentny - domyślny)</option>
-                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najwyższa dokładność OCR - wolniejszy)</option>
+                        <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
+                            <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash-Lite (Najszybszy odczyt)</option>
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash (Szybki i inteligentny)</option>
+                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najwyższa dokładność)</option>
                         </select>
                     </div>
 
-                    <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
+                    <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
                         <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie tabliczki
                     </button>
                 </div>
 
-                <!-- Supabase Katalog Explorer -->
-                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none">
-                    <h3 class="font-bold text-base mb-2 flex items-center justify-between text-brand-500">
-                        <span class="flex items-center gap-2">
-                            <i class="fa-solid fa-database"></i> Katalog Supabase
+                <!-- Status dopasowania Supabase -->
+                <div id="supabaseMatchSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                        <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
+                            <i class="fa-solid fa-link"></i> Status dopasowania
+                        </h3>
+                        <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            Oczekiwanie
                         </span>
-                        <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md font-normal">wozki</span>
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-                        Przeglądaj lub przeszukuj bazę Sawtrak po parametrze <span class="font-semibold text-brand-500">NRKATALOGOWY</span>:
-                    </p>
-                    
-                    <!-- Formularz wyszukiwania -->
-                    <div class="space-y-2.5 mb-4">
-                        <div class="relative">
-                            <input type="text" id="dbSearchInput" placeholder="Wpisz NRKATALOGOWY wózka..." class="w-full text-xs py-2.5 px-3 pl-8 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-xs text-slate-400"></i>
-                        </div>
-                        <div class="flex gap-2">
-                            <button id="btnDbSearch" class="flex-1 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-brand-500/10 hover:shadow-brand-500/20 flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-magnifying-glass"></i> Szukaj
-                            </button>
-                            <button id="btnDbRefresh" title="Odśwież listę" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all flex items-center justify-center">
-                                <i class="fa-solid fa-arrows-rotate"></i>
-                            </button>
-                        </div>
                     </div>
 
-                    <!-- Podgląd bazy -->
-                    <div class="border-t border-slate-100 dark:border-slate-800/80 pt-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rekordy w bazie:</span>
-                            <span id="dbRecordCount" class="text-[10px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="dbListContainer" class="max-h-[160px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
-                            <p class="text-slate-400 text-center py-4 text-xs">Ładowanie katalogu...</p>
-                        </div>
+                    <div id="supabaseMatchContent" class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 transition-all">
+                        <p class="text-xs text-slate-400 text-center py-4">
+                            Odczytaj tabliczkę znamionową, aby automatycznie przeszukać bazę Supabase po numerze seryjnym.
+                        </p>
                     </div>
                 </div>
 
-
+                <!-- Zapis operacji w bazie z polami dodatkowymi -->
+                <div id="saveOperationSection" class="hidden bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                    <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
+                        <i class="fa-solid fa-floppy-disk"></i> Zapisz operację w bazie
+                    </h3>
+                    <div class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 space-y-3 transition-all">
+                        <div class="grid grid-cols-1 gap-3">
+                            <div>
+                                <label for="opKlient" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Klient</label>
+                                <input type="text" id="opKlient" placeholder="np. Sawtrak Sp. z o.o." class="w-full text-xs py-2 px-3 bg-white dark:bg-[#111111]/60 border border-slate-200 dark:border-zinc-800/80 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                            <div>
+                                <label for="opTemat" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Temat</label>
+                                <input type="text" id="opTemat" placeholder="np. Przegląd okresowy" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#111111]/60 border border-slate-200 dark:border-zinc-800/80 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                        </div>
+                        <button onclick="saveOperationWithDetails()" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle-plus"></i> Zapisz operację do bazy danych
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <div class="md:col-span-7 flex flex-col gap-6">
-                <div id="stateContainer" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 p-8 shadow-xl shadow-slate-200/40 dark:shadow-none text-center min-h-[380px] flex flex-col items-center justify-center transition-all">
+            <!-- 2. Oczekiwanie na analizę / Wyniki -->
+            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all flex flex-col">
+                <div id="stateContainer" class="text-center min-h-[380px] flex flex-col items-center justify-center transition-all w-full">
                     
                     <!-- Bezczynność -->
                     <div id="stateIdle" class="flex flex-col items-center">
-                        <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 mb-5">
+                        <div class="w-20 h-20 bg-[#F9F9F9] dark:bg-zinc-900 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 mb-5">
                             <i class="fa-solid fa-truck-pickup text-3xl"></i>
                         </div>
-                        <h3 class="text-lg font-bold">Oczekiwanie na analizę</h3>
+                        <h3 class="text-lg font-bold font-ubuntu">Oczekiwanie na analizę</h3>
                         <p class="text-sm text-slate-400 max-w-sm mt-2">
                             Prześlij zdjęcie tabliczki znamionowej Sawtrak z lewej strony i kliknij przycisk analizy.
                         </p>
@@ -212,69 +220,225 @@
                                 <i class="fa-solid fa-brain text-2xl animate-pulse"></i>
                             </div>
                         </div>
-                        <h3 class="text-lg font-bold">Trwa analiza AI...</h3>
+                        <h3 class="text-lg font-bold font-ubuntu">Trwa analiza AI...</h3>
                         <p class="text-sm text-slate-400 mt-2 max-w-xs">
                             Zaawansowany model sztucznej inteligencji skanuje obraz w poszukiwaniu danych technicznych, modeli oraz numerów seryjnych.
                         </p>
-                        <div class="w-full max-w-xs bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-6 overflow-hidden">
+                        <div class="w-full max-w-xs bg-slate-100 dark:bg-zinc-900 rounded-full h-1.5 mt-6 overflow-hidden">
                             <div class="bg-brand-500 h-1.5 rounded-full animate-[loading-bar_2.5s_infinite]" style="width: 50%"></div>
                         </div>
                     </div>
 
                     <!-- Wyniki -->
                     <div id="stateResults" class="hidden w-full text-left">
-                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4">
                             <div>
-                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Odczytane parametry</h3>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu">Odczytane parametry</h3>
                                 <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="copyToClipboard()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                                <button onclick="copyToClipboard()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
                                     <i class="fa-solid fa-copy"></i> Kopiuj
                                 </button>
-                                <button onclick="downloadAsJSON()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                                <button onclick="downloadAsJSON()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
                                     <i class="fa-solid fa-download"></i> JSON
                                 </button>
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 hover:border-brand-500/30 transition-colors duration-500">
+                        <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-zinc-800 bg-[#F9F9F9] dark:bg-[#111111]/40 hover:border-brand-500/30 transition-colors duration-500">
                             <table class="w-full text-sm">
                                 <thead>
-                                    <tr class="bg-slate-100/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                                    <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
                                         <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
                                     </tr>
                                 </thead>
-                                <tbody id="resultsBody" class="divide-y divide-slate-200 dark:divide-slate-800">
+                                <tbody id="resultsBody" class="divide-y divide-slate-200 dark:divide-zinc-800">
                                     <!-- Dane dynamiczne -->
                                 </tbody>
                             </table>
                         </div>
 
-                        <!-- Dopasowanie z bazy danych Supabase -->
-                        <div id="supabaseMatchSection" class="mt-6 border-t border-slate-200 dark:border-slate-800 pt-6">
-                            <div class="flex items-center justify-between mb-3">
-                                <h4 class="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-link text-brand-500"></i> Status dopasowania Supabase
-                                </h4>
-                                <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                    Oczekiwanie
-                                </span>
-                            </div>
+                    </div>
+                </div>
+            </div>
 
-                            <div id="supabaseMatchContent" class="bg-slate-100/45 dark:bg-slate-950/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 p-4 transition-all">
-                                <p class="text-xs text-slate-400 text-center py-2">
-                                    Odczytaj tabliczkę znamionową, aby automatycznie przeszukać bazę Supabase po numerze seryjnym.
-                                </p>
-                            </div>
-                        </div>
+            <!-- 3. Katalog Supabase -->
+            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                <h3 class="font-bold text-base mb-2 flex items-center justify-between text-brand-500 font-ubuntu">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-database"></i> Katalog Supabase
+                    </span>
+                    <span class="text-[10px] bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md font-normal">wozki</span>
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                    Przeglądaj lub przeszukuj bazę Sawtrak po parametrze <span class="font-semibold text-brand-500">NRKATALOGOWY</span>:
+                </p>
+                
+                <!-- Formularz wyszukiwania -->
+                <div class="space-y-2.5 mb-4">
+                    <div class="relative">
+                        <input type="text" id="dbSearchInput" placeholder="Wpisz NRKATALOGOWY wózka..." class="w-full text-xs py-2.5 px-3 pl-8 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-xs text-slate-400"></i>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="btnDbSearch" class="flex-1 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-brand-500/10 hover:shadow-brand-500/20 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-magnifying-glass"></i> Szukaj
+                        </button>
+                        <button id="btnDbRefresh" title="Odśwież listę" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
                     </div>
                 </div>
 
+                <!-- Podgląd bazy -->
+                <div class="border-t border-slate-100 dark:border-zinc-800/80 pt-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rekordy w bazie:</span>
+                        <span id="dbRecordCount" class="text-[10px] bg-brand-50 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-full font-bold">0</span>
+                    </div>
+                    <div id="dbListContainer" class="max-h-[300px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                        <p class="text-slate-400 text-center py-4 text-xs">Ładowanie katalogu...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 4. Rejestr wykonanych operacji (Historia skanów) -->
+        <div class="mt-8 bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-zinc-800 pb-5 mb-6">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2.5 font-ubuntu">
+                        <i class="fa-solid fa-clock-rotate-left text-brand-500"></i> Rejestr wykonanych operacji
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">
+                        Historia wszystkich przeanalizowanych tabliczek znamionowych z zapisanym obrazem oraz szczegółami.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="operationsCountBadge" class="text-xs bg-brand-50 dark:bg-brand-500/10 text-brand-500 px-3 py-1.5 rounded-full font-bold">
+                        Wpisy: 0
+                    </span>
+                    <button onclick="loadOperations()" class="p-2 bg-[#F9F9F9] hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold">
+                        <i class="fa-solid fa-arrows-rotate animate-pulse"></i> Odśwież rejestr
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtrowanie -->
+            <div class="bg-[#F9F9F9] dark:bg-[#111111]/40 rounded-2xl border border-slate-200/50 dark:border-zinc-800/80 p-4 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <h4 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-filter"></i> Filtruj wpisy
+                    </h4>
+                    <button onclick="clearOperationsFilters()" class="text-[10px] text-slate-400 hover:text-brand-500 font-bold transition-all">
+                        <i class="fa-solid fa-filter-circle-xmark"></i> Wyczyść filtry
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="filterKlient" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Klient</label>
+                        <input type="text" id="filterKlient" placeholder="Filtruj po kliencie..." oninput="debounceFilterOperations()" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label for="filterTemat" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Temat</label>
+                        <input type="text" id="filterTemat" placeholder="Filtruj po temacie..." oninput="debounceFilterOperations()" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label for="filterNrKatalogowy" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Nr Katalogowy wózka</label>
+                        <input type="text" id="filterNrKatalogowy" placeholder="Filtruj po nr katalogowym..." oninput="debounceFilterOperations()" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SQL Setup & RLS Troubleshooting Panel -->
+            <div id="sqlSetupAlert" class="hidden bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200/60 dark:border-amber-900/40 rounded-3xl p-5 mb-6 text-amber-900 dark:text-amber-200">
+                <div class="flex items-start gap-3">
+                    <div class="text-lg text-amber-500 shrink-0 mt-0.5">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                            <h4 class="font-bold text-sm">Konfiguracja tabeli w Supabase & RLS</h4>
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400">Instrukcja</span>
+                        </div>
+                        <p class="text-xs mt-1.5 leading-relaxed text-slate-600 dark:text-slate-400">
+                            Jeśli pomyślnie zapisujesz operacje, ale <strong>nie widzisz ich w tabeli</strong> (lub lista jest pusta), najczęstszą przyczyną jest włączone zabezpieczenie <strong>Row Level Security (RLS)</strong> w Supabase bez reguł odczytu publicznego dla klucza <code class="font-mono bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 rounded">anon</code>.
+                        </p>
+                        
+                        <div class="mt-4 space-y-3">
+                            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                Wykonaj to polecenie w zakładce <strong>Supabase -> SQL Editor</strong>, aby wyłączyć RLS i natychmiast odblokować pełny publiczny zapis oraz odczyt:
+                            </p>
+                            
+                            <div class="relative">
+                                <pre class="bg-slate-950 text-emerald-400 font-mono text-[10px] p-3.5 rounded-xl overflow-x-auto border border-slate-800 max-h-[180px] scrollbar-thin select-all" id="sqlCommandCode">-- 1. Upewnij się, że tabela 'operacje' na pewno istnieje i posiada poprawne kolumny
+CREATE TABLE IF NOT EXISTS operacje (
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    wozek_id bigint,
+    nrkatalogowy text,
+    model text,
+    klient text,
+    temat text,
+    parametry jsonb,
+    image_data text
+);
+
+-- 2. Wyłącz zabezpieczenie RLS na tabeli 'operacje' (najszybsze rozwiązanie)
+ALTER TABLE operacje DISABLE ROW LEVEL SECURITY;
+
+-- 3. Jeśli używasz też tabeli 'wozki', wyłącz RLS również na niej
+ALTER TABLE wozki DISABLE ROW LEVEL SECURITY;</pre>
+                                <button onclick="copySQLCommand()" class="absolute top-2 right-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1">
+                                    <i class="fa-solid fa-copy"></i> Kopiuj SQL
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-amber-200/40 dark:border-amber-900/30 flex items-center justify-between gap-4 flex-wrap">
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                <i class="fa-solid fa-circle-info"></i> Wyłączenie RLS (DISABLE ROW LEVEL SECURITY) gwarantuje poprawne wyświetlanie i dodawanie wpisów.
+                            </p>
+                            <button onclick="hideSqlSetupAlert()" class="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline shrink-0">
+                                Ukryj to okno pomocnicze
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Powiadomienie o synchronizacji lokalnych wpisów -->
+            <div id="syncLocalBanner" class="hidden bg-brand-500/10 border border-brand-500/20 dark:border-brand-500/10 rounded-3xl p-5 mb-6 text-slate-800 dark:text-slate-200">
+                <div class="flex items-start gap-3">
+                    <div class="text-lg text-brand-500 shrink-0 mt-0.5">
+                        <i class="fa-solid fa-cloud-arrow-up animate-bounce"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-sm">Wykryto operacje w pamięci lokalnej</h4>
+                        <p class="text-xs mt-1 leading-relaxed text-slate-600 dark:text-slate-400">
+                            Masz zapisane <strong id="localOpsCountText">0</strong> operacji w pamięci przeglądarki (zapisanych przed utworzeniem tabeli w Supabase). Możesz teraz przenieść je bezpośrednio do tabeli <code class="font-mono bg-brand-500/10 px-1 py-0.5 rounded text-brand-500">operacje</code> w Supabase!
+                        </p>
+                        <div class="mt-4 flex gap-2">
+                            <button id="btnSyncLocal" onclick="syncLocalOperationsToSupabase()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Prześlij do Supabase
+                            </button>
+                            <button onclick="dismissSyncLocalBanner()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition-all">
+                                Ignoruj
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista wpisów -->
+            <div id="operationsListContainer" class="space-y-4">
+                <p class="text-slate-400 text-center py-8 text-sm">Ładowanie historii rejestru...</p>
             </div>
         </div>
+
     </main>
 
     <!-- Stopka -->
@@ -335,9 +499,20 @@
         </div>
     </div>
 
+    <!-- Modal Podglądu Pełnego Zdjęcia (Lightbox) -->
+    <div id="imageLightboxModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300" onclick="closeLightbox()">
+        <div class="relative max-w-3xl w-full flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+            <button onclick="closeLightbox()" class="absolute -top-12 right-0 bg-slate-900/80 hover:bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="lightboxImage" class="max-h-[80vh] w-auto max-w-full rounded-2xl shadow-2xl border border-zinc-800 object-contain" src="" alt="Pełny obraz">
+        </div>
+    </div>
+
     <script>
         let uploadedFileBase64 = "";
         let parsedResults = null;
+        let matchedWozek = null;
 
         // --- Connection Mode Setup & Variables ---
         let currentMode = localStorage.getItem('sawtrak_conn_mode') || 'auto';
@@ -351,6 +526,33 @@
             if (currentMode === 'server') return false;
             // auto-detect: only default to static mode on actual GitHub Pages (github.io)
             return window.location.hostname.includes('github.io');
+        }
+
+        // Utility to format database keys to user-friendly Polish labels
+        function formatFieldKey(key) {
+            const keyTranslations = {
+                "nrkatalogowy": "Numer seryjny / katalogowy",
+                "model": "Model / Typ",
+                "udzwig": "Udźwig",
+                "rok_produkcji": "Rok produkcji",
+                "masa_wlasna": "Masa własna",
+                "id": "ID wpisu",
+                "created_at": "Data dodania",
+                "klient": "Klient",
+                "temat": "Temat"
+            };
+            const normalizedKey = key.toLowerCase();
+            let label = keyTranslations[normalizedKey] || key;
+
+            if (label === key) {
+                // Format snake_case to Space Case and Capitalize
+                label = key
+                    .replace(/_/g, " ")
+                    .split(" ")
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(" ");
+            }
+            return label;
         }
 
         // Kontrola ciemnego motywu
@@ -519,6 +721,8 @@
             stateIdle.classList.remove('hidden'); 
             stateLoading.classList.add('hidden'); 
             stateResults.classList.add('hidden');
+            const saveOpSec = document.getElementById('saveOperationSection');
+            if (saveOpSec) saveOpSec.classList.add('hidden');
         }
 
         // Direct Client-side Gemini API Caller (Solution B / Static Pages)
@@ -625,6 +829,8 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
                 stateLoading.classList.add('hidden'); 
                 stateResults.classList.remove('hidden');
+                const saveOpSec = document.getElementById('saveOperationSection');
+                if (saveOpSec) saveOpSec.classList.remove('hidden');
                 showToast(`Pomyślnie odczytano dane (Model: ${modelLabel})`, "success");
 
                 // Automatyczne dopasowanie w bazie Supabase po odczycie
@@ -810,15 +1016,20 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 
                 if (matchedRows && matchedRows.length > 0) {
                     const match = matchedRows[0];
+                    matchedWozek = match;
                     badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400";
                     badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ZNAJDZIONO DOPASOWANIE`;
                     
                     let rowsHtml = "";
                     for (const [key, val] of Object.entries(match)) {
+                        if (val === null || val === undefined) continue;
+                        const valStr = String(val).trim();
+                        if (valStr === "") continue;
+
                         rowsHtml += `
                             <tr class="hover:bg-slate-100/40 dark:hover:bg-slate-900/20 transition-colors">
-                                <td class="px-3 py-2 font-bold text-slate-500 dark:text-slate-400 border-r border-slate-200/40 dark:border-slate-800/40">${key}</td>
-                                <td class="px-3 py-2 text-slate-800 dark:text-slate-200 select-all">${val}</td>
+                                <td class="px-3 py-2 font-bold text-slate-500 dark:text-slate-400 border-r border-slate-200/40 dark:border-slate-800/40 text-[11px]">${formatFieldKey(key)}</td>
+                                <td class="px-3 py-2 text-slate-800 dark:text-slate-200 select-all font-medium text-[11px] break-all">${valStr}</td>
                             </tr>
                         `;
                     }
@@ -840,6 +1051,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     `;
                     showToast("Zlokalizowano rekord w bazie Supabase!", "success");
                 } else {
+                    matchedWozek = null;
                     badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
                     badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> BRAK REKORDU W BAZIE`;
                     
@@ -860,6 +1072,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 }
             } catch (err) {
                 console.error(err);
+                matchedWozek = null;
                 badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400";
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Błąd połączenia`;
                 content.innerHTML = `<p class="text-xs text-red-500 text-center py-2">Nie udało się nawiązać połączenia z bazą Supabase w celu weryfikacji.</p>`;
@@ -867,7 +1080,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
         }
 
         // Insert currently parsed record to Supabase
-        async function insertCurrentRecordToSupabase(serialNumber) {
+        async function insertCurrentRecordToSupabase(serialNumber, klientVal = "", tematVal = "") {
             if (!parsedResults) return;
             
             showToast("Trwa zapisywanie do bazy...", "info");
@@ -880,6 +1093,15 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 ROK_PRODUKCJI: parsedResults["Rok produkcji"] || parsedResults["Rok"] || parsedResults["ROK_PRODUKCJI"] || "",
                 MASA_WLASNA: parsedResults["Masa własna"] || parsedResults["Masa"] || parsedResults["MASA_WLASNA"] || ""
             };
+
+            if (klientVal) {
+                record.klient = klientVal;
+                record.KLIENT = klientVal;
+            }
+            if (tematVal) {
+                record.temat = tematVal;
+                record.TEMAT = tematVal;
+            }
             
             try {
                 if (isStaticMode()) {
@@ -913,12 +1135,69 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 
                 showToast("Rekord został pomyślnie dodany do Supabase!", "success");
                 
+                // Clear inputs on success
+                const kInput = document.getElementById('opKlient');
+                const tInput = document.getElementById('opTemat');
+                if (kInput) kInput.value = "";
+                if (tInput) tInput.value = "";
+
                 // Refresh both current match and the catalog explorer list
                 await searchSupabaseMatch(serialNumber);
                 await loadDbCatalog();
                 
             } catch (err) {
                 console.error(err);
+                
+                // If failed and had klient/temat fields, retry without them
+                if (klientVal || tematVal) {
+                    try {
+                        showToast("Próba zapisu bez pól Klient/Temat...", "info");
+                        const cleanRecord = {
+                            NRKATALOGOWY: serialNumber,
+                            MODEL: parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || parsedResults["TYP"] || "",
+                            UDZWIG: parsedResults["Udźwig"] || parsedResults["Udźwig (kg)"] || parsedResults["Q"] || parsedResults["Q (kg)"] || parsedResults["UDZWIG"] || "",
+                            ROK_PRODUKCJI: parsedResults["Rok produkcji"] || parsedResults["Rok"] || parsedResults["ROK_PRODUKCJI"] || "",
+                            MASA_WLASNA: parsedResults["Masa własna"] || parsedResults["Masa"] || parsedResults["MASA_WLASNA"] || ""
+                        };
+
+                        if (isStaticMode()) {
+                            const response = await fetch(`${supabaseUrl}/rest/v1/wozki`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "apikey": supabaseAnonKey,
+                                    "Authorization": `Bearer ${supabaseAnonKey}`,
+                                    "Prefer": "return=representation"
+                                },
+                                body: JSON.stringify(cleanRecord)
+                            });
+                            if (!response.ok) throw new Error();
+                        } else {
+                            const response = await fetch("/api/supabase/insert", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ record: cleanRecord })
+                            });
+                            if (!response.ok) throw new Error();
+                        }
+                        
+                        showToast("Wózek zapisany! Dodaj kolumny klient i temat w Supabase.", "success");
+                        alert("Wózek został pomyślnie dodany do bazy danych, ale Twoja tabela 'wozki' nie posiada jeszcze kolumn 'klient' oraz 'temat'.\n\nAby te dane były zapisywane, przejdź do panelu SQL Editor w Supabase i wykonaj:\n\nALTER TABLE wozki ADD COLUMN klient text;\nALTER TABLE wozki ADD COLUMN temat text;");
+                        
+                        // Clear inputs
+                        const kInput = document.getElementById('opKlient');
+                        const tInput = document.getElementById('opTemat');
+                        if (kInput) kInput.value = "";
+                        if (tInput) tInput.value = "";
+
+                        await searchSupabaseMatch(serialNumber);
+                        await loadDbCatalog();
+                        return;
+                    } catch (fallbackErr) {
+                        // proceed to general fallback
+                    }
+                }
+
                 // Try simple fallback insert (only NRKATALOGOWY)
                 try {
                     showToast("Próba zapisu uproszczonego (tylko NRKATALOGOWY)...", "info");
@@ -958,6 +1237,577 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     showToast(`Błąd zapisu: ${fallbackErr.message || "Brak uprawnień RLS."}`, "error");
                 }
             }
+        }
+
+        // Save scanned details with additional inputs: Klient and Temat to the separate 'operacje' table
+        async function saveOperationWithDetails() {
+            if (!parsedResults) {
+                showToast("Brak odczytanych danych z tabliczki znamionowej!", "error");
+                return;
+            }
+
+            const serialNum = findSerialNumber(parsedResults);
+            if (!serialNum) {
+                showToast("Błąd: Nie odczytano numeru seryjnego z tabliczki. Wyszukaj ręcznie lub spróbuj innego zdjęcia.", "error");
+                return;
+            }
+
+            const klientVal = document.getElementById('opKlient').value.trim();
+            const tematVal = document.getElementById('opTemat').value.trim();
+
+            if (!klientVal && !tematVal) {
+                if (!confirm("Zapisujesz operację bez podania Klienta oraz Tematu. Czy chcesz kontynuować?")) {
+                    return;
+                }
+            }
+
+            await saveOperationToDatabase(serialNum, klientVal, tematVal);
+        }
+
+        // Save a scanned plate log with base64 image, client details and matched forklift ID
+        async function saveOperationToDatabase(serialNumber, klientVal, tematVal) {
+            showToast("Zapisywanie operacji...", "info");
+            
+            const modelVal = parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || parsedResults["TYP"] || "";
+            const wozekIdVal = matchedWozek ? (matchedWozek.id || matchedWozek.ID) : null;
+
+            const record = {
+                wozek_id: wozekIdVal,
+                nrkatalogowy: serialNumber,
+                model: modelVal,
+                klient: klientVal,
+                temat: tematVal,
+                parametry: parsedResults,
+                image_data: uploadedFileBase64 ? `data:image/jpeg;base64,${uploadedFileBase64}` : "",
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                let success = false;
+                let data = [];
+
+                if (isStaticMode()) {
+                    const response = await fetch(`${supabaseUrl}/rest/v1/operacje`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`,
+                            "Prefer": "return=representation"
+                        },
+                        body: JSON.stringify(record)
+                    });
+                    
+                    if (response.ok) {
+                        data = await response.json();
+                        success = true;
+                    } else {
+                        const err = await response.json().catch(() => ({}));
+                        if (response.status === 404 || err.code === "42P01") {
+                            // Table missing - save to localStorage as backup
+                            saveOperationToLocalStorage(record);
+                            const alertEl = document.getElementById('sqlSetupAlert');
+                            if (alertEl) alertEl.classList.remove('hidden');
+                            showToast("Skany zapisane lokalnie w przeglądarce!", "warning");
+                            await loadOperations();
+                            return;
+                        }
+                        throw new Error(err.message || `Błąd serwera Supabase (${response.status})`);
+                    }
+                } else {
+                    const response = await fetch("/api/supabase/save-operation", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ record })
+                    });
+                    
+                    const resData = await response.json();
+                    if (response.ok) {
+                        data = resData.data;
+                        success = true;
+                    } else if (response.status === 404 || resData.code === "TABLE_NOT_FOUND") {
+                        saveOperationToLocalStorage(record);
+                        const alertEl = document.getElementById('sqlSetupAlert');
+                        if (alertEl) alertEl.classList.remove('hidden');
+                        showToast("Skany zapisane lokalnie w przeglądarce!", "warning");
+                        await loadOperations();
+                        return;
+                    } else {
+                        throw new Error(resData.error || "Błąd zapisu.");
+                    }
+                }
+
+                if (success) {
+                    showToast("Operacja została pomyślnie zapisana!", "success");
+                    
+                    // Clear inputs on success
+                    const kInput = document.getElementById('opKlient');
+                    const tInput = document.getElementById('opTemat');
+                    if (kInput) kInput.value = "";
+                    if (tInput) tInput.value = "";
+
+                    // Hide SQL Setup alert if database table worked
+                    const alertEl = document.getElementById('sqlSetupAlert');
+                    if (alertEl) alertEl.classList.add('hidden');
+
+                    await loadOperations();
+                }
+            } catch (err) {
+                console.error("Error saving operation to Supabase:", err);
+                
+                // Backup to local storage so user does not lose scanned data
+                saveOperationToLocalStorage(record);
+                showToast(`Błąd zapisu w bazie: ${err.message || "Brak połączenia"}. Zapisano lokalnie!`, "error");
+                await loadOperations();
+            }
+        }
+
+        // Local storage persistence helper for operations
+        function saveOperationToLocalStorage(record) {
+            let localOps = [];
+            try {
+                localOps = JSON.parse(localStorage.getItem('sawtrak_local_operations')) || [];
+            } catch (e) {
+                localOps = [];
+            }
+            
+            record.id = Date.now();
+            record.local = true;
+            
+            localOps.unshift(record);
+            localStorage.setItem('sawtrak_local_operations', JSON.stringify(localOps));
+        }
+
+        // Filter operations with input debounce
+        let operationsDebounceTimeout = null;
+        function debounceFilterOperations() {
+            clearTimeout(operationsDebounceTimeout);
+            operationsDebounceTimeout = setTimeout(() => {
+                loadOperations();
+            }, 300);
+        }
+
+        // Load operations history log from Supabase or localStorage fallback
+        async function loadOperations() {
+            const listContainer = document.getElementById('operationsListContainer');
+            const countBadge = document.getElementById('operationsCountBadge');
+            const sqlAlert = document.getElementById('sqlSetupAlert');
+
+            const filterKlient = document.getElementById('filterKlient').value.toLowerCase().trim();
+            const filterTemat = document.getElementById('filterTemat').value.toLowerCase().trim();
+            const filterNrKatalogowy = document.getElementById('filterNrKatalogowy').value.toLowerCase().trim();
+
+            try {
+                let list = [];
+                let usingLocalFallback = false;
+
+                if (isStaticMode()) {
+                    let queryParts = [];
+                    // Keep selective query for Supabase REST API
+                    const queryStr = ""; // fetch all and do robust client filter or fetch simply
+                    
+                    const response = await fetch(`${supabaseUrl}/rest/v1/operacje?select=*&order=created_at.desc`, {
+                        headers: {
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        list = await response.json();
+                        if (sqlAlert) sqlAlert.classList.add('hidden');
+                    } else {
+                        usingLocalFallback = true;
+                    }
+                } else {
+                    // Let the server route filter
+                    let queryParams = new URLSearchParams();
+                    if (filterKlient) queryParams.append('klient', filterKlient);
+                    if (filterTemat) queryParams.append('temat', filterTemat);
+                    if (filterNrKatalogowy) queryParams.append('nrkatalogowy', filterNrKatalogowy);
+
+                    const response = await fetch(`/api/supabase/list-operations?${queryParams.toString()}`);
+                    if (response.ok) {
+                        const resJson = await response.json();
+                        list = resJson.data || [];
+                        if (sqlAlert) sqlAlert.classList.add('hidden');
+                    } else {
+                        usingLocalFallback = true;
+                    }
+                }
+
+                // If table is missing, use local storage
+                if (usingLocalFallback) {
+                    if (sqlAlert) sqlAlert.classList.remove('hidden');
+                    try {
+                        list = JSON.parse(localStorage.getItem('sawtrak_local_operations')) || [];
+                    } catch (e) {
+                        list = [];
+                    }
+                }
+
+                // Robust filtering (mandatory on local, helpful fallback on direct client)
+                if (usingLocalFallback || isStaticMode()) {
+                    if (filterKlient || filterTemat || filterNrKatalogowy) {
+                        list = list.filter(op => {
+                            const matchKlient = !filterKlient || String(op.klient || "").toLowerCase().includes(filterKlient);
+                            const matchTemat = !filterTemat || String(op.temat || "").toLowerCase().includes(filterTemat);
+                            const matchNr = !filterNrKatalogowy || String(op.nrkatalogowy || "").toLowerCase().includes(filterNrKatalogowy);
+                            return matchKlient && matchTemat && matchNr;
+                        });
+                    }
+                }
+
+                countBadge.textContent = `Wpisy: ${list.length}`;
+
+                // Toggle sync local banner
+                let localOps = [];
+                try {
+                    localOps = JSON.parse(localStorage.getItem('sawtrak_local_operations')) || [];
+                } catch (e) {
+                    localOps = [];
+                }
+
+                const syncBanner = document.getElementById('syncLocalBanner');
+                const dismissed = localStorage.getItem('sawtrak_sync_dismissed') === 'true';
+
+                if (localOps.length > 0 && !usingLocalFallback && !dismissed && syncBanner) {
+                    const countEl = document.getElementById('localOpsCountText');
+                    if (countEl) countEl.textContent = localOps.length;
+                    syncBanner.classList.remove('hidden');
+                } else if (syncBanner) {
+                    syncBanner.classList.add('hidden');
+                }
+
+                if (list.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="bg-[#F9F9F9] dark:bg-[#111111]/20 rounded-2xl border border-slate-200/50 dark:border-zinc-800/80 p-12 text-center text-slate-400 dark:text-slate-500">
+                            <i class="fa-solid fa-clock-rotate-left text-3xl mb-3 block text-slate-300 dark:text-zinc-800"></i>
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Rejestr operacji jest pusty</p>
+                            <p class="text-xs max-w-sm mx-auto mt-1 leading-relaxed">
+                                Brak zapisanych wpisów pasujących do kryteriów. Aby zapisać, wybierz wózek, podaj klienta i temat, a następnie kliknij przycisk zapisu powyżej.
+                            </p>
+                            <div class="mt-4 pt-4 border-t border-slate-200/40 dark:border-zinc-800/40 flex flex-col items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                <span>Zapisujesz pomyślnie, ale nic się nie pojawia w tabeli?</span>
+                                <button onclick="showSqlSetupAlert()" class="inline-flex items-center gap-1 text-brand-500 font-bold hover:underline">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Pokaż pomoc SQL & uprawnienia RLS w Supabase
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let listHtml = "";
+                list.forEach(op => {
+                    const opDate = op.created_at ? new Date(op.created_at).toLocaleString('pl-PL') : "Nieznana data";
+                    const isLocal = !!op.local;
+                    
+                    let paramsObj = {};
+                    if (typeof op.parametry === 'string') {
+                        try { paramsObj = JSON.parse(op.parametry); } catch (e) { paramsObj = {}; }
+                    } else {
+                        paramsObj = op.parametry || {};
+                    }
+
+                    let tagsHtml = "";
+                    for (const [pk, pv] of Object.entries(paramsObj)) {
+                        const lowKey = pk.toLowerCase();
+                        if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('model') || lowKey.includes('typ')) continue;
+                        tagsHtml += `
+                            <span class="text-[10px] bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-medium border border-slate-200/40 dark:border-zinc-800/80 whitespace-nowrap">
+                                <strong>${pk}:</strong> ${pv}
+                            </span>
+                        `;
+                    }
+
+                    const hasImage = op.image_data && op.image_data.length > 50;
+                    const imgSrc = hasImage ? (op.image_data.startsWith('data:') ? op.image_data : `data:image/jpeg;base64,${op.image_data}`) : '';
+
+                    listHtml += `
+                        <div class="bg-white dark:bg-[#111111]/30 rounded-2xl border border-slate-200/50 dark:border-zinc-800/80 p-4 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                            <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                                <!-- Podgląd zdjęcia (Thumbnail) -->
+                                ${hasImage ? `
+                                    <div class="relative w-16 h-16 rounded-xl bg-slate-100 dark:bg-zinc-900 overflow-hidden border border-slate-200/60 dark:border-zinc-800/80 shrink-0 cursor-pointer group" onclick="viewFullImage('${imgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby zobaczyć powiększone zdjęcie">
+                                        <img src="${imgSrc}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="Podgląd">
+                                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px]">
+                                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80 shrink-0 flex items-center justify-center text-slate-400 dark:text-zinc-600">
+                                        <i class="fa-solid fa-image text-xl"></i>
+                                    </div>
+                                `}
+
+                                <!-- Treść szczegółów -->
+                                <div class="min-w-0 space-y-1">
+                                    <div class="flex items-center gap-2 flex-wrap text-xs font-black">
+                                        <span class="text-slate-800 dark:text-slate-100">
+                                            Klient: <span class="text-brand-500 font-bold">${op.klient || "—"}</span>
+                                        </span>
+                                        <span class="text-slate-300 dark:text-zinc-800 font-normal">|</span>
+                                        <span class="text-slate-600 dark:text-slate-400 font-bold">
+                                            Temat: <span class="text-slate-900 dark:text-white">${op.temat || "—"}</span>
+                                        </span>
+                                        ${isLocal ? `
+                                            <span class="text-[8px] bg-amber-500/15 text-amber-500 px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wider">Lokalnie</span>
+                                        ` : `
+                                            <span class="text-[8px] bg-emerald-500/15 text-emerald-500 px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wider">W bazie</span>
+                                        `}
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500 flex-wrap">
+                                        <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1 font-ubuntu">
+                                            <i class="fa-solid fa-truck-pickup text-brand-500 text-[10px]"></i> ${op.model || "—"}
+                                        </span>
+                                        <span>•</span>
+                                        <span>Seryjny: <span class="text-slate-800 dark:text-slate-200 font-black select-all">${op.nrkatalogowy || "—"}</span></span>
+                                        <span>•</span>
+                                        <span class="text-slate-400 dark:text-slate-600 flex items-center gap-1">
+                                            <i class="fa-solid fa-calendar text-[10px]"></i> ${opDate}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-1 flex-wrap pt-1">
+                                        ${tagsHtml}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 border-slate-100 dark:border-zinc-800/40 pt-2.5 md:pt-0">
+                                ${op.wozek_id ? `
+                                    <button onclick="selectCatalogItem('${op.nrkatalogowy}')" class="px-2.5 py-1.5 bg-brand-50 dark:bg-brand-500/10 hover:bg-brand-100 dark:hover:bg-brand-500/20 text-brand-500 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1">
+                                        <i class="fa-solid fa-link"></i> Katalog (ID: ${op.wozek_id})
+                                    </button>
+                                ` : `
+                                    <button onclick="associateOperationWithCatalog('${op.nrkatalogowy}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1" title="Szukaj tego wózka w katalogu">
+                                        <i class="fa-solid fa-magnifying-glass text-[9px]"></i> Brak powiązania
+                                    </button>
+                                `}
+                                <button onclick="deleteOperation(${isLocal ? op.id : `'${op.id}'` || op.id}, ${isLocal})" class="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0" title="Usuń operację">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                listContainer.innerHTML = listHtml;
+            } catch (err) {
+                console.error("Error listing operations:", err);
+                listContainer.innerHTML = `
+                    <div class="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-900/40 p-6 text-center text-red-600 dark:text-red-400">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl mb-2 block"></i>
+                        <p class="text-xs font-bold">Wystąpił błąd podczas ładowania rejestru operacji</p>
+                        <p class="text-[10px] mt-1 text-slate-500">${err.message || ""}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Delete operation from table or localStorage
+        async function deleteOperation(opId, isLocal) {
+            if (!confirm("Czy na pewno chcesz trwale usunąć tę operację z rejestru?")) return;
+
+            showToast("Usuwanie operacji...", "info");
+
+            try {
+                if (isLocal) {
+                    let localOps = [];
+                    try {
+                        localOps = JSON.parse(localStorage.getItem('sawtrak_local_operations')) || [];
+                    } catch (e) {
+                        localOps = [];
+                    }
+                    localOps = localOps.filter(o => o.id !== Number(opId));
+                    localStorage.setItem('sawtrak_local_operations', JSON.stringify(localOps));
+                    showToast("Operacja usunięta lokalnie", "success");
+                    await loadOperations();
+                    return;
+                }
+
+                if (isStaticMode()) {
+                    const response = await fetch(`${supabaseUrl}/rest/v1/operacje?id=eq.${opId}`, {
+                        method: "DELETE",
+                        headers: {
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`
+                        }
+                    });
+                    if (!response.ok) throw new Error(`Błąd serwera (${response.status})`);
+                } else {
+                    const response = await fetch(`${supabaseUrl}/rest/v1/operacje?id=eq.${opId}`, {
+                        method: "DELETE",
+                        headers: {
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`
+                        }
+                    });
+                    if (!response.ok) throw new Error();
+                }
+
+                showToast("Pomyślnie usunięto operację", "success");
+                await loadOperations();
+            } catch (err) {
+                console.error("Delete operation failed:", err);
+                showToast("Błąd podczas usuwania operacji z bazy.", "error");
+            }
+        }
+
+        // Helper to query missing forklift catalogs
+        function associateOperationWithCatalog(nrkatalogowy) {
+            selectCatalogItem(nrkatalogowy);
+            showToast(`Szukanie wózka o nr: ${nrkatalogowy}`, "info");
+        }
+
+        // Lightbox Image viewer functions
+        function viewFullImage(imgSrc) {
+            const modal = document.getElementById('imageLightboxModal');
+            const img = document.getElementById('lightboxImage');
+            img.src = imgSrc;
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('imageLightboxModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('lightboxImage').src = "";
+            }, 300);
+        }
+
+        // Clear filtering search inputs
+        function clearOperationsFilters() {
+            document.getElementById('filterKlient').value = "";
+            document.getElementById('filterTemat').value = "";
+            document.getElementById('filterNrKatalogowy').value = "";
+            loadOperations();
+            showToast("Wyczyszczono filtry rejestru", "info");
+        }
+
+        // Copy SQL commands helper
+        function copySQLCommand() {
+            const code = document.getElementById('sqlCommandCode').textContent;
+            const el = document.createElement('textarea');
+            el.value = code;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast("Skopiowano skrypt SQL do schowka!", "success");
+        }
+
+        function showSqlSetupAlert() {
+            const alertEl = document.getElementById('sqlSetupAlert');
+            if (alertEl) {
+                alertEl.classList.remove('hidden');
+                alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function hideSqlSetupAlert() {
+            const alertEl = document.getElementById('sqlSetupAlert');
+            if (alertEl) alertEl.classList.add('hidden');
+        }
+
+        // Synchronize local operations backlog to Supabase database
+        async function syncLocalOperationsToSupabase() {
+            const btn = document.getElementById('btnSyncLocal');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-1.5"></i> Przesyłanie...`;
+            }
+
+            let localOps = [];
+            try {
+                localOps = JSON.parse(localStorage.getItem('sawtrak_local_operations')) || [];
+            } catch (e) {
+                localOps = [];
+            }
+
+            if (localOps.length === 0) {
+                showToast("Brak lokalnych operacji do przesłania.", "info");
+                const banner = document.getElementById('syncLocalBanner');
+                if (banner) banner.classList.add('hidden');
+                return;
+            }
+
+            showToast(`Rozpoczęto przesyłanie ${localOps.length} operacji do bazy Supabase...`, "info");
+            
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const op of localOps) {
+                const record = {
+                    wozek_id: op.wozek_id || null,
+                    nrkatalogowy: op.nrkatalogowy || "",
+                    model: op.model || "",
+                    klient: op.klient || "",
+                    temat: op.temat || "",
+                    parametry: op.parametry || {},
+                    image_data: op.image_data || "",
+                    created_at: op.created_at || new Date().toISOString()
+                };
+
+                try {
+                    let resOk = false;
+                    if (isStaticMode()) {
+                        const response = await fetch(`${supabaseUrl}/rest/v1/operacje`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "apikey": supabaseAnonKey,
+                                "Authorization": `Bearer ${supabaseAnonKey}`,
+                                "Prefer": "return=minimal"
+                            },
+                            body: JSON.stringify(record)
+                        });
+                        resOk = response.ok;
+                    } else {
+                        const response = await fetch("/api/supabase/save-operation", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ record })
+                        });
+                        resOk = response.ok;
+                    }
+
+                    if (resOk) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (err) {
+                    console.error("Sync item failed:", err);
+                    failCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                localStorage.removeItem('sawtrak_local_operations');
+                localStorage.removeItem('sawtrak_sync_dismissed'); // reset dismissal since they synced successfully
+                showToast(`Pomyślnie zsynchronizowano ${successCount} operacji z Supabase!`, "success");
+            }
+
+            if (failCount > 0) {
+                showToast(`Błąd zapisu ${failCount} operacji. Upewnij się, że RLS jest wyłączony w Supabase!`, "error");
+            }
+
+            const banner = document.getElementById('syncLocalBanner');
+            if (banner) banner.classList.add('hidden');
+
+            await loadOperations();
+        }
+
+        function dismissSyncLocalBanner() {
+            const banner = document.getElementById('syncLocalBanner');
+            if (banner) banner.classList.add('hidden');
+            localStorage.setItem('sawtrak_sync_dismissed', 'true');
+            showToast("Ukryto powiadomienie o synchronizacji", "info");
         }
 
         // Load recent catalog from Supabase
@@ -1142,23 +1992,38 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 matched.forEach(item => {
                     const modelName = item.MODEL || item.model || "Brak modelu";
                     const serialNum = item.NRKATALOGOWY || "Brak numeru";
-                    const subtitle = item.ROK_PRODUKCJI || item.rok || item.UDZWIG || "";
+                    
+                    let fieldsHtml = "";
+                    Object.entries(item).forEach(([rawKey, val]) => {
+                        if (val === null || val === undefined) return;
+                        const valStr = String(val).trim();
+                        if (valStr === "") return;
+
+                        fieldsHtml += `
+                            <div class="flex items-start justify-between py-1 border-b border-slate-100 dark:border-slate-800/30 last:border-0 gap-3">
+                                <span class="text-slate-400 dark:text-slate-500 font-medium shrink-0">${formatFieldKey(rawKey)}:</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 text-right select-all break-all">${valStr}</span>
+                            </div>
+                        `;
+                    });
                     
                     listHtml += `
-                        <div class="p-2.5 rounded-xl bg-brand-50/30 dark:bg-brand-500/5 border border-brand-500/30 text-xs transition-all space-y-1.5">
+                        <div class="p-3 rounded-xl bg-brand-50/30 dark:bg-brand-500/5 border border-brand-500/30 text-xs transition-all space-y-2">
                             <div class="flex items-center justify-between gap-2 border-b border-brand-500/10 pb-1.5">
                                 <span class="font-bold text-[11px] text-slate-800 dark:text-white truncate">${modelName}</span>
-                                <span class="text-[9px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-md font-bold uppercase shrink-0">Wyszukano</span>
+                                <span class="text-[9px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-md font-bold uppercase shrink-0">Szczegóły</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-                                <div>NR: <span class="font-bold text-slate-800 dark:text-slate-200 select-all">${serialNum}</span></div>
-                                ${item.UDZWIG ? `<div>Udźwig: <span class="font-bold text-slate-800 dark:text-slate-200">${item.UDZWIG}</span></div>` : ""}
-                                ${item.ROK_PRODUKCJI ? `<div>Rok: <span class="font-bold text-slate-800 dark:text-slate-200">${item.ROK_PRODUKCJI}</span></div>` : ""}
-                                ${item.MASA_WLASNA ? `<div>Masa: <span class="font-bold text-slate-800 dark:text-slate-200">${item.MASA_WLASNA}</span></div>` : ""}
+                            <div class="space-y-0.5 text-[10px]">
+                                ${fieldsHtml}
                             </div>
-                            <button onclick="clearDbSearch()" class="w-full mt-1.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold transition-all">
-                                Powrót do pełnej listy
-                            </button>
+                            <div class="flex gap-1.5 pt-1">
+                                <button onclick="searchSupabaseMatch('${serialNum}')" class="flex-1 py-1 px-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-[9px] font-bold transition-all flex items-center justify-center gap-1">
+                                    <i class="fa-solid fa-link"></i> Powiąż ze skanerem
+                                </button>
+                                <button onclick="clearDbSearch()" class="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold transition-all">
+                                    Zamknij
+                                </button>
+                            </div>
                         </div>
                     `;
                 });
@@ -1197,6 +2062,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
         window.addEventListener('DOMContentLoaded', () => {
             updateConnectionStatusUI();
             loadDbCatalog();
+            loadOperations();
         });
     </script>
 </body>
