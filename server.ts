@@ -7,13 +7,20 @@ import { createClient } from "@supabase/supabase-js";
 const app = express();
 const PORT = 3000;
 
-// Enable CORS and parse JSON request bodies up to 10MB (necessary for base64 images)
+// Enable CORS and parse JSON request bodies up to 50MB (necessary for high-res base64 images)
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Initialize Supabase Client safely
 const supabaseUrl = process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
-const supabaseKey = process.env.SUPABASE_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+
+// Resolve the correct key. If SUPABASE_SERVICE_ROLE_KEY is set but is actually a publishable key,
+// we prefer the provided secret key to make sure we have RLS bypass privileges.
+let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+if (!supabaseKey || supabaseKey.startsWith("sb_publishable_")) {
+  supabaseKey = "sb_secret_-UNQjh0T27_QdDoBl01EPg_UU8hiyeM";
+}
 
 let supabase: any = null;
 try {
@@ -38,6 +45,19 @@ function checkIfTableMissing(error: any): boolean {
     msg.includes("could not find") ||
     msg.includes("schema cache") ||
     (msg.includes("operacje") && msg.includes("find"))
+  );
+}
+
+// Helper to determine if a Supabase error is due to an RLS violation
+function checkIfRlsViolation(error: any): boolean {
+  if (!error) return false;
+  const code = String(error.code || "").toLowerCase();
+  const msg = String(error.message || "").toLowerCase();
+  return (
+    code === "42501" ||
+    msg.includes("row-level security") ||
+    msg.includes("rls") ||
+    msg.includes("violates row-level security policy")
   );
 }
 
@@ -96,19 +116,76 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
     const resultText = response.text || "";
     
+    // Robust helper to extract and parse JSON from the Gemini response
+    function robustJsonParse(text: string): any {
+      const trimmed = text.trim();
+      try {
+        return JSON.parse(trimmed);
+      } catch (err) {
+        // Attempt standard cleanup of markdown blocks
+        const cleaned = trimmed
+          .replace(/^```json\s*/i, "")
+          .replace(/```\s*$/, "")
+          .trim();
+        try {
+          return JSON.parse(cleaned);
+        } catch (err2) {
+          // Find the first '{' and last '}'
+          const firstBrace = cleaned.indexOf("{");
+          const lastBrace = cleaned.lastIndexOf("}");
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            const jsonCandidate = cleaned.substring(firstBrace, lastBrace + 1);
+            try {
+              return JSON.parse(jsonCandidate);
+            } catch (err3) {
+              // If still failing, let's try to locate matched braces
+              let braceCount = 0;
+              let insideString = false;
+              let escape = false;
+              for (let i = firstBrace; i < cleaned.length; i++) {
+                const char = cleaned[i];
+                if (escape) {
+                  escape = false;
+                  continue;
+                }
+                if (char === '\\') {
+                  escape = true;
+                  continue;
+                }
+                if (char === '"') {
+                  insideString = !insideString;
+                  continue;
+                }
+                if (!insideString) {
+                  if (char === '{') {
+                    braceCount++;
+                  } else if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0) {
+                      const candidate = cleaned.substring(firstBrace, i + 1);
+                      try {
+                        return JSON.parse(candidate);
+                      } catch (e) {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+          throw err2; // rethrow if all recovery attempts fail
+        }
+      }
+    }
+
     try {
-      // Parse the JSON string to ensure it's valid JSON before sending
-      const parsed = JSON.parse(resultText);
-      return res.json({ success: true, data: parsed, modelUsed: selectedModel });
-    } catch (parseError) {
-      // If parsing failed, attempt a clean-up of potential markdown formatting and parse again
-      const cleaned = resultText
-        .replace(/^```json\s*/i, "")
-        .replace(/```\s*$/, "")
-        .trim();
-      
-      const parsedCleaned = JSON.parse(cleaned);
-      return res.json({ success: true, data: parsedCleaned, modelUsed: selectedModel });
+      const parsedData = robustJsonParse(resultText);
+      return res.json({ success: true, data: parsedData, modelUsed: selectedModel });
+    } catch (parseError: any) {
+      console.error("JSON extraction failed on raw text:", resultText, parseError);
+      return res.status(500).json({
+        error: `Nie udało się przetworzyć odpowiedzi AI na poprawny format JSON: ${parseError.message}`,
+        rawResponse: resultText
+      });
     }
   } catch (error: any) {
     console.error("Gemini OCR Error:", error);
@@ -231,10 +308,24 @@ app.post("/api/supabase/insert", async (req, res) => {
       .insert([record])
       .select();
 
-    if (error) throw error;
+    if (error) {
+      if (checkIfRlsViolation(error)) {
+        return res.status(403).json({
+          error: "Brak uprawnień RLS do zapisu w tabeli 'wozki' w Supabase. Uruchom dostarczony skrypt SQL w SQL Editor, aby wyłączyć lub skonfigurować reguły RLS.",
+          code: "RLS_VIOLATION"
+        });
+      }
+      throw error;
+    }
     return res.json({ success: true, data: data || [] });
   } catch (error: any) {
     console.error("Supabase insert error:", error);
+    if (checkIfRlsViolation(error)) {
+      return res.status(403).json({
+        error: "Brak uprawnień RLS do zapisu w tabeli 'wozki' w Supabase. Uruchom dostarczony skrypt SQL w SQL Editor, aby wyłączyć lub skonfigurować reguły RLS.",
+        code: "RLS_VIOLATION"
+      });
+    }
     return res.status(500).json({ 
       error: error.message || "Błąd dodawania rekordu. Upewnij się, że nie naruszasz reguł RLS w Supabase." 
     });
@@ -266,6 +357,12 @@ app.post("/api/supabase/save-operation", async (req, res) => {
           code: "TABLE_NOT_FOUND" 
         });
       }
+      if (checkIfRlsViolation(error)) {
+        return res.status(403).json({
+          error: "Brak uprawnień RLS do zapisu w tabeli 'operacje' w Supabase. Uruchom dostarczony skrypt SQL w SQL Editor, aby wyłączyć lub skonfigurować reguły RLS.",
+          code: "RLS_VIOLATION"
+        });
+      }
       throw error;
     }
 
@@ -276,6 +373,12 @@ app.post("/api/supabase/save-operation", async (req, res) => {
       return res.status(404).json({ 
         error: "Tabela 'operacje' nie istnieje w bazie Supabase.",
         code: "TABLE_NOT_FOUND" 
+      });
+    }
+    if (checkIfRlsViolation(error)) {
+      return res.status(403).json({
+        error: "Brak uprawnień RLS do zapisu w tabeli 'operacje' w Supabase. Uruchom dostarczony skrypt SQL w SQL Editor, aby wyłączyć lub skonfigurować reguły RLS.",
+        code: "RLS_VIOLATION"
       });
     }
     return res.status(500).json({ error: error.message || "Błąd zapisu operacji." });
@@ -289,9 +392,28 @@ app.get("/api/supabase/list-operations", async (req, res) => {
       return res.status(500).json({ error: "Supabase client is not initialized." });
     }
 
-    const { klient, temat, nrkatalogowy } = req.query;
+    const { id, klient, temat, nrkatalogowy, wozek_id } = req.query;
     let query = supabase.from("operacje").select("*");
 
+    if (id) {
+      const cleanId = String(id).trim();
+      const parsedId = parseInt(cleanId, 10);
+      if (!isNaN(parsedId) && String(parsedId) === cleanId) {
+        query = query.eq("id", parsedId);
+      } else {
+        // Fallback for UUIDs or textual IDs
+        query = query.eq("id", cleanId);
+      }
+    }
+    if (wozek_id) {
+      const cleanWozekId = String(wozek_id).trim();
+      const parsedWozekId = parseInt(cleanWozekId, 10);
+      if (!isNaN(parsedWozekId) && String(parsedWozekId) === cleanWozekId) {
+        query = query.eq("wozek_id", parsedWozekId);
+      } else {
+        query = query.eq("wozek_id", cleanWozekId);
+      }
+    }
     if (klient) {
       query = query.ilike("klient", `%${String(klient).trim()}%`);
     }
@@ -327,12 +449,122 @@ app.get("/api/supabase/list-operations", async (req, res) => {
   }
 });
 
+// 6. Endpoint to update an operation
+app.post("/api/supabase/update-operation", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client is not initialized." });
+    }
+
+    const { id, record } = req.body;
+    if (!id || !record) {
+      return res.status(400).json({ error: "Brak ID operacji lub danych rekordu." });
+    }
+
+    let parsedId = id;
+    const cleanId = String(id).trim();
+    const parsedInt = parseInt(cleanId, 10);
+    if (!isNaN(parsedInt) && String(parsedInt) === cleanId) {
+      parsedId = parsedInt;
+    }
+
+    const { data, error } = await supabase
+      .from("operacje")
+      .update(record)
+      .eq("id", parsedId)
+      .select();
+
+    if (error) {
+      if (checkIfRlsViolation(error)) {
+        return res.status(403).json({
+          error: "Brak uprawnień RLS do modyfikacji w tabeli 'operacje' w Supabase.",
+          code: "RLS_VIOLATION"
+        });
+      }
+      throw error;
+    }
+
+    return res.json({ success: true, data: data || [] });
+  } catch (error: any) {
+    console.error("Supabase update-operation error:", error);
+    return res.status(500).json({ error: error.message || "Błąd podczas modyfikacji operacji." });
+  }
+});
+
+// 7. Endpoint to delete an operation
+app.post("/api/supabase/delete-operation", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client is not initialized." });
+    }
+
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: "Brak ID operacji do usunięcia." });
+    }
+
+    let parsedId = id;
+    const cleanId = String(id).trim();
+    const parsedInt = parseInt(cleanId, 10);
+    if (!isNaN(parsedInt) && String(parsedInt) === cleanId) {
+      parsedId = parsedInt;
+    }
+
+    const { data, error } = await supabase
+      .from("operacje")
+      .delete()
+      .eq("id", parsedId)
+      .select();
+
+    if (error) {
+      if (checkIfRlsViolation(error)) {
+        return res.status(403).json({
+          error: "Brak uprawnień RLS do usunięcia w tabeli 'operacje' w Supabase.",
+          code: "RLS_VIOLATION"
+        });
+      }
+      throw error;
+    }
+
+    // If no row was returned/affected and we used select(), check if it actually deleted anything.
+    // Note: data might be empty if RLS prevents delete or if ID didn't exist.
+    const deletedCount = data ? data.length : 0;
+    console.log(`Deleted operation ID: ${parsedId}, count: ${deletedCount}`);
+
+    return res.json({ success: true, data: data || [], deletedCount });
+  } catch (error: any) {
+    console.error("Supabase delete-operation error:", error);
+    return res.status(500).json({ error: error.message || "Błąd podczas usuwania operacji." });
+  }
+});
+
 // Serve static assets from the current directory
 app.use(express.static(process.cwd()));
 
 // SPA fallback: serve index.html for all other routes
 app.get("*", (req, res) => {
   res.sendFile(path.join(process.cwd(), "index.html"));
+});
+
+// Global error handler to prevent returning HTML for API errors (e.g. PayloadTooLargeError)
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Global express error handled:", err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  
+  const status = err.status || err.statusCode || 500;
+  
+  // Always return JSON for API routes
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(status).json({
+      error: err.message || "Wystąpił nieoczekiwany błąd serwera.",
+      code: err.code || "SERVER_ERROR",
+      status
+    });
+  }
+  
+  next(err);
 });
 
 // Start the server on port 3000
