@@ -532,6 +532,17 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                         Bezpiecznie zapisany lokalnie w Twojej przeglądarce. Pobierz bezpłatny klucz na <a href="https://aistudio.google.com/" target="_blank" class="text-brand-500 font-bold hover:underline inline-flex items-center gap-0.5">Google AI Studio <i class="fa-solid fa-up-right-from-square text-[8px]"></i></a>.
                     </p>
                 </div>
+
+                <div id="supabaseConfigContainer" class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
+                    <div>
+                        <label for="supabaseUrlInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Supabase URL</label>
+                        <input type="text" id="supabaseUrlInput" placeholder="https://your-project.supabase.co" class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
+                    </div>
+                    <div>
+                        <label for="supabaseKeyInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Supabase Anon / Service Key</label>
+                        <input type="password" id="supabaseKeyInput" placeholder="Wklej klucz..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
+                    </div>
+                </div>
             </div>
 
             <div class="mt-6 flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -602,8 +613,30 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         // --- Connection Mode Setup & Variables ---
         let currentMode = localStorage.getItem('sawtrak_conn_mode') || 'auto';
         let geminiApiKey = localStorage.getItem('sawtrak_gemini_key') || '';
-        const supabaseUrl = "https://nhqambvmghlhzjtdvljz.supabase.co";
-        const supabaseAnonKey = "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+        let supabaseUrl = localStorage.getItem('sawtrak_supabase_url') || "https://nhqambvmghlhzjtdvljz.supabase.co";
+        let supabaseAnonKey = localStorage.getItem('sawtrak_supabase_anon_key') || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+
+        // Fetch correct credentials from Node server and persist them in localStorage for Static Mode (e.g., GitHub Pages)
+        async function fetchServerConfig() {
+            if (!isStaticMode()) {
+                try {
+                    const response = await fetch('/api/supabase/config');
+                    if (response.ok) {
+                        const config = await response.json();
+                        if (config.supabaseUrl && config.supabaseUrl !== "https://nhqambvmghlhzjtdvljz.supabase.co") {
+                            localStorage.setItem('sawtrak_supabase_url', config.supabaseUrl);
+                            supabaseUrl = config.supabaseUrl;
+                        }
+                        if (config.supabaseAnonKey && config.supabaseAnonKey !== "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC") {
+                            localStorage.setItem('sawtrak_supabase_anon_key', config.supabaseAnonKey);
+                            supabaseAnonKey = config.supabaseAnonKey;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Błąd pobierania konfiguracji z serwera:", err);
+                }
+            }
+        }
 
         // Determine if we are in direct-client (static) mode
         function isStaticMode() {
@@ -688,6 +721,8 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         const connectionStatusIndicator = document.getElementById('connectionStatusIndicator');
         const connectionStatusDot = document.getElementById('connectionStatusDot');
         const connectionStatusText = document.getElementById('connectionStatusText');
+        const supabaseUrlInput = document.getElementById('supabaseUrlInput');
+        const supabaseKeyInput = document.getElementById('supabaseKeyInput');
 
         // Update connection status UI
         function updateConnectionStatusUI() {
@@ -728,6 +763,8 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         settingsToggle.addEventListener('click', () => {
             connModeSelect.value = currentMode;
             geminiApiKeyInput.value = geminiApiKey;
+            if (supabaseUrlInput) supabaseUrlInput.value = supabaseUrl;
+            if (supabaseKeyInput) supabaseKeyInput.value = supabaseAnonKey;
             
             settingsModal.classList.remove('hidden');
             setTimeout(() => {
@@ -765,8 +802,13 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             currentMode = connModeSelect.value;
             geminiApiKey = geminiApiKeyInput.value.trim();
             
+            if (supabaseUrlInput) supabaseUrl = supabaseUrlInput.value.trim() || "https://nhqambvmghlhzjtdvljz.supabase.co";
+            if (supabaseKeyInput) supabaseAnonKey = supabaseKeyInput.value.trim() || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+            
             localStorage.setItem('sawtrak_conn_mode', currentMode);
             localStorage.setItem('sawtrak_gemini_key', geminiApiKey);
+            localStorage.setItem('sawtrak_supabase_url', supabaseUrl);
+            localStorage.setItem('sawtrak_supabase_anon_key', supabaseAnonKey);
             
             updateConnectionStatusUI();
             closeSettings();
@@ -774,6 +816,7 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             
             // Reload database catalog to reflect possible source changes
             loadDbCatalog();
+            loadOperations();
         });
 
         dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-brand-500', 'bg-brand-50/10'); });
@@ -1376,7 +1419,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
         // Save a scanned plate log with base64 image, client details and matched forklift ID
         async function saveOperationToDatabase(serialNumber, klientVal, tematVal) {
-            showToast("Zapisywanie operacji...", "info");
+            showToast("Zapisywanie operacji w bazie...", "info");
             
             const modelVal = parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || parsedResults["TYP"] || "";
             const wozekIdVal = matchedWozek ? (matchedWozek.id || matchedWozek.ID) : null;
@@ -1413,24 +1456,6 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                         success = true;
                     } else {
                         const err = await response.json().catch(() => ({}));
-                        if (response.status === 404 || err.code === "42P01") {
-                            // Table missing - save to localStorage as backup
-                            saveOperationToLocalStorage(record);
-                            const alertEl = document.getElementById('sqlSetupAlert');
-                            if (alertEl) alertEl.classList.remove('hidden');
-                            showToast("Skany zapisane lokalnie w przeglądarce!", "warning");
-                            await loadOperations();
-                            return;
-                        }
-                        if (response.status === 403 || err.code === "42501" || (err.message && String(err.message).toLowerCase().includes("row-level security"))) {
-                            // RLS Violation - save to localStorage as backup
-                            saveOperationToLocalStorage(record);
-                            const alertEl = document.getElementById('sqlSetupAlert');
-                            if (alertEl) alertEl.classList.remove('hidden');
-                            showToast("Brak uprawnień RLS! Zapisano awaryjnie w przeglądarce.", "warning");
-                            await loadOperations();
-                            return;
-                        }
                         throw new Error(err.message || `Błąd serwera Supabase (${response.status})`);
                     }
                 } else {
@@ -1452,27 +1477,13 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     if (response.ok) {
                         data = resData.data;
                         success = true;
-                    } else if (response.status === 404 || resData.code === "TABLE_NOT_FOUND") {
-                        saveOperationToLocalStorage(record);
-                        const alertEl = document.getElementById('sqlSetupAlert');
-                        if (alertEl) alertEl.classList.remove('hidden');
-                        showToast("Skany zapisane lokalnie w przeglądarce!", "warning");
-                        await loadOperations();
-                        return;
-                    } else if (response.status === 403 || resData.code === "RLS_VIOLATION") {
-                        saveOperationToLocalStorage(record);
-                        const alertEl = document.getElementById('sqlSetupAlert');
-                        if (alertEl) alertEl.classList.remove('hidden');
-                        showToast("Brak uprawnień RLS! Zapisano awaryjnie w przeglądarce.", "warning");
-                        await loadOperations();
-                        return;
                     } else {
                         throw new Error(resData.error || "Błąd zapisu.");
                     }
                 }
 
                 if (success) {
-                    showToast("Operacja została pomyślnie zapisana!", "success");
+                    showToast("Operacja została pomyślnie zapisana w bazie danych!", "success");
                     
                     // Clear inputs on success
                     const kInput = document.getElementById('opKlient');
@@ -1489,17 +1500,14 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             } catch (err) {
                 console.error("Error saving operation to Supabase:", err);
                 
-                // Backup to local storage so user does not lose scanned data
-                saveOperationToLocalStorage(record);
-                
-                // Automatically show the troubleshooting & SQL SQL setup instructions
+                // Automatically show the troubleshooting & SQL setup instructions
                 const alertEl = document.getElementById('sqlSetupAlert');
                 if (alertEl) {
                     alertEl.classList.remove('hidden');
                     alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
                 
-                showToast(`Błąd zapisu w bazie: ${err.message || "Brak połączenia"}. Zapisano lokalnie!`, "error");
+                showToast(`Błąd zapisu bezpośrednio w bazie: ${err.message || "Brak połączenia"}.`, "error");
                 await loadOperations();
             }
         }
@@ -1620,35 +1628,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     }
                 }
 
-                // If table is missing, use local storage
-                if (usingLocalFallback) {
-                    if (sqlAlert) sqlAlert.classList.remove('hidden');
-                    try {
-                        list = JSON.parse(localStorage.getItem('sawtrak_local_operations')) || [];
-                    } catch (e) {
-                        list = [];
-                    }
-                }
-
-                // Robust filtering (mandatory on local, helpful fallback on direct client)
-                if (usingLocalFallback || isStaticMode() || filterId || filterWozekId) {
-                    if (filterId || filterWozekId || filterKlient || filterTemat || filterNrKatalogowy) {
-                        list = list.filter(op => {
-                            const matchId = !filterId || String(op.id || "").toLowerCase().includes(filterId);
-                            const matchWozekId = !filterWozekId || String(op.wozek_id || op.wozekId || "").toLowerCase().includes(filterWozekId);
-                            const matchKlient = !filterKlient || String(op.klient || "").toLowerCase().includes(filterKlient);
-                            const matchTemat = !filterTemat || String(op.temat || "").toLowerCase().includes(filterTemat);
-                            const matchNr = !filterNrKatalogowy || String(op.nrkatalogowy || "").toLowerCase().includes(filterNrKatalogowy);
-                            return matchId && matchWozekId && matchKlient && matchTemat && matchNr;
-                        });
-                    }
-                }
-
-                window.currentOperations = list;
-
-                countBadge.textContent = `Wpisy: ${list.length}`;
-
-                // Toggle sync local banner
+                // Fetch local operations only to check if sync banner is needed
                 let localOps = [];
                 try {
                     localOps = JSON.parse(localStorage.getItem('sawtrak_local_operations')) || [];
@@ -1656,6 +1636,30 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     localOps = [];
                 }
 
+                // If table is missing or fails, show help and set list to empty
+                if (usingLocalFallback) {
+                    if (sqlAlert) sqlAlert.classList.remove('hidden');
+                    list = [];
+                }
+
+                // Robust client-side filtering for both local and DB entries
+                if (filterId || filterWozekId || filterKlient || filterTemat || filterNrKatalogowy) {
+                    list = list.filter(op => {
+                        const matchId = !filterId || String(op.id || "").toLowerCase().includes(filterId);
+                        const opWozekId = op.wozek_id !== undefined ? op.wozek_id : op.wozekId;
+                        const matchWozekId = !filterWozekId || String(opWozekId || "").toLowerCase().includes(filterWozekId);
+                        const matchKlient = !filterKlient || String(op.klient || "").toLowerCase().includes(filterKlient);
+                        const matchTemat = !filterTemat || String(op.temat || "").toLowerCase().includes(filterTemat);
+                        const matchNr = !filterNrKatalogowy || String(op.nrkatalogowy || "").toLowerCase().includes(filterNrKatalogowy);
+                        return matchId && matchWozekId && matchKlient && matchTemat && matchNr;
+                    });
+                }
+
+                window.currentOperations = list;
+
+                countBadge.textContent = `Wpisy: ${list.length}`;
+
+                // Toggle sync local banner
                 const syncBanner = document.getElementById('syncLocalBanner');
                 const dismissed = localStorage.getItem('sawtrak_sync_dismissed') === 'true';
 
@@ -2402,10 +2406,11 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
         });
 
         // Initialize Catalog on load
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             updateConnectionStatusUI();
-            loadDbCatalog();
-            loadOperations();
+            await fetchServerConfig();
+            await loadDbCatalog();
+            await loadOperations();
         });
     </script>
 </body>

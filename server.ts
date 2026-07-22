@@ -332,6 +332,14 @@ app.post("/api/supabase/insert", async (req, res) => {
   }
 });
 
+// Endpoint to return Supabase configuration (URL and key) for the static client fallback
+app.get("/api/supabase/config", (req, res) => {
+  return res.json({
+    supabaseUrl: supabaseUrl,
+    supabaseAnonKey: supabaseKey || process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC"
+  });
+});
+
 // 4. Endpoint to save operations/scans with client, topic, image and timestamp
 app.post("/api/supabase/save-operation", async (req, res) => {
   try {
