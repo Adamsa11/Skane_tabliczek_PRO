@@ -1645,13 +1645,20 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 let wozkiCatalog = [];
                 try {
                     if (isStaticMode()) {
-                        const wRes = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*`, {
-                            headers: {
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`
-                            }
-                        });
-                        if (wRes.ok) wozkiCatalog = await wRes.json();
+                        const cleanSupabaseUrl = (supabaseUrl || '').replace(/\/+$/, '');
+                        const headers = {
+                            "apikey": supabaseAnonKey,
+                            "Authorization": `Bearer ${supabaseAnonKey}`
+                        };
+                        let wRes = await fetch(`${cleanSupabaseUrl}/rest/v1/wozki?select=*&limit=1000`, { headers });
+                        if (!wRes.ok) {
+                            wRes = await fetch(`${cleanSupabaseUrl}/rest/v1/wozki?select=*`, { headers });
+                        }
+                        if (wRes.ok) {
+                            wozkiCatalog = await wRes.json();
+                        } else {
+                            console.warn("Static REST API wozki fetch warning:", wRes.status);
+                        }
                     } else {
                         const wRes = await fetch("/api/supabase/list");
                         if (wRes.ok) {
@@ -1659,12 +1666,69 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                             wozkiCatalog = wJson.data || [];
                         }
                     }
-                    wozkiCatalog.forEach(w => {
-                        if (w.id !== undefined && w.id !== null) wozkiMap[String(w.id)] = w;
-                        if (w.ID !== undefined && w.ID !== null) wozkiMap[String(w.ID)] = w;
-                    });
+                    if (Array.isArray(wozkiCatalog)) {
+                        window.wozkiCatalogCache = wozkiCatalog;
+                        wozkiCatalog.forEach(w => {
+                            if (w && w.id !== undefined && w.id !== null) wozkiMap[String(w.id)] = w;
+                            if (w && w.ID !== undefined && w.ID !== null) wozkiMap[String(w.ID)] = w;
+                        });
+                    }
                 } catch (wErr) {
                     console.warn("Błąd ładowania mapy wózków:", wErr);
+                }
+
+                // Helper do dopasowywania wózka do operacji w static/server mode
+                function resolveWozekForOperation(op) {
+                    if (!op) return null;
+                    if (op.wozek_data) return op.wozek_data;
+
+                    const opWozekId = op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId;
+                    if (opWozekId !== null && opWozekId !== undefined && wozkiMap[String(opWozekId)]) {
+                        return wozkiMap[String(opWozekId)];
+                    }
+
+                    if (!Array.isArray(wozkiCatalog) || wozkiCatalog.length === 0) return null;
+
+                    const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                    // 1. Dopasowanie po op.nrkatalogowy
+                    const opNrNorm = norm(op.nrkatalogowy);
+                    if (opNrNorm) {
+                        let found = wozkiCatalog.find(w => {
+                            const wCode = norm(w.NRKATALOGOWY || w.nrkatalogowy || w.kod || w.KOD || w.nr_katalogowy || w.NR_FABRYCZNY || w.nr_fabryczny);
+                            return wCode && wCode === opNrNorm;
+                        });
+                        if (found) return found;
+
+                        found = wozkiCatalog.find(w => {
+                            const wCode = norm(w.NRKATALOGOWY || w.nrkatalogowy || w.kod || w.KOD || w.nr_katalogowy || w.NR_FABRYCZNY || w.nr_fabryczny);
+                            return wCode && (wCode.includes(opNrNorm) || opNrNorm.includes(wCode));
+                        });
+                        if (found) return found;
+                    }
+
+                    // 2. Dopasowanie po parametrach ze skanu
+                    let paramsObj = op.parametry;
+                    if (typeof paramsObj === 'string') {
+                        try { paramsObj = JSON.parse(paramsObj); } catch (e) { paramsObj = null; }
+                    }
+                    if (paramsObj && typeof paramsObj === 'object') {
+                        for (const [pk, pv] of Object.entries(paramsObj)) {
+                            const lowKey = pk.toLowerCase();
+                            if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('serial') || lowKey.includes('fabryczny')) {
+                                const paramNorm = norm(pv);
+                                if (paramNorm && paramNorm.length >= 3) {
+                                    const found = wozkiCatalog.find(w => {
+                                        const wCode = norm(w.NRKATALOGOWY || w.nrkatalogowy || w.kod || w.KOD || w.nr_katalogowy || w.NR_FABRYCZNY || w.nr_fabryczny);
+                                        return wCode && (wCode === paramNorm || wCode.includes(paramNorm) || paramNorm.includes(wCode));
+                                    });
+                                    if (found) return found;
+                                }
+                            }
+                        }
+                    }
+
+                    return null;
                 }
 
                 // Fetch local operations
@@ -1689,8 +1753,8 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 // Robust client-side filtering for both local and DB entries
                 if (filterId || filterWozekId || filterKlient || filterTemat || filterNrKatalogowy) {
                     list = list.filter(op => {
-                        const opWozekId = op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId;
-                        const matchedWozek = (op.wozek_data) || (opWozekId ? wozkiMap[String(opWozekId)] : null);
+                        const matchedWozek = resolveWozekForOperation(op);
+                        const opWozekId = matchedWozek ? (matchedWozek.id || matchedWozek.ID) : (op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId);
                         const wozekKod = matchedWozek ? (matchedWozek.NRKATALOGOWY || matchedWozek.nrkatalogowy || matchedWozek.kod || "") : "";
                         const wozekModel = matchedWozek ? (matchedWozek.MODEL || matchedWozek.TYP_WOZKA || matchedWozek.TYP || matchedWozek.model || "") : "";
 
@@ -1745,17 +1809,14 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 list.forEach(op => {
                     const opDate = op.created_at ? new Date(op.created_at).toLocaleString('pl-PL') : "Nieznana data";
                     const isLocal = !!op.local;
-                    const opWozekId = op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId;
+                    const rawOpWozekId = op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId;
 
-                    // Resolve matched wozek record from database via wozek_id -> id or fallback by NRKATALOGOWY
-                    let matchedWozek = op.wozek_data || (opWozekId ? wozkiMap[String(opWozekId)] : null);
-                    if (!matchedWozek && op.nrkatalogowy) {
-                        const cleanOpNr = String(op.nrkatalogowy).trim().toLowerCase();
-                        matchedWozek = wozkiCatalog.find(w => String(w.NRKATALOGOWY || w.nrkatalogowy || '').trim().toLowerCase() === cleanOpNr);
-                    }
+                    // Resolve matched wozek record from database
+                    const matchedWozek = resolveWozekForOperation(op);
 
-                    const kodZBazy = matchedWozek ? (matchedWozek.NRKATALOGOWY || matchedWozek.nrkatalogowy || matchedWozek.kod || "Brak kodu") : "—";
-                    const modelZBazy = matchedWozek ? (matchedWozek.MODEL || matchedWozek.TYP_WOZKA || matchedWozek.TYP || matchedWozek.model || matchedWozek.typ_wozka || "Brak modelu") : "—";
+                    const kodZBazy = matchedWozek ? (matchedWozek.NRKATALOGOWY || matchedWozek.nrkatalogowy || matchedWozek.kod || matchedWozek.KOD || matchedWozek.nr_katalogowy || matchedWozek.NR_FABRYCZNY || matchedWozek.nr_fabryczny || "Brak kodu") : "—";
+                    const modelZBazy = matchedWozek ? (matchedWozek.MODEL || matchedWozek.model || matchedWozek.TYP_WOZKA || matchedWozek.typ_wozka || matchedWozek.TYP || matchedWozek.typ || matchedWozek.model_wozka || "Brak modelu") : "—";
+                    const resolvedWozekId = matchedWozek ? (matchedWozek.id || matchedWozek.ID || rawOpWozekId) : rawOpWozekId;
                     
                     let paramsObj = {};
                     if (typeof op.parametry === 'string') {
@@ -1815,7 +1876,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                                     <!-- Dane z połączenia z tabelą 'wozki' (ID <-> wozek_id) -->
                                     <div class="flex items-center gap-2 flex-wrap text-[11px] font-bold py-1 px-2.5 bg-brand-50/50 dark:bg-brand-500/10 rounded-xl border border-brand-500/20 text-slate-700 dark:text-slate-200">
                                         <span class="text-[10px] uppercase tracking-wider text-brand-500 font-extrabold flex items-center gap-1">
-                                            <i class="fa-solid fa-truck-ramp-box"></i> Tabela wózki ${opWozekId ? `(ID: ${opWozekId})` : ''}:
+                                            <i class="fa-solid fa-truck-ramp-box"></i> Tabela wózki ${resolvedWozekId ? `(ID: ${resolvedWozekId})` : ''}:
                                         </span>
                                         <span>
                                             Kod z bazy: <strong class="text-slate-900 dark:text-white font-black select-all">${kodZBazy}</strong>
@@ -1846,9 +1907,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                             </div>
 
                             <div class="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end border-t md:border-t-0 border-slate-100 dark:border-zinc-800/40 pt-2.5 md:pt-0">
-                                ${opWozekId ? `
+                                ${resolvedWozekId ? `
                                     <button onclick="selectCatalogItem('${kodZBazy !== '—' && kodZBazy !== 'Brak kodu' ? kodZBazy : op.nrkatalogowy}')" class="px-2.5 py-1.5 bg-brand-50 dark:bg-brand-500/10 hover:bg-brand-100 dark:hover:bg-brand-500/20 text-brand-500 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1">
-                                        <i class="fa-solid fa-link"></i> Katalog (ID: ${opWozekId})
+                                        <i class="fa-solid fa-link"></i> Katalog (ID: ${resolvedWozekId})
                                     </button>
                                 ` : `
                                     <button onclick="associateOperationWithCatalog('${op.nrkatalogowy}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1" title="Szukaj tego wózka w katalogu">
