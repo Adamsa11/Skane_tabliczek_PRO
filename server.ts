@@ -444,7 +444,29 @@ app.get("/api/supabase/list-operations", async (req, res) => {
       throw error;
     }
 
-    return res.json({ success: true, data: data || [] });
+    let enrichedList = data || [];
+    if (enrichedList.length > 0) {
+      const wozekIds = Array.from(new Set(enrichedList.map((o: any) => o.wozek_id).filter((id: any) => id !== null && id !== undefined)));
+      if (wozekIds.length > 0) {
+        try {
+          const { data: wozkiList } = await supabase.from("wozki").select("*").in("id", wozekIds);
+          if (wozkiList && wozkiList.length > 0) {
+            const wozkiMap = new Map(wozkiList.map((w: any) => [String(w.id), w]));
+            enrichedList = enrichedList.map((op: any) => {
+              const matchedWozek = op.wozek_id ? wozkiMap.get(String(op.wozek_id)) : null;
+              return {
+                ...op,
+                wozek_data: matchedWozek || null
+              };
+            });
+          }
+        } catch (e) {
+          console.warn("Could not enrich operations with wozki table data:", e);
+        }
+      }
+    }
+
+    return res.json({ success: true, data: enrichedList });
   } catch (error: any) {
     console.error("Supabase list-operations error:", error);
     if (checkIfTableMissing(error)) {
