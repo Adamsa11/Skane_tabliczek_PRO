@@ -1931,32 +1931,8 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                         kodZBazy = getWozekCode(matchedWozek) || "Brak kodu";
                         modelZBazy = getWozekModel(matchedWozek) || "Brak modelu";
                     } else {
-                        const opCode = getOpCode(op);
-                        const opModel = getOpModel(op);
-
-                        let paramCode = "";
-                        let paramModel = "";
-                        let paramsObj = op.parametry;
-                        if (typeof paramsObj === 'string') {
-                            try { paramsObj = JSON.parse(paramsObj); } catch (e) { paramsObj = null; }
-                        }
-                        if (paramsObj && typeof paramsObj === 'object') {
-                            for (const [pk, pv] of Object.entries(paramsObj)) {
-                                const lowKey = pk.toLowerCase();
-                                if (!paramCode && (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('serial') || lowKey.includes('fabryczny') || lowKey.includes('kod'))) {
-                                    paramCode = String(pv).trim();
-                                }
-                                if (!paramModel && (lowKey.includes('model') || lowKey.includes('typ'))) {
-                                    paramModel = String(pv).trim();
-                                }
-                            }
-                        }
-
-                        const effCode = opCode || paramCode;
-                        const effModel = opModel || paramModel;
-
-                        kodZBazy = effCode ? `${effCode}` : "Brak kodu";
-                        modelZBazy = effModel ? `${effModel}` : "Brak modelu";
+                        kodZBazy = "Brak w bazie";
+                        modelZBazy = "Brak w bazie";
                     }
                     
                     let paramsObj = {};
