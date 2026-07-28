@@ -658,10 +658,54 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
 
         function getWozekModel(w) {
             if (!w) return "";
-            return String(
-                w.MODEL || w.model || w.TYP_WOZKA || w.typ_wozka || 
-                w.TYP || w.typ || w.model_wozka || w.MODEL_WOZKA || w.NAZWA || w.nazwa || ""
+            
+            const brand = String(
+                w.PRODUCENT || w.producent || w.MARKA || w.marka || w.PRODUCENT_WOZKA || ""
             ).trim();
+
+            const candidateFields = [
+                w.MODEL_WOZKA, w.model_wozka,
+                w.TYP_WOZKA, w.typ_wozka,
+                w.MODEL, w.model,
+                w.TYP, w.typ,
+                w.OZNACZENIE, w.oznaczenie,
+                w.NAZWA_WOZKA, w.nazwa_wozka,
+                w.NAZWA, w.nazwa
+            ];
+
+            const found = [];
+            for (const val of candidateFields) {
+                if (val !== undefined && val !== null) {
+                    const str = String(val).trim();
+                    if (str) {
+                        const lowerNew = str.toLowerCase();
+                        const isDupOrSub = found.some(existing => {
+                            const lowerEx = existing.toLowerCase();
+                            return lowerEx === lowerNew || lowerEx.includes(lowerNew);
+                        });
+                        if (!isDupOrSub) {
+                            const subIdx = found.findIndex(existing => lowerNew.includes(existing.toLowerCase()));
+                            if (subIdx !== -1) {
+                                found[subIdx] = str;
+                            } else {
+                                found.push(str);
+                            }
+                        }
+                    }
+                }
+            }
+
+            let modelText = found.join(" / ");
+
+            if (brand && modelText) {
+                if (!modelText.toLowerCase().includes(brand.toLowerCase())) {
+                    modelText = `${brand} ${modelText}`;
+                }
+            } else if (brand && !modelText) {
+                modelText = brand;
+            }
+
+            return modelText.trim() || "";
         }
 
         function getWozekId(w) {
@@ -1791,17 +1835,6 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                                 }
                             }
                         }
-                    }
-
-                    // 3. Dopasowanie po nazwie modelu
-                    const opModel = getOpModel(op);
-                    const opModelNorm = norm(opModel);
-                    if (opModelNorm && opModelNorm.length >= 3) {
-                        const found = wozkiCatalog.find(w => {
-                            const wModel = norm(getWozekModel(w));
-                            return wModel && (wModel === opModelNorm || wModel.includes(opModelNorm) || opModelNorm.includes(wModel));
-                        });
-                        if (found) return found;
                     }
 
                     return null;
