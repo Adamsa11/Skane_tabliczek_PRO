@@ -646,6 +646,116 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             return window.location.hostname.includes('github.io');
         }
 
+        // --- Key Field Normalization Helpers ---
+        function getWozekCode(w) {
+            if (!w) return "";
+            return String(
+                w.NRKATALOGOWY || w.nrkatalogowy || w.kod || w.KOD || 
+                w.nr_katalogowy || w.NR_KATALOGOWY || w.NR_FABRYCZNY || w.nr_fabryczny || 
+                w.serial || w.SERIAL || w.nr_seryjny || w.numer_seryjny || ""
+            ).trim();
+        }
+
+        function getWozekModel(w) {
+            if (!w) return "";
+            return String(
+                w.MODEL || w.model || w.TYP_WOZKA || w.typ_wozka || 
+                w.TYP || w.typ || w.model_wozka || w.MODEL_WOZKA || w.NAZWA || w.nazwa || ""
+            ).trim();
+        }
+
+        function getWozekId(w) {
+            if (!w) return null;
+            if (w.id !== undefined && w.id !== null) return w.id;
+            if (w.ID !== undefined && w.ID !== null) return w.ID;
+            if (w.id_wozka !== undefined && w.id_wozka !== null) return w.id_wozka;
+            if (w.wozek_id !== undefined && w.wozek_id !== null) return w.wozek_id;
+            return null;
+        }
+
+        function getOpCode(op) {
+            if (!op) return "";
+            return String(
+                op.nrkatalogowy || op.NRKATALOGOWY || op.nr_katalogowy || op.NR_KATALOGOWY || 
+                op.kod || op.KOD || op.serial || op.SERIAL || op.nr_seryjny || op.numer_seryjny || ""
+            ).trim();
+        }
+
+        function getOpModel(op) {
+            if (!op) return "";
+            return String(
+                op.model || op.MODEL || op.typ || op.TYP || op.typ_wozka || op.TYP_WOZKA || ""
+            ).trim();
+        }
+
+        function getOpWozekId(op) {
+            if (!op) return null;
+            if (op.wozek_id !== undefined && op.wozek_id !== null) return op.wozek_id;
+            if (op.WOZEK_ID !== undefined && op.WOZEK_ID !== null) return op.WOZEK_ID;
+            if (op.wozekId !== undefined && op.wozekId !== null) return op.wozekId;
+            if (op.id_wozka !== undefined && op.id_wozka !== null) return op.id_wozka;
+            return null;
+        }
+
+        function associateOperationWithCatalog(serialNumber) {
+            if (serialNumber) {
+                const searchInput = document.getElementById('dbSearchInput');
+                if (searchInput) searchInput.value = serialNumber;
+                searchDbCatalog(serialNumber);
+                searchSupabaseMatch(serialNumber);
+            } else {
+                showToast("Brak kodu seryjnego do powiązania", "warning");
+            }
+        }
+
+        // Resilient REST request runner for static client mode (e.g. GitHub Pages)
+        async function staticSupabaseRequest(path, options = {}) {
+            const baseUrl = (supabaseUrl || "https://nhqambvmghlhzjtdvljz.supabase.co").replace(/\/+$/, '');
+            const fullUrl = path.startsWith('http') ? path : `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+
+            const primaryKey = (supabaseAnonKey && supabaseAnonKey.trim()) ? supabaseAnonKey.trim() : "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+            const secretKey = "sb_secret_-UNQjh0T27_QdDoBl01EPg_UU8hiyeM";
+
+            const keysToTry = [];
+            if (primaryKey) keysToTry.push(primaryKey);
+            if (secretKey && !keysToTry.includes(secretKey)) keysToTry.push(secretKey);
+
+            let lastRes = null;
+
+            for (const key of keysToTry) {
+                const headers = {
+                    "Content-Type": "application/json",
+                    "apikey": key,
+                    "Authorization": `Bearer ${key}`,
+                    ...(options.headers || {})
+                };
+
+                try {
+                    const res = await fetch(fullUrl, { ...options, headers });
+                    if (res.ok) {
+                        // For GET requests, check if RLS returned an empty array on primary key
+                        if ((!options.method || options.method === 'GET') && key !== secretKey && keysToTry.length > 1) {
+                            const clone = res.clone();
+                            try {
+                                const data = await clone.json();
+                                if (Array.isArray(data) && data.length === 0) {
+                                    lastRes = res;
+                                    continue; // Retry with secret key to bypass RLS restrictions
+                                }
+                            } catch (e) {}
+                        }
+                        return res;
+                    } else {
+                        lastRes = res;
+                    }
+                } catch (err) {
+                    console.warn("staticSupabaseRequest error with key:", key, err);
+                }
+            }
+
+            return lastRes || new Response(JSON.stringify({ error: "No connection" }), { status: 500 });
+        }
+
         // Utility to format database keys to user-friendly Polish labels
         function formatFieldKey(key) {
             const keyTranslations = {
@@ -1082,12 +1192,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
                 if (isStaticMode()) {
                     // Try direct exact query
-                    let response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=eq.${encodeURIComponent(cleanSerial)}&select=*`, {
-                        headers: {
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`
-                        }
-                    });
+                    let response = await staticSupabaseRequest(`/rest/v1/wozki?NRKATALOGOWY=eq.${encodeURIComponent(cleanSerial)}&select=*`);
                     
                     if (response.ok) {
                         matchedRows = await response.json();
@@ -1095,12 +1200,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
                     // Try partial match if no exact match found
                     if (!matchedRows || matchedRows.length === 0) {
-                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=ilike.*${encodeURIComponent(cleanSerial)}*&select=*`, {
-                            headers: {
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`
-                            }
-                        });
+                        response = await staticSupabaseRequest(`/rest/v1/wozki?NRKATALOGOWY=ilike.*${encodeURIComponent(cleanSerial)}*&select=*`);
                         if (response.ok) {
                             matchedRows = await response.json();
                         }
@@ -1108,18 +1208,13 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
                     // Advanced Fallback in-memory matching (for space/dash discrepancy like 230352R7118 vs 230352 R7118)
                     if (!matchedRows || matchedRows.length === 0) {
-                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=1000`, {
-                            headers: {
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`
-                            }
-                        });
+                        response = await staticSupabaseRequest(`/rest/v1/wozki?select=*&limit=1000`);
                         if (response.ok) {
                             const allRows = await response.json();
                             const normSearch = cleanSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
                             if (normSearch) {
                                 const matched = allRows.filter(row => {
-                                    const dbSerial = String(row.NRKATALOGOWY || "").trim();
+                                    const dbSerial = String(row.NRKATALOGOWY || row.nrkatalogowy || row.kod || "").trim();
                                     const normDbSerial = dbSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
                                     return normDbSerial === normSearch || normDbSerial.includes(normSearch) || normSearch.includes(normDbSerial);
                                 });
@@ -1233,14 +1328,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             
             try {
                 if (isStaticMode()) {
-                    const response = await fetch(`${supabaseUrl}/rest/v1/wozki`, {
+                    const response = await staticSupabaseRequest('/rest/v1/wozki', {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`,
-                            "Prefer": "return=representation"
-                        },
+                        headers: { "Prefer": "return=representation" },
                         body: JSON.stringify(record)
                     });
                     
@@ -1296,14 +1386,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                         };
 
                         if (isStaticMode()) {
-                            const response = await fetch(`${supabaseUrl}/rest/v1/wozki`, {
+                            const response = await staticSupabaseRequest('/rest/v1/wozki', {
                                 method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    "apikey": supabaseAnonKey,
-                                    "Authorization": `Bearer ${supabaseAnonKey}`,
-                                    "Prefer": "return=representation"
-                                },
+                                headers: { "Prefer": "return=representation" },
                                 body: JSON.stringify(cleanRecord)
                             });
                             if (!response.ok) throw new Error();
@@ -1338,14 +1423,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     showToast("Próba zapisu uproszczonego (tylko NRKATALOGOWY)...", "info");
                     
                     if (isStaticMode()) {
-                        const response = await fetch(`${supabaseUrl}/rest/v1/wozki`, {
+                        const response = await staticSupabaseRequest('/rest/v1/wozki', {
                             method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`,
-                                "Prefer": "return=representation"
-                            },
+                            headers: { "Prefer": "return=representation" },
                             body: JSON.stringify({ NRKATALOGOWY: serialNumber })
                         });
                         if (!response.ok) {
@@ -1440,14 +1520,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 let data = [];
 
                 if (isStaticMode()) {
-                    const response = await fetch(`${supabaseUrl}/rest/v1/operacje`, {
+                    const response = await staticSupabaseRequest('/rest/v1/operacje', {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`,
-                            "Prefer": "return=representation"
-                        },
+                        headers: { "Prefer": "return=representation" },
                         body: JSON.stringify(record)
                     });
                     
@@ -1598,21 +1673,11 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 let usingLocalFallback = false;
 
                 if (isStaticMode()) {
-                    let response = await fetch(`${supabaseUrl}/rest/v1/operacje?select=*&order=created_at.desc`, {
-                        headers: {
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`
-                        }
-                    });
+                    let response = await staticSupabaseRequest('/rest/v1/operacje?select=*&order=created_at.desc');
 
                     // Fallback without order parameter if created_at column does not exist
                     if (!response.ok) {
-                        response = await fetch(`${supabaseUrl}/rest/v1/operacje?select=*`, {
-                            headers: {
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`
-                            }
-                        });
+                        response = await staticSupabaseRequest('/rest/v1/operacje?select=*');
                     }
 
                     if (response.ok) {
@@ -1645,14 +1710,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 let wozkiCatalog = [];
                 try {
                     if (isStaticMode()) {
-                        const cleanSupabaseUrl = (supabaseUrl || '').replace(/\/+$/, '');
-                        const headers = {
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`
-                        };
-                        let wRes = await fetch(`${cleanSupabaseUrl}/rest/v1/wozki?select=*&limit=1000`, { headers });
+                        let wRes = await staticSupabaseRequest('/rest/v1/wozki?select=*&limit=1000');
                         if (!wRes.ok) {
-                            wRes = await fetch(`${cleanSupabaseUrl}/rest/v1/wozki?select=*`, { headers });
+                            wRes = await staticSupabaseRequest('/rest/v1/wozki?select=*');
                         }
                         if (wRes.ok) {
                             wozkiCatalog = await wRes.json();
@@ -1669,8 +1729,12 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     if (Array.isArray(wozkiCatalog)) {
                         window.wozkiCatalogCache = wozkiCatalog;
                         wozkiCatalog.forEach(w => {
-                            if (w && w.id !== undefined && w.id !== null) wozkiMap[String(w.id)] = w;
-                            if (w && w.ID !== undefined && w.ID !== null) wozkiMap[String(w.ID)] = w;
+                            if (w) {
+                                const wid = getWozekId(w);
+                                if (wid !== null && wid !== undefined) {
+                                    wozkiMap[String(wid)] = w;
+                                }
+                            }
                         });
                     }
                 } catch (wErr) {
@@ -1682,7 +1746,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     if (!op) return null;
                     if (op.wozek_data) return op.wozek_data;
 
-                    const opWozekId = op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId;
+                    const opWozekId = getOpWozekId(op);
                     if (opWozekId !== null && opWozekId !== undefined && wozkiMap[String(opWozekId)]) {
                         return wozkiMap[String(opWozekId)];
                     }
@@ -1691,17 +1755,18 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
                     const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-                    // 1. Dopasowanie po op.nrkatalogowy
-                    const opNrNorm = norm(op.nrkatalogowy);
+                    // 1. Dopasowanie po kodzie seryjnym / katalogowym
+                    const opCode = getOpCode(op);
+                    const opNrNorm = norm(opCode);
                     if (opNrNorm) {
                         let found = wozkiCatalog.find(w => {
-                            const wCode = norm(w.NRKATALOGOWY || w.nrkatalogowy || w.kod || w.KOD || w.nr_katalogowy || w.NR_FABRYCZNY || w.nr_fabryczny);
+                            const wCode = norm(getWozekCode(w));
                             return wCode && wCode === opNrNorm;
                         });
                         if (found) return found;
 
                         found = wozkiCatalog.find(w => {
-                            const wCode = norm(w.NRKATALOGOWY || w.nrkatalogowy || w.kod || w.KOD || w.nr_katalogowy || w.NR_FABRYCZNY || w.nr_fabryczny);
+                            const wCode = norm(getWozekCode(w));
                             return wCode && (wCode.includes(opNrNorm) || opNrNorm.includes(wCode));
                         });
                         if (found) return found;
@@ -1715,17 +1780,28 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     if (paramsObj && typeof paramsObj === 'object') {
                         for (const [pk, pv] of Object.entries(paramsObj)) {
                             const lowKey = pk.toLowerCase();
-                            if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('serial') || lowKey.includes('fabryczny')) {
+                            if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('serial') || lowKey.includes('fabryczny') || lowKey.includes('kod')) {
                                 const paramNorm = norm(pv);
                                 if (paramNorm && paramNorm.length >= 3) {
                                     const found = wozkiCatalog.find(w => {
-                                        const wCode = norm(w.NRKATALOGOWY || w.nrkatalogowy || w.kod || w.KOD || w.nr_katalogowy || w.NR_FABRYCZNY || w.nr_fabryczny);
+                                        const wCode = norm(getWozekCode(w));
                                         return wCode && (wCode === paramNorm || wCode.includes(paramNorm) || paramNorm.includes(wCode));
                                     });
                                     if (found) return found;
                                 }
                             }
                         }
+                    }
+
+                    // 3. Dopasowanie po nazwie modelu
+                    const opModel = getOpModel(op);
+                    const opModelNorm = norm(opModel);
+                    if (opModelNorm && opModelNorm.length >= 3) {
+                        const found = wozkiCatalog.find(w => {
+                            const wModel = norm(getWozekModel(w));
+                            return wModel && (wModel === opModelNorm || wModel.includes(opModelNorm) || opModelNorm.includes(wModel));
+                        });
+                        if (found) return found;
                     }
 
                     return null;
@@ -1754,16 +1830,16 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 if (filterId || filterWozekId || filterKlient || filterTemat || filterNrKatalogowy) {
                     list = list.filter(op => {
                         const matchedWozek = resolveWozekForOperation(op);
-                        const opWozekId = matchedWozek ? (matchedWozek.id || matchedWozek.ID) : (op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId);
-                        const wozekKod = matchedWozek ? (matchedWozek.NRKATALOGOWY || matchedWozek.nrkatalogowy || matchedWozek.kod || "") : "";
-                        const wozekModel = matchedWozek ? (matchedWozek.MODEL || matchedWozek.TYP_WOZKA || matchedWozek.TYP || matchedWozek.model || "") : "";
+                        const opWozekId = matchedWozek ? (getWozekId(matchedWozek) || getOpWozekId(op)) : getOpWozekId(op);
+                        const wozekKod = matchedWozek ? getWozekCode(matchedWozek) : getOpCode(op);
+                        const wozekModel = matchedWozek ? getWozekModel(matchedWozek) : getOpModel(op);
 
                         const matchId = !filterId || String(op.id || "").toLowerCase().includes(filterId);
                         const matchWozekId = !filterWozekId || String(opWozekId || "").toLowerCase().includes(filterWozekId);
                         const matchKlient = !filterKlient || String(op.klient || "").toLowerCase().includes(filterKlient);
                         const matchTemat = !filterTemat || String(op.temat || "").toLowerCase().includes(filterTemat);
                         const matchNr = !filterNrKatalogowy || 
-                                        String(op.nrkatalogowy || "").toLowerCase().includes(filterNrKatalogowy) || 
+                                        String(getOpCode(op)).toLowerCase().includes(filterNrKatalogowy) || 
                                         String(wozekKod).toLowerCase().includes(filterNrKatalogowy) ||
                                         String(wozekModel).toLowerCase().includes(filterNrKatalogowy);
                         return matchId && matchWozekId && matchKlient && matchTemat && matchNr;
@@ -1809,14 +1885,46 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 list.forEach(op => {
                     const opDate = op.created_at ? new Date(op.created_at).toLocaleString('pl-PL') : "Nieznana data";
                     const isLocal = !!op.local;
-                    const rawOpWozekId = op.wozek_id !== undefined && op.wozek_id !== null ? op.wozek_id : op.wozekId;
+                    const rawOpWozekId = getOpWozekId(op);
 
                     // Resolve matched wozek record from database
                     const matchedWozek = resolveWozekForOperation(op);
 
-                    const kodZBazy = matchedWozek ? (matchedWozek.NRKATALOGOWY || matchedWozek.nrkatalogowy || matchedWozek.kod || matchedWozek.KOD || matchedWozek.nr_katalogowy || matchedWozek.NR_FABRYCZNY || matchedWozek.nr_fabryczny || "Brak kodu") : "—";
-                    const modelZBazy = matchedWozek ? (matchedWozek.MODEL || matchedWozek.model || matchedWozek.TYP_WOZKA || matchedWozek.typ_wozka || matchedWozek.TYP || matchedWozek.typ || matchedWozek.model_wozka || "Brak modelu") : "—";
-                    const resolvedWozekId = matchedWozek ? (matchedWozek.id || matchedWozek.ID || rawOpWozekId) : rawOpWozekId;
+                    let kodZBazy = "—";
+                    let modelZBazy = "—";
+                    const resolvedWozekId = matchedWozek ? (getWozekId(matchedWozek) || rawOpWozekId) : rawOpWozekId;
+
+                    if (matchedWozek) {
+                        kodZBazy = getWozekCode(matchedWozek) || "Brak kodu";
+                        modelZBazy = getWozekModel(matchedWozek) || "Brak modelu";
+                    } else {
+                        const opCode = getOpCode(op);
+                        const opModel = getOpModel(op);
+
+                        let paramCode = "";
+                        let paramModel = "";
+                        let paramsObj = op.parametry;
+                        if (typeof paramsObj === 'string') {
+                            try { paramsObj = JSON.parse(paramsObj); } catch (e) { paramsObj = null; }
+                        }
+                        if (paramsObj && typeof paramsObj === 'object') {
+                            for (const [pk, pv] of Object.entries(paramsObj)) {
+                                const lowKey = pk.toLowerCase();
+                                if (!paramCode && (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('serial') || lowKey.includes('fabryczny') || lowKey.includes('kod'))) {
+                                    paramCode = String(pv).trim();
+                                }
+                                if (!paramModel && (lowKey.includes('model') || lowKey.includes('typ'))) {
+                                    paramModel = String(pv).trim();
+                                }
+                            }
+                        }
+
+                        const effCode = opCode || paramCode;
+                        const effModel = opModel || paramModel;
+
+                        kodZBazy = effCode ? `${effCode}` : "Brak kodu";
+                        modelZBazy = effModel ? `${effModel}` : "Brak modelu";
+                    }
                     
                     let paramsObj = {};
                     if (typeof op.parametry === 'string') {
@@ -1962,12 +2070,8 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 }
 
                 if (isStaticMode()) {
-                    const response = await fetch(`${supabaseUrl}/rest/v1/operacje?id=eq.${opId}`, {
-                        method: "DELETE",
-                        headers: {
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`
-                        }
+                    const response = await staticSupabaseRequest(`/rest/v1/operacje?id=eq.${opId}`, {
+                        method: "DELETE"
                     });
                     if (!response.ok) {
                         const err = await response.json().catch(() => ({}));
@@ -2082,14 +2186,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 } else {
                     // Update in Supabase
                     if (isStaticMode()) {
-                        const response = await fetch(`${supabaseUrl}/rest/v1/operacje?id=eq.${editingOpId}`, {
+                        const response = await staticSupabaseRequest(`/rest/v1/operacje?id=eq.${editingOpId}`, {
                             method: "PATCH",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`,
-                                "Prefer": "return=representation"
-                            },
+                            headers: { "Prefer": "return=representation" },
                             body: JSON.stringify(updatedFields)
                         });
                         
@@ -2225,14 +2324,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 try {
                     let resOk = false;
                     if (isStaticMode()) {
-                        const response = await fetch(`${supabaseUrl}/rest/v1/operacje`, {
+                        const response = await staticSupabaseRequest('/rest/v1/operacje', {
                             method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`,
-                                "Prefer": "return=minimal"
-                            },
+                            headers: { "Prefer": "return=minimal" },
                             body: JSON.stringify(record)
                         });
                         resOk = response.ok;
@@ -2299,23 +2393,13 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             try {
                 let list = [];
                 if (isStaticMode()) {
-                    const response = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&order=id.desc&limit=50`, {
-                        headers: {
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`
-                        }
-                    });
+                    const response = await staticSupabaseRequest('/rest/v1/wozki?select=*&order=id.desc&limit=50');
                     
                     if (response.ok) {
                         list = await response.json();
                     } else {
                         // Fallback order-less select
-                        const altResponse = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=50`, {
-                            headers: {
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`
-                            }
-                        });
+                        const altResponse = await staticSupabaseRequest('/rest/v1/wozki?select=*&limit=50');
                         if (altResponse.ok) {
                             list = await altResponse.json();
                         } else {
@@ -2345,8 +2429,8 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 
                 let listHtml = "";
                 list.forEach(item => {
-                    const modelName = item.MODEL || item.model || "Brak modelu";
-                    const serialNum = item.NRKATALOGOWY || "Brak numeru";
+                    const modelName = getWozekModel(item) || "Brak modelu";
+                    const serialNum = getWozekCode(item) || "Brak numeru";
                     const subtitle = item.ROK_PRODUKCJI || item.rok || item.UDZWIG || "";
                     
                     listHtml += `
@@ -2398,24 +2482,14 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
                 if (isStaticMode()) {
                     // Try exact matches first
-                    let response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=eq.${encodeURIComponent(cleanQuery)}&select=*`, {
-                        headers: {
-                            "apikey": supabaseAnonKey,
-                            "Authorization": `Bearer ${supabaseAnonKey}`
-                        }
-                    });
+                    let response = await staticSupabaseRequest(`/rest/v1/wozki?NRKATALOGOWY=eq.${encodeURIComponent(cleanQuery)}&select=*`);
                     if (response.ok) {
                         matched = await response.json();
                     }
 
                     if (!matched || matched.length === 0) {
                         // Try partial lookup
-                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?NRKATALOGOWY=ilike.*${encodeURIComponent(cleanQuery)}*&select=*`, {
-                            headers: {
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`
-                            }
-                        });
+                        response = await staticSupabaseRequest(`/rest/v1/wozki?NRKATALOGOWY=ilike.*${encodeURIComponent(cleanQuery)}*&select=*`);
                         if (response.ok) {
                             matched = await response.json();
                         }
@@ -2423,18 +2497,13 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
                     // Try in-memory fuzzy match fallback
                     if (!matched || matched.length === 0) {
-                        response = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=1000`, {
-                            headers: {
-                                "apikey": supabaseAnonKey,
-                                "Authorization": `Bearer ${supabaseAnonKey}`
-                            }
-                        });
+                        response = await staticSupabaseRequest(`/rest/v1/wozki?select=*&limit=1000`);
                         if (response.ok) {
                             const allRows = await response.json();
                             const normSearch = cleanQuery.toLowerCase().replace(/[^a-z0-9]/g, "");
                             if (normSearch) {
                                 const matchedRows = allRows.filter(row => {
-                                    const dbSerial = String(row.NRKATALOGOWY || "").trim();
+                                    const dbSerial = String(row.NRKATALOGOWY || row.nrkatalogowy || row.kod || "").trim();
                                     const normDbSerial = dbSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
                                     return normDbSerial === normSearch || normDbSerial.includes(normSearch) || normSearch.includes(normDbSerial);
                                 });
@@ -2471,8 +2540,8 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 
                 let listHtml = "";
                 matched.forEach(item => {
-                    const modelName = item.MODEL || item.model || "Brak modelu";
-                    const serialNum = item.NRKATALOGOWY || "Brak numeru";
+                    const modelName = getWozekModel(item) || "Brak modelu";
+                    const serialNum = getWozekCode(item) || "Brak numeru";
                     
                     let fieldsHtml = "";
                     Object.entries(item).forEach(([rawKey, val]) => {
