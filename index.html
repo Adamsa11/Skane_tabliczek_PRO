@@ -1754,14 +1754,50 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 let wozkiCatalog = [];
                 try {
                     if (isStaticMode()) {
+                        // 1. Collect wozek_ids from operations for targeted fetching
+                        const targetWozekIds = Array.from(new Set(list.map(getOpWozekId).filter(id => id !== null && id !== undefined)));
+                        if (targetWozekIds.length > 0) {
+                            try {
+                                const idQuery = targetWozekIds.join(',');
+                                const wIdRes = await staticSupabaseRequest(`/rest/v1/wozki?id=in.(${idQuery})`);
+                                if (wIdRes.ok) {
+                                    const wIdData = await wIdRes.json();
+                                    if (Array.isArray(wIdData)) {
+                                        wozkiCatalog.push(...wIdData);
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn("Targeted wozki by ID fetch error:", e);
+                            }
+                        }
+
+                        // 2. Collect serial/catalog codes for targeted fetching
+                        const targetCodes = Array.from(new Set(list.map(getOpCode).filter(c => c && c.length >= 3)));
+                        if (targetCodes.length > 0) {
+                            try {
+                                const codeQuery = targetCodes.map(c => `"${c}"`).join(',');
+                                const wCodeRes = await staticSupabaseRequest(`/rest/v1/wozki?NRKATALOGOWY=in.(${codeQuery})`);
+                                if (wCodeRes.ok) {
+                                    const wCodeData = await wCodeRes.json();
+                                    if (Array.isArray(wCodeData)) {
+                                        wozkiCatalog.push(...wCodeData);
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn("Targeted wozki by NRKATALOGOWY fetch error:", e);
+                            }
+                        }
+
+                        // 3. Fallback/general catalog fetch
                         let wRes = await staticSupabaseRequest('/rest/v1/wozki?select=*&limit=1000');
                         if (!wRes.ok) {
                             wRes = await staticSupabaseRequest('/rest/v1/wozki?select=*');
                         }
                         if (wRes.ok) {
-                            wozkiCatalog = await wRes.json();
-                        } else {
-                            console.warn("Static REST API wozki fetch warning:", wRes.status);
+                            const genData = await wRes.json();
+                            if (Array.isArray(genData)) {
+                                wozkiCatalog.push(...genData);
+                            }
                         }
                     } else {
                         const wRes = await fetch("/api/supabase/list");
@@ -1770,6 +1806,18 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                             wozkiCatalog = wJson.data || [];
                         }
                     }
+
+                    // Deduplicate catalog by ID or serial number
+                    const uniqueMap = new Map();
+                    wozkiCatalog.forEach(w => {
+                        if (!w) return;
+                        const key = getWozekId(w) || getWozekCode(w);
+                        if (key && !uniqueMap.has(String(key))) {
+                            uniqueMap.set(String(key), w);
+                        }
+                    });
+                    wozkiCatalog = Array.from(uniqueMap.values());
+
                     if (Array.isArray(wozkiCatalog)) {
                         window.wozkiCatalogCache = wozkiCatalog;
                         wozkiCatalog.forEach(w => {
