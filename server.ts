@@ -75,7 +75,7 @@ const ai = new GoogleGenAI({
 // API endpoint for analyzing the plate image
 app.post("/api/analyze", async (req, res) => {
   try {
-    const { mimeType, imageBase64, model } = req.body;
+    const { mimeType, imageBase64, model, promptType } = req.body;
 
     if (!mimeType || !imageBase64) {
       return res.status(400).json({ error: "Missing mimeType or imageBase64 data." });
@@ -90,11 +90,19 @@ app.post("/api/analyze", async (req, res) => {
     // Select the requested model or fallback to gemini-3.5-flash
     const selectedModel = model || "gemini-3.5-flash";
 
-    const promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
+    let promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
 Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 - Klucze JSON w języku polskim, np. 'Model', 'Numer seryjny', 'Udźwig', 'Rok produkcji', 'Masa własna'.
 - Wartości dokładnie jak na tabliczce, razem z jednostkami, np. '5000 Kg', '54.6 KW', '2025-06'.
 - Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
+
+    if (promptType === 'screen') {
+      promptText = `Odczytaj dane ze zdjęcia ekranu / wyświetlacza wózka widłowego (lub paleciaka).
+Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kody błędów, Stan naładowania baterii, Napięcie, Prędkość, Tryb pracy, Model, Numery seryjne itp.
+- Klucze JSON w języku polskim, np. 'Motogodziny', 'Kody błędów', 'Stan baterii', 'Model', 'Tryb pracy'.
+- Wartości dokładnie jak na ekranie, np. '1234 h', 'E-04', '85%'.
+- Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
+    }
 
     const response = await ai.models.generateContent({
       model: selectedModel,

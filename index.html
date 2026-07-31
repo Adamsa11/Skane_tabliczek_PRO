@@ -113,10 +113,10 @@
             
             <!-- Kolumna 1: Zdjęcie + Status dopasowania -->
             <div class="flex flex-col gap-6">
-                <!-- 1. Wprowadź zdjęcie -->
+                <!-- 1. Wprowadź zdjęcie tabliczki -->
                 <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
                     <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
-                        <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie
+                        <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie tabliczki
                     </h3>
                     
                     <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
@@ -126,7 +126,7 @@
                             <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
                                 <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
                             </div>
-                            <p class="text-sm font-semibold">Wybierz zdjęcie</p>
+                            <p class="text-sm font-semibold">Wybierz zdjęcie tabliczki</p>
                             <p class="text-xs text-slate-400 mt-1">z aparatu lub pamięci urządzenia</p>
                         </div>
 
@@ -151,6 +151,47 @@
 
                     <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
                         <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie tabliczki
+                    </button>
+                </div>
+
+                <!-- 1b. Wprowadź zdjęcie ekranu -->
+                <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                    <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
+                        <i class="fa-solid fa-desktop"></i> Wprowadź zdjęcie ekranu
+                    </h3>
+                    
+                    <div id="dropzoneScreen" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
+                        <input type="file" id="imageInputScreen" accept="image/*" class="hidden">
+                        
+                        <div id="uploadPlaceholderScreen" class="flex flex-col items-center">
+                            <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
+                                <i class="fa-solid fa-desktop text-2xl"></i>
+                            </div>
+                            <p class="text-sm font-semibold">Wybierz zdjęcie ekranu</p>
+                            <p class="text-xs text-slate-400 mt-1">z aparatu lub pamięci urządzenia</p>
+                        </div>
+
+                        <!-- Podgląd zdjęcia ekranu -->
+                        <div id="previewWrapperScreen" class="hidden relative w-full h-full max-h-[260px] rounded-lg overflow-hidden">
+                            <img id="imagePreviewScreen" class="w-full h-full object-contain rounded-lg max-h-[200px]" alt="Podgląd ekranu">
+                            <button id="removeImageBtnScreen" class="absolute top-2 right-2 bg-[#161616]/80 hover:bg-[#CC0000] text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Wybór Modelu AI -->
+                    <div class="mt-4">
+                        <label for="modelSelectScreen" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
+                        <select id="modelSelectScreen" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
+                            <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash-Lite (Najszybszy odczyt)</option>
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash (Szybki i inteligentny)</option>
+                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najwyższa dokładność)</option>
+                        </select>
+                    </div>
+
+                    <button id="processBtnScreen" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
+                        <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie ekranu
                     </button>
                 </div>
 
@@ -196,22 +237,22 @@
                 </div>
             </div>
 
-            <!-- 2. Oczekiwanie na analizę / Wyniki -->
+            <!-- 2a. Oczekiwanie na analizę / Wyniki - Tabliczka znamionowa -->
             <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all flex flex-col">
-                <div id="stateContainer" class="text-center min-h-[380px] flex flex-col items-center justify-center transition-all w-full">
+                <div id="stateContainer" class="text-center min-h-[340px] flex flex-col items-center justify-center transition-all w-full">
                     
-                    <!-- Bezczynność -->
+                    <!-- Bezczynność tabliczki -->
                     <div id="stateIdle" class="flex flex-col items-center">
                         <div class="w-20 h-20 bg-[#F9F9F9] dark:bg-zinc-900 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 mb-5">
-                            <i class="fa-solid fa-truck-pickup text-3xl"></i>
+                            <i class="fa-solid fa-id-card text-3xl"></i>
                         </div>
-                        <h3 class="text-lg font-bold font-ubuntu">Oczekiwanie na analizę</h3>
+                        <h3 class="text-lg font-bold font-ubuntu">Oczekiwanie na analizę tabliczki</h3>
                         <p class="text-sm text-slate-400 max-w-sm mt-2">
-                            Prześlij zdjęcie tabliczki znamionowej Sawtrak z lewej strony i kliknij przycisk analizy.
+                            Prześlij zdjęcie tabliczki znamionowej z lewej strony i kliknij przycisk „Analizuj zdjęcie tabliczki”.
                         </p>
                     </div>
 
-                    <!-- Ładowanie -->
+                    <!-- Ładowanie tabliczki -->
                     <div id="stateLoading" class="hidden flex flex-col items-center w-full">
                         <div class="relative w-20 h-20 mb-6">
                             <div class="absolute inset-0 border-4 border-brand-500/10 rounded-full"></div>
@@ -220,7 +261,7 @@
                                 <i class="fa-solid fa-brain text-2xl animate-pulse"></i>
                             </div>
                         </div>
-                        <h3 class="text-lg font-bold font-ubuntu">Trwa analiza AI...</h3>
+                        <h3 class="text-lg font-bold font-ubuntu">Trwa analiza AI tabliczki...</h3>
                         <p class="text-sm text-slate-400 mt-2 max-w-xs">
                             Zaawansowany model sztucznej inteligencji skanuje obraz w poszukiwaniu danych technicznych, modeli oraz numerów seryjnych.
                         </p>
@@ -229,11 +270,11 @@
                         </div>
                     </div>
 
-                    <!-- Wyniki -->
+                    <!-- Wyniki tabliczki -->
                     <div id="stateResults" class="hidden w-full text-left">
                         <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4">
                             <div>
-                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu">Odczytane parametry</h3>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu">Odczytane parametry tabliczki</h3>
                                 <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
                             </div>
                             <div class="flex items-center gap-2">
@@ -250,12 +291,80 @@
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
-                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr</th>
+                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr tabliczki</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
                                     </tr>
                                 </thead>
                                 <tbody id="resultsBody" class="divide-y divide-slate-200 dark:divide-zinc-800">
                                     <!-- Dane dynamiczne -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2b. Oczekiwanie na analizę / Wyniki - Zdjęcie ekranu -->
+            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all flex flex-col mt-6">
+                <div id="stateContainerScreen" class="text-center min-h-[340px] flex flex-col items-center justify-center transition-all w-full">
+                    
+                    <!-- Bezczynność ekranu -->
+                    <div id="stateIdleScreen" class="flex flex-col items-center">
+                        <div class="w-20 h-20 bg-[#F9F9F9] dark:bg-zinc-900 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 mb-5">
+                            <i class="fa-solid fa-desktop text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold font-ubuntu">Oczekiwanie na analizę ekranu</h3>
+                        <p class="text-sm text-slate-400 max-w-sm mt-2">
+                            Prześlij zdjęcie ekranu / wyświetlacza z lewej strony i kliknij przycisk „Analizuj zdjęcie ekranu”.
+                        </p>
+                    </div>
+
+                    <!-- Ładowanie ekranu -->
+                    <div id="stateLoadingScreen" class="hidden flex flex-col items-center w-full">
+                        <div class="relative w-20 h-20 mb-6">
+                            <div class="absolute inset-0 border-4 border-brand-500/10 rounded-full"></div>
+                            <div class="absolute inset-0 border-4 border-t-brand-500 rounded-full animate-spin"></div>
+                            <div class="absolute inset-0 flex items-center justify-center text-brand-500">
+                                <i class="fa-solid fa-desktop text-2xl animate-pulse"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-bold font-ubuntu">Trwa analiza AI ekranu...</h3>
+                        <p class="text-sm text-slate-400 mt-2 max-w-xs">
+                            Zaawansowany model sztucznej inteligencji skanuje wyświetlacz pod kątem motogodzin, kodów błędów i wskaźników.
+                        </p>
+                        <div class="w-full max-w-xs bg-slate-100 dark:bg-zinc-900 rounded-full h-1.5 mt-6 overflow-hidden">
+                            <div class="bg-brand-500 h-1.5 rounded-full animate-[loading-bar_2.5s_infinite]" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Wyniki ekranu -->
+                    <div id="stateResultsScreen" class="hidden w-full text-left">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu">Odczytane parametry z ekranu</h3>
+                                <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="copyToClipboardScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-copy"></i> Kopiuj
+                                </button>
+                                <button onclick="downloadAsJSONScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-zinc-800 bg-[#F9F9F9] dark:bg-[#111111]/40 hover:border-brand-500/30 transition-colors duration-500">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
+                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr ekranu</th>
+                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsBodyScreen" class="divide-y divide-slate-200 dark:divide-zinc-800">
+                                    <!-- Dane dynamiczne z ekranu -->
                                 </tbody>
                             </table>
                         </div>
@@ -382,7 +491,7 @@
                             </p>
                             
                             <div class="relative">
-                                <pre class="bg-slate-950 text-emerald-400 font-mono text-[10px] p-3.5 rounded-xl overflow-x-auto border border-slate-800 max-h-[220px] scrollbar-thin select-all" id="sqlCommandCode">-- KROK 1: Utwórz tabele jeśli jeszcze nie istnieją
+                                <pre class="bg-slate-950 text-emerald-400 font-mono text-[10px] p-3.5 rounded-xl overflow-x-auto border border-slate-800 max-h-[260px] scrollbar-thin select-all" id="sqlCommandCode">-- KROK 1: Utwórz tabele jeśli jeszcze nie istnieją
 CREATE TABLE IF NOT EXISTS operacje (
     id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -392,8 +501,14 @@ CREATE TABLE IF NOT EXISTS operacje (
     klient text,
     temat text,
     parametry jsonb,
-    image_data text
+    image_data text,
+    parametry_ekranu jsonb,
+    image_data_screen text
 );
+
+-- DODAWANIE NOWYCH KOLUMN DO ISTNIEJĄCEJ TABELI OPERACJE (MIGRACJA):
+ALTER TABLE operacje ADD COLUMN IF NOT EXISTS parametry_ekranu jsonb;
+ALTER TABLE operacje ADD COLUMN IF NOT EXISTS image_data_screen text;
 
 CREATE TABLE IF NOT EXISTS wozki (
     id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -412,7 +527,7 @@ CREATE TABLE IF NOT EXISTS wozki (
     "TYP" text
 );
 
--- OPCJA A (Najprostsza, wyłączenie RLS): Wykonaj te linie, aby całkowicie wyłączyć ograniczenia RLS
+-- KROK 2: Wyłączenie RLS (Zalecane dla najprostszego zapisu i odczytu)
 ALTER TABLE IF EXISTS operacje DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
 
@@ -978,10 +1093,10 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('border-brand-500', 'bg-brand-50/10'); handleFile(e.dataTransfer.files[0]); });
         dropzone.addEventListener('click', () => { imageInput.click(); });
         imageInput.addEventListener('change', (e) => { handleFile(e.target.files[0]); });
-        removeImageBtn.addEventListener('click', (e) => { e.stopPropagation(); resetUploader(); showToast("Usunięto zdjęcie", "info"); });
+        removeImageBtn.addEventListener('click', (e) => { e.stopPropagation(); resetUploader(); showToast("Usunięto zdjęcie tabliczki", "info"); });
 
         function handleFile(file) {
-            if (!file || !file.type.startsWith('image/')) { showToast("Wybierz zdjęcie.", "error"); return; }
+            if (!file || !file.type.startsWith('image/')) { showToast("Wybierz zdjęcie tabliczki.", "error"); return; }
             const reader = new FileReader();
             reader.onload = function(event) {
                 imagePreview.src = event.target.result;
@@ -989,7 +1104,7 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 uploadPlaceholder.classList.add('hidden'); 
                 previewWrapper.classList.remove('hidden'); 
                 processBtn.disabled = false;
-                showToast("Zdjęcie wczytane poprawnie", "success");
+                showToast("Zdjęcie tabliczki wczytane poprawnie", "success");
             };
             reader.readAsDataURL(file);
         }
@@ -1007,19 +1122,82 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             if (saveOpSec) saveOpSec.classList.add('hidden');
         }
 
+        // Screen Image DOM references & handlers
+        const dropzoneScreen = document.getElementById('dropzoneScreen');
+        const imageInputScreen = document.getElementById('imageInputScreen');
+        const uploadPlaceholderScreen = document.getElementById('uploadPlaceholderScreen');
+        const previewWrapperScreen = document.getElementById('previewWrapperScreen');
+        const imagePreviewScreen = document.getElementById('imagePreviewScreen');
+        const removeImageBtnScreen = document.getElementById('removeImageBtnScreen');
+        const modelSelectScreen = document.getElementById('modelSelectScreen');
+        const processBtnScreen = document.getElementById('processBtnScreen');
+
+        let uploadedScreenFileBase64 = "";
+        let parsedScreenResults = null;
+
+        if (dropzoneScreen) {
+            dropzoneScreen.addEventListener('dragover', (e) => { e.preventDefault(); dropzoneScreen.classList.add('border-brand-500', 'bg-brand-50/10'); });
+            dropzoneScreen.addEventListener('dragleave', () => { dropzoneScreen.classList.remove('border-brand-500', 'bg-brand-50/10'); });
+            dropzoneScreen.addEventListener('drop', (e) => { e.preventDefault(); dropzoneScreen.classList.remove('border-brand-500', 'bg-brand-50/10'); handleScreenFile(e.dataTransfer.files[0]); });
+            dropzoneScreen.addEventListener('click', () => { imageInputScreen.click(); });
+        }
+        if (imageInputScreen) {
+            imageInputScreen.addEventListener('change', (e) => { handleScreenFile(e.target.files[0]); });
+        }
+        if (removeImageBtnScreen) {
+            removeImageBtnScreen.addEventListener('click', (e) => { e.stopPropagation(); resetScreenUploader(); showToast("Usunięto zdjęcie ekranu", "info"); });
+        }
+
+        function handleScreenFile(file) {
+            if (!file || !file.type.startsWith('image/')) { showToast("Wybierz zdjęcie ekranu.", "error"); return; }
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imagePreviewScreen.src = event.target.result;
+                uploadedScreenFileBase64 = event.target.result.split(',')[1];
+                uploadPlaceholderScreen.classList.add('hidden'); 
+                previewWrapperScreen.classList.remove('hidden'); 
+                processBtnScreen.disabled = false;
+                showToast("Zdjęcie ekranu wczytane poprawnie", "success");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetScreenUploader() {
+            if (imageInputScreen) imageInputScreen.value = ''; 
+            uploadedScreenFileBase64 = ""; 
+            if (previewWrapperScreen) previewWrapperScreen.classList.add('hidden'); 
+            if (uploadPlaceholderScreen) uploadPlaceholderScreen.classList.remove('hidden'); 
+            if (processBtnScreen) processBtnScreen.disabled = true;
+            
+            const stateIdleScreen = document.getElementById('stateIdleScreen');
+            const stateLoadingScreen = document.getElementById('stateLoadingScreen');
+            const stateResultsScreen = document.getElementById('stateResultsScreen');
+            if (stateIdleScreen) stateIdleScreen.classList.remove('hidden'); 
+            if (stateLoadingScreen) stateLoadingScreen.classList.add('hidden'); 
+            if (stateResultsScreen) stateResultsScreen.classList.add('hidden');
+        }
+
         // Direct Client-side Gemini API Caller (Solution B / Static Pages)
-        async function performClientSideOcr(mimeType, base64Data, model) {
+        async function performClientSideOcr(mimeType, base64Data, model, promptType = 'plate') {
             if (!geminiApiKey) {
                 throw new Error("Wymagany jest klucz API Gemini w trybie statycznym! Kliknij ikonę ustawień w prawym górnym rogu i wprowadź klucz.");
             }
             
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
             
-            const promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
+            let promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
 Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 - Klucze JSON w języku polskim, np. 'Model', 'Numer seryjny', 'Udźwig', 'Rok produkcji', 'Masa własna'.
 - Wartości dokładnie jak na tabliczce, razem z jednostkami, np. '5000 Kg', '54.6 KW', '2025-06'.
 - Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
+
+            if (promptType === 'screen') {
+                promptText = `Odczytaj dane ze zdjęcia ekranu / wyświetlacza wózka widłowego (lub paleciaka).
+Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kody błędów, Stan naładowania baterii, Napięcie, Prędkość, Tryb pracy, Model, Numery seryjne itp.
+- Klucze JSON w języku polskim, np. 'Motogodziny', 'Kody błędów', 'Stan baterii', 'Model', 'Tryb pracy'.
+- Wartości dokładnie jak na ekranie, np. '1234 h', 'E-04', '85%'.
+- Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
+            }
 
             const body = {
                 contents: [{
@@ -1064,7 +1242,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
         }
 
         processBtn.addEventListener('click', async () => {
-            if (!uploadedFileBase64) { showToast("Wybierz zdjęcie!", "error"); return; }
+            if (!uploadedFileBase64) { showToast("Wybierz zdjęcie tabliczki!", "error"); return; }
             
             const selectedModel = modelSelect.value;
             let modelLabel = "3.5 Flash";
@@ -1086,7 +1264,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 
                 let resData;
                 if (isStaticMode()) {
-                    const parsed = await performClientSideOcr(mimeType, uploadedFileBase64, selectedModel);
+                    const parsed = await performClientSideOcr(mimeType, uploadedFileBase64, selectedModel, 'plate');
                     resData = { data: parsed };
                 } else {
                     const response = await fetch("/api/analyze", {
@@ -1095,7 +1273,8 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                         body: JSON.stringify({
                             mimeType: mimeType,
                             imageBase64: uploadedFileBase64,
-                            model: selectedModel
+                            model: selectedModel,
+                            promptType: 'plate'
                         })
                     });
 
@@ -1113,7 +1292,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 stateResults.classList.remove('hidden');
                 const saveOpSec = document.getElementById('saveOperationSection');
                 if (saveOpSec) saveOpSec.classList.remove('hidden');
-                showToast(`Pomyślnie odczytano dane (Model: ${modelLabel})`, "success");
+                showToast(`Pomyślnie odczytano dane tabliczki (Model: ${modelLabel})`, "success");
 
                 // Automatyczne dopasowanie w bazie Supabase po odczycie
                 const serialNum = findSerialNumber(parsedResults);
@@ -1133,10 +1312,99 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             }
         });
 
+        if (processBtnScreen) {
+            processBtnScreen.addEventListener('click', async () => {
+                if (!uploadedScreenFileBase64) { showToast("Wybierz zdjęcie ekranu!", "error"); return; }
+                
+                const selectedModel = modelSelectScreen.value;
+                let modelLabel = "3.5 Flash";
+                if (selectedModel === "gemini-3.1-pro-preview") {
+                    modelLabel = "3.1 Pro (Najdokładniejszy)";
+                } else if (selectedModel === "gemini-3.1-flash-lite") {
+                    modelLabel = "3.1 Flash-Lite (Błyskawiczny)";
+                } else {
+                    modelLabel = "3.5 Flash (Szybki)";
+                }
+
+                const stateIdleScreen = document.getElementById('stateIdleScreen');
+                const stateLoadingScreen = document.getElementById('stateLoadingScreen');
+                const stateResultsScreen = document.getElementById('stateResultsScreen');
+
+                if (stateIdleScreen) stateIdleScreen.classList.add('hidden'); 
+                if (stateResultsScreen) stateResultsScreen.classList.add('hidden'); 
+                if (stateLoadingScreen) stateLoadingScreen.classList.remove('hidden'); 
+                processBtnScreen.disabled = true;
+
+                try {
+                    const mimeType = (imageInputScreen.files && imageInputScreen.files[0]) ? imageInputScreen.files[0].type : "image/jpeg";
+                    
+                    let resData;
+                    if (isStaticMode()) {
+                        const parsed = await performClientSideOcr(mimeType, uploadedScreenFileBase64, selectedModel, 'screen');
+                        resData = { data: parsed };
+                    } else {
+                        const response = await fetch("/api/analyze", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                mimeType: mimeType,
+                                imageBase64: uploadedScreenFileBase64,
+                                model: selectedModel,
+                                promptType: 'screen'
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const errData = await response.json().catch(() => ({}));
+                            throw new Error(errData.error || `Błąd serwera (${response.status})`);
+                        }
+                        resData = await response.json();
+                    }
+
+                    parsedScreenResults = resData.data;
+                    renderResultsScreen(parsedScreenResults);
+
+                    if (stateLoadingScreen) stateLoadingScreen.classList.add('hidden'); 
+                    if (stateResultsScreen) stateResultsScreen.classList.remove('hidden');
+                    const saveOpSec = document.getElementById('saveOperationSection');
+                    if (saveOpSec) saveOpSec.classList.remove('hidden');
+                    showToast(`Pomyślnie odczytano dane z ekranu (Model: ${modelLabel})`, "success");
+
+                    // Automatyczne dopasowanie w bazie Supabase po odczycie (jeśli wykryto nr seryjny w ekranie)
+                    const serialNum = findSerialNumber(parsedScreenResults);
+                    if (serialNum) {
+                        await searchSupabaseMatch(serialNum);
+                    }
+
+                } catch (err) {
+                    console.error("Screen OCR Error: ", err);
+                    if (stateLoadingScreen) stateLoadingScreen.classList.add('hidden'); 
+                    if (stateIdleScreen) stateIdleScreen.classList.remove('hidden');
+                    showToast(err.message || `Nie udało się odczytać zdjęcia ekranu.`, "error");
+                } finally { 
+                    processBtnScreen.disabled = false; 
+                }
+            });
+        }
+
         function renderResults(dataObj) {
             resultsBody.innerHTML = '';
             for (const [key, value] of Object.entries(dataObj)) {
                 resultsBody.innerHTML += `
+                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors">
+                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${key}</td>
+                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all">${value}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderResultsScreen(dataObj) {
+            const resultsBodyScreen = document.getElementById('resultsBodyScreen');
+            if (!resultsBodyScreen) return;
+            resultsBodyScreen.innerHTML = '';
+            for (const [key, value] of Object.entries(dataObj)) {
+                resultsBodyScreen.innerHTML += `
                     <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors">
                         <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${key}</td>
                         <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all">${value}</td>
@@ -1158,7 +1426,22 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             document.execCommand('copy');
             document.body.removeChild(el);
             
-            showToast("Skopiowano parametry do schowka", "success");
+            showToast("Skopiowano parametry tabliczki do schowka", "success");
+        }
+
+        function copyToClipboardScreen() {
+            if (!parsedScreenResults) return;
+            let copyStr = "DANE Z EKRANU WÓZKA SAWTRAK\n--------------------------------\n";
+            for (const [key, value] of Object.entries(parsedScreenResults)) copyStr += `${key}: ${value}\n`;
+            
+            const el = document.createElement('textarea');
+            el.value = copyStr;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            showToast("Skopiowano parametry ekranu do schowka", "success");
         }
 
         function downloadAsJSON() {
@@ -1166,10 +1449,21 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(parsedResults, null, 2));
             const anchor = document.createElement('a'); 
             anchor.href = dataStr; 
-            anchor.download = `odczyt-${Date.now()}.json`;
+            anchor.download = `odczyt-tabliczka-${Date.now()}.json`;
             anchor.click(); 
             anchor.remove(); 
-            showToast("Pobrano plik JSON", "success");
+            showToast("Pobrano plik JSON tabliczki", "success");
+        }
+
+        function downloadAsJSONScreen() {
+            if (!parsedScreenResults) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(parsedScreenResults, null, 2));
+            const anchor = document.createElement('a'); 
+            anchor.href = dataStr; 
+            anchor.download = `odczyt-ekran-${Date.now()}.json`;
+            anchor.click(); 
+            anchor.remove(); 
+            showToast("Pobrano plik JSON z ekranu", "success");
         }
 
         function showToast(message, type = "info") {
@@ -1518,14 +1812,16 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
 
         // Save scanned details with additional inputs: Klient and Temat to the separate 'operacje' table
         async function saveOperationWithDetails() {
-            if (!parsedResults) {
-                showToast("Brak odczytanych danych z tabliczki znamionowej!", "error");
+            const combinedData = { ...(parsedResults || {}), ...(parsedScreenResults || {}) };
+
+            if (!parsedResults && !parsedScreenResults) {
+                showToast("Brak odczytanych danych z tabliczki lub ekranu!", "error");
                 return;
             }
 
-            const serialNum = findSerialNumber(parsedResults);
+            const serialNum = findSerialNumber(combinedData);
             if (!serialNum) {
-                showToast("Błąd: Nie odczytano numeru seryjnego z tabliczki. Wyszukaj ręcznie lub spróbuj innego zdjęcia.", "error");
+                showToast("Błąd: Nie odczytano numeru seryjnego. Wyszukaj ręcznie lub spróbuj innego zdjęcia.", "error");
                 return;
             }
 
@@ -1541,11 +1837,12 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             await saveOperationToDatabase(serialNum, klientVal, tematVal);
         }
 
-        // Save a scanned plate log with base64 image, client details and matched forklift ID
+        // Save a scanned plate log with base64 images, client details, screen params, and matched forklift ID
         async function saveOperationToDatabase(serialNumber, klientVal, tematVal) {
             showToast("Zapisywanie operacji w bazie...", "info");
             
-            const modelVal = parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || parsedResults["TYP"] || "";
+            const combinedData = { ...(parsedResults || {}), ...(parsedScreenResults || {}) };
+            const modelVal = combinedData["Model"] || combinedData["MODEL"] || combinedData["Typ"] || combinedData["TYP"] || "";
             const wozekIdVal = matchedWozek ? (matchedWozek.id || matchedWozek.ID) : null;
 
             const record = {
@@ -1554,9 +1851,22 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 model: modelVal,
                 klient: klientVal,
                 temat: tematVal,
-                parametry: parsedResults,
+                parametry: parsedResults || {},
+                parametry_ekranu: parsedScreenResults || {},
                 image_data: uploadedFileBase64 ? `data:image/jpeg;base64,${uploadedFileBase64}` : "",
+                image_data_screen: uploadedScreenFileBase64 ? `data:image/jpeg;base64,${uploadedScreenFileBase64}` : "",
                 created_at: new Date().toISOString()
+            };
+
+            const fallbackRecord = {
+                wozek_id: record.wozek_id,
+                nrkatalogowy: record.nrkatalogowy,
+                model: record.model,
+                klient: record.klient,
+                temat: record.temat,
+                parametry: { ...(parsedResults || {}), ...(parsedScreenResults ? { "_ekran": parsedScreenResults } : {}) },
+                image_data: record.image_data || record.image_data_screen || "",
+                created_at: record.created_at
             };
 
             try {
@@ -1564,12 +1874,24 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                 let data = [];
 
                 if (isStaticMode()) {
-                    const response = await staticSupabaseRequest('/rest/v1/operacje', {
+                    let response = await staticSupabaseRequest('/rest/v1/operacje', {
                         method: "POST",
                         headers: { "Prefer": "return=representation" },
                         body: JSON.stringify(record)
                     });
                     
+                    if (!response.ok) {
+                        // Fallback retry if extra columns like parametry_ekranu or image_data_screen don't exist in Supabase table
+                        const err = await response.json().catch(() => ({}));
+                        if (err.message && (err.message.includes('parametry_ekranu') || err.message.includes('image_data_screen') || err.message.includes('column'))) {
+                            response = await staticSupabaseRequest('/rest/v1/operacje', {
+                                method: "POST",
+                                headers: { "Prefer": "return=representation" },
+                                body: JSON.stringify(fallbackRecord)
+                            });
+                        }
+                    }
+
                     if (response.ok) {
                         data = await response.json();
                         success = true;
@@ -1578,7 +1900,7 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                         throw new Error(err.message || `Błąd serwera Supabase (${response.status})`);
                     }
                 } else {
-                    const response = await fetch("/api/supabase/save-operation", {
+                    let response = await fetch("/api/supabase/save-operation", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ record })
@@ -1589,8 +1911,17 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     try {
                         resData = JSON.parse(responseText);
                     } catch (e) {
-                        console.error("Błąd parsowania odpowiedzi JSON z /api/supabase/save-operation:", e, responseText);
                         resData = { error: "Błędna odpowiedź serwera (brak JSON)" };
+                    }
+
+                    if (!response.ok && (resData.error && (resData.error.includes('parametry_ekranu') || resData.error.includes('image_data_screen') || resData.error.includes('column')))) {
+                        response = await fetch("/api/supabase/save-operation", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ record: fallbackRecord })
+                        });
+                        const fallbackText = await response.text();
+                        try { resData = JSON.parse(fallbackText); } catch(e) {}
                     }
 
                     if (response.ok) {
@@ -1658,18 +1989,20 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
             } catch (quotaError) {
                 console.warn("Pojemność LocalStorage przekroczona! Uruchamianie procedury naprawczej...", quotaError);
                 
-                // Krok 1: Usuń obraz z właśnie zapisanego rekordu (same dane tekstowe zajmują ułamek kilobajta)
+                // Krok 1: Usuń obrazy z właśnie zapisanego rekordu (same dane tekstowe zajmują ułamek kilobajta)
                 recordCopy.image_data = "";
+                recordCopy.image_data_screen = "";
                 localOps[0] = recordCopy;
                 
                 try {
                     localStorage.setItem('sawtrak_local_operations', JSON.stringify(localOps));
-                    showToast("Zapisano lokalnie dane tekstowe (zdjęcie usunięte z powodu braku miejsca).", "warning");
+                    showToast("Zapisano lokalnie dane tekstowe (zdjęcia usunięte z powodu braku miejsca).", "warning");
                     return;
                 } catch (err2) {
                     // Krok 2: Usuń obrazy ze wszystkich dotychczasowych lokalnych wpisów, aby zwolnić pamięć
                     for (let i = 0; i < localOps.length; i++) {
                         localOps[i].image_data = "";
+                        localOps[i].image_data_screen = "";
                     }
                     
                     try {
@@ -1990,8 +2323,20 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                         paramsObj = op.parametry || {};
                     }
 
+                    let paramsScreenObj = {};
+                    if (op.parametry_ekranu) {
+                        if (typeof op.parametry_ekranu === 'string') {
+                            try { paramsScreenObj = JSON.parse(op.parametry_ekranu); } catch (e) { paramsScreenObj = {}; }
+                        } else {
+                            paramsScreenObj = op.parametry_ekranu || {};
+                        }
+                    } else if (paramsObj && paramsObj._ekran) {
+                        paramsScreenObj = paramsObj._ekran || {};
+                    }
+
                     let tagsHtml = "";
                     for (const [pk, pv] of Object.entries(paramsObj)) {
+                        if (pk === '_ekran') continue;
                         const lowKey = pk.toLowerCase();
                         if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('model') || lowKey.includes('typ')) continue;
                         tagsHtml += `
@@ -2001,25 +2346,45 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                         `;
                     }
 
-                    const hasImage = op.image_data && op.image_data.length > 50;
-                    const imgSrc = hasImage ? (op.image_data.startsWith('data:') ? op.image_data : `data:image/jpeg;base64,${op.image_data}`) : '';
+                    let tagsScreenHtml = "";
+                    for (const [pk, pv] of Object.entries(paramsScreenObj)) {
+                        tagsScreenHtml += `
+                            <span class="text-[10px] bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 px-2 py-0.5 rounded font-medium border border-sky-200/60 dark:border-sky-800/60 whitespace-nowrap">
+                                <strong>${pk}:</strong> ${pv}
+                            </span>
+                        `;
+                    }
+
+                    const hasPlateImage = op.image_data && op.image_data.length > 50;
+                    const plateImgSrc = hasPlateImage ? (op.image_data.startsWith('data:') ? op.image_data : `data:image/jpeg;base64,${op.image_data}`) : '';
+
+                    const screenImageDataRaw = op.image_data_screen || op.zdjecie_ekranu || '';
+                    const hasScreenImage = screenImageDataRaw && screenImageDataRaw.length > 50;
+                    const screenImgSrc = hasScreenImage ? (screenImageDataRaw.startsWith('data:') ? screenImageDataRaw : `data:image/jpeg;base64,${screenImageDataRaw}`) : '';
 
                     listHtml += `
                         <div class="bg-white dark:bg-[#111111]/30 rounded-2xl border border-slate-200/50 dark:border-zinc-800/80 p-4 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                             <div class="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
-                                <!-- Podgląd zdjęcia (Thumbnail) -->
-                                ${hasImage ? `
-                                    <div class="relative w-16 h-16 rounded-xl bg-slate-100 dark:bg-zinc-900 overflow-hidden border border-slate-200/60 dark:border-zinc-800/80 shrink-0 cursor-pointer group mt-1 sm:mt-0" onclick="viewFullImage('${imgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby zobaczyć powiększone zdjęcie">
-                                        <img src="${imgSrc}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="Podgląd">
-                                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px]">
-                                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                <!-- Podglądy zdjęć (Thumbnails) -->
+                                <div class="flex sm:flex-col gap-1.5 shrink-0 mt-1 sm:mt-0">
+                                    ${hasPlateImage ? `
+                                        <div class="relative w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-900 overflow-hidden border border-slate-200/60 dark:border-zinc-800/80 cursor-pointer group" onclick="viewFullImage('${plateImgSrc.replace(/'/g, "\\'")}')" title="Zdjęcie tabliczki - kliknij, aby powiększyć">
+                                            <img src="${plateImgSrc}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="Tabliczka">
+                                            <div class="absolute bottom-0 inset-x-0 bg-black/60 text-[7px] text-white text-center font-extrabold py-0.5 uppercase tracking-wider">Tabliczka</div>
                                         </div>
-                                    </div>
-                                ` : `
-                                    <div class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80 shrink-0 flex items-center justify-center text-slate-400 dark:text-zinc-600 mt-1 sm:mt-0">
-                                        <i class="fa-solid fa-image text-xl"></i>
-                                    </div>
-                                `}
+                                    ` : ''}
+                                    ${hasScreenImage ? `
+                                        <div class="relative w-14 h-14 rounded-xl bg-sky-950/20 overflow-hidden border border-sky-500/40 cursor-pointer group" onclick="viewFullImage('${screenImgSrc.replace(/'/g, "\\'")}')" title="Zdjęcie ekranu - kliknij, aby powiększyć">
+                                            <img src="${screenImgSrc}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="Ekran">
+                                            <div class="absolute bottom-0 inset-x-0 bg-sky-900/80 text-[7px] text-sky-100 text-center font-extrabold py-0.5 uppercase tracking-wider">Ekran</div>
+                                        </div>
+                                    ` : ''}
+                                    ${!hasPlateImage && !hasScreenImage ? `
+                                        <div class="w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80 shrink-0 flex items-center justify-center text-slate-400 dark:text-zinc-600">
+                                            <i class="fa-solid fa-image text-lg"></i>
+                                        </div>
+                                    ` : ''}
+                                </div>
 
                                 <!-- Treść szczegółów -->
                                 <div class="min-w-0 space-y-1.5 flex-1">
@@ -2065,9 +2430,29 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                                         </span>
                                     </div>
 
-                                    <div class="flex items-center gap-1 flex-wrap pt-0.5">
-                                        ${tagsHtml}
-                                    </div>
+                                    <!-- Parametry tabliczki -->
+                                    ${tagsHtml ? `
+                                        <div class="pt-0.5">
+                                            <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1 mb-1">
+                                                <i class="fa-solid fa-id-card text-brand-500 text-[9px]"></i> Parametry tabliczki:
+                                            </div>
+                                            <div class="flex items-center gap-1 flex-wrap">
+                                                ${tagsHtml}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    <!-- Parametry ekranu -->
+                                    ${tagsScreenHtml ? `
+                                        <div class="pt-1">
+                                            <div class="text-[10px] font-bold text-sky-500 flex items-center gap-1 mb-1">
+                                                <i class="fa-solid fa-desktop text-sky-500 text-[9px]"></i> Parametry ekranu / wyświetlacza:
+                                            </div>
+                                            <div class="flex items-center gap-1 flex-wrap">
+                                                ${tagsScreenHtml}
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
 
@@ -2374,7 +2759,9 @@ Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
                     klient: op.klient || "",
                     temat: op.temat || "",
                     parametry: op.parametry || {},
+                    parametry_ekranu: op.parametry_ekranu || {},
                     image_data: op.image_data || "",
+                    image_data_screen: op.image_data_screen || op.zdjecie_ekranu || "",
                     created_at: op.created_at || new Date().toISOString()
                 };
 
