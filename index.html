@@ -108,8 +108,57 @@
         </div>
     </header>
 
-    <main class="flex-grow max-w-[1400px] w-full mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <main class="flex-grow max-w-[1600px] w-full mx-auto px-4 py-6">
+        <div class="flex flex-col lg:flex-row gap-6 items-start">
+            
+            <!-- BOCZNE MENU (Sidebar Navigation) -->
+            <aside class="w-full lg:w-72 shrink-0 bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-4 shadow-xl shadow-slate-200/40 dark:shadow-none sticky top-6 z-20">
+                <div class="px-3 py-2 mb-2 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+                    <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2 font-ubuntu">
+                        <i class="fa-solid fa-bars-staggered text-brand-500"></i> Menu główne
+                    </h2>
+                    <span class="text-[9px] font-bold bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded-full">v2.5</span>
+                </div>
+
+                <nav class="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-none">
+                    <!-- 1. Nowy wpis -->
+                    <button id="navBtn-new-entry" onclick="switchTab('new-entry')" class="nav-tab-btn flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap bg-brand-500 text-white shadow-lg shadow-brand-500/20 active-nav-tab">
+                        <i class="fa-solid fa-plus-circle text-base"></i>
+                        <span>1. Nowy wpis</span>
+                    </button>
+
+                    <!-- 2. Katalog Saw-Trak -->
+                    <button id="navBtn-catalog" onclick="switchTab('catalog')" class="nav-tab-btn flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800/60">
+                        <i class="fa-solid fa-truck-front text-base text-brand-500"></i>
+                        <span>2. Katalog Saw-Trak</span>
+                    </button>
+
+                    <!-- 3. Rejestr wykonanych operacji -->
+                    <button id="navBtn-registry" onclick="switchTab('registry')" class="nav-tab-btn flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800/60">
+                        <i class="fa-solid fa-clock-rotate-left text-base text-brand-500"></i>
+                        <span>3. Rejestr operacji</span>
+                    </button>
+                </nav>
+
+                <!-- Status pomocniczy w menu -->
+                <div class="hidden lg:block mt-6 pt-4 border-t border-slate-100 dark:border-zinc-800/80 text-[11px] text-slate-400 dark:text-slate-500 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span>Baza Saw-Trak:</span>
+                        <span class="font-bold text-emerald-500 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Połączono</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span>Model AI:</span>
+                        <span class="font-bold text-brand-500">Google Gemini</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- OBSZAR GŁÓWNY (Main Content Area) -->
+            <div class="flex-1 min-w-0 w-full space-y-6">
+
+                <!-- 1. SEKCJA: NOWY WPIS -->
+                <section id="tabView-new-entry" class="tab-view-content space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
             <!-- Kolumna 1: Zdjęcie + Status dopasowania -->
             <div class="flex flex-col gap-6">
@@ -220,7 +269,7 @@
                         <i class="fa-solid fa-floppy-disk"></i> Zapisz operację w bazie
                     </h3>
                     <div class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 space-y-3 transition-all">
-                        <div class="grid grid-cols-1 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label for="opKlient" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Klient</label>
                                 <input type="text" id="opKlient" placeholder="np. Sawtrak Sp. z o.o." class="w-full text-xs py-2 px-3 bg-white dark:bg-[#111111]/60 border border-slate-200 dark:border-zinc-800/80 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
@@ -229,6 +278,10 @@
                                 <label for="opTemat" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Temat</label>
                                 <input type="text" id="opTemat" placeholder="np. Przegląd okresowy" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#111111]/60 border border-slate-200 dark:border-zinc-800/80 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
                             </div>
+                        </div>
+                        <div>
+                            <label for="opOpis" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Opis / Uwagi</label>
+                            <input type="text" id="opOpis" placeholder="np. Uwagi serwisowe, stan techniczny, opis usterki..." class="w-full text-xs py-2 px-3 bg-white dark:bg-[#111111]/60 border border-slate-200 dark:border-zinc-800/80 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
                         </div>
                         <button onclick="saveOperationWithDetails()" class="w-full py-3.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-all flex items-center justify-center gap-2">
                             <i class="fa-solid fa-circle-plus"></i> Zapisz operację do bazy danych
@@ -372,18 +425,21 @@
                     </div>
                 </div>
             </div>
+                </section>
 
-            <!-- 3. Katalog Supabase -->
-            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
-                <h3 class="font-bold text-base mb-2 flex items-center justify-between text-brand-500 font-ubuntu">
-                    <span class="flex items-center gap-2">
-                        <i class="fa-solid fa-database"></i> Katalog Supabase
-                    </span>
-                    <span class="text-[10px] bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md font-normal">wozki</span>
-                </h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-                    Przeglądaj lub przeszukuj bazę Sawtrak po parametrze <span class="font-semibold text-brand-500">NRKATALOGOWY</span>:
-                </p>
+                <!-- 2. SEKCJA: KATALOG SAW-TRAK -->
+                <section id="tabView-catalog" class="tab-view-content hidden">
+                    <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-zinc-800 mb-6">
+                            <div>
+                                <h3 class="font-bold text-xl text-slate-800 dark:text-white flex items-center gap-2.5 font-ubuntu">
+                                    <i class="fa-solid fa-truck-front text-brand-500"></i> Katalog Saw-Trak
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Przeglądaj lub przeszukuj oficjalną bazę wózków widłowych Saw-Trak (tabela <code class="font-mono bg-brand-50 dark:bg-brand-500/10 text-brand-500 px-1 py-0.5 rounded">wozki</code>):
+                                </p>
+                            </div>
+                        </div>
                 
                 <!-- Formularz wyszukiwania -->
                 <div class="space-y-2.5 mb-4">
@@ -411,12 +467,12 @@
                         <p class="text-slate-400 text-center py-4 text-xs">Ładowanie katalogu...</p>
                     </div>
                 </div>
-            </div>
+                    </div>
+                </section>
 
-        </div>
-
-        <!-- 4. Rejestr wykonanych operacji (Historia skanów) -->
-        <div class="mt-8 bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all">
+                <!-- 3. SEKCJA: REJESTR WYKONANYCH OPERACJI -->
+                <section id="tabView-registry" class="tab-view-content hidden">
+                    <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-zinc-800 pb-5 mb-6">
                 <div>
                     <h3 class="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2.5 font-ubuntu">
@@ -446,7 +502,7 @@
                         <i class="fa-solid fa-filter-circle-xmark"></i> Wyczyść filtry
                     </button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
                     <div>
                         <label for="filterId" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">ID Operacji</label>
                         <input type="text" id="filterId" placeholder="ID operacji..." oninput="debounceFilterOperations()" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
@@ -462,6 +518,10 @@
                     <div>
                         <label for="filterTemat" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Temat</label>
                         <input type="text" id="filterTemat" placeholder="Filtruj po temacie..." oninput="debounceFilterOperations()" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label for="filterOpis" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Opis / Uwagi</label>
+                        <input type="text" id="filterOpis" placeholder="Filtruj po opisie..." oninput="debounceFilterOperations()" class="w-full text-xs py-2 px-3 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
                     </div>
                     <div>
                         <label for="filterNrKatalogowy" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Kod wózka / Nr kat.</label>
@@ -500,6 +560,7 @@ CREATE TABLE IF NOT EXISTS operacje (
     model text,
     klient text,
     temat text,
+    opis text,
     parametry jsonb,
     image_data text,
     parametry_ekranu jsonb,
@@ -507,6 +568,7 @@ CREATE TABLE IF NOT EXISTS operacje (
 );
 
 -- DODAWANIE NOWYCH KOLUMN DO ISTNIEJĄCEJ TABELI OPERACJE (MIGRACJA):
+ALTER TABLE operacje ADD COLUMN IF NOT EXISTS opis text;
 ALTER TABLE operacje ADD COLUMN IF NOT EXISTS parametry_ekranu jsonb;
 ALTER TABLE operacje ADD COLUMN IF NOT EXISTS image_data_screen text;
 
@@ -596,8 +658,11 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 <p class="text-slate-400 text-center py-8 text-sm">Ładowanie historii rejestru...</p>
             </div>
         </div>
+    </section>
 
-    </main>
+</div>
+</div>
+</main>
 
     <!-- Stopka -->
     <footer class="mt-auto border-t border-slate-200/60 dark:border-slate-800/60 py-6 text-center text-xs text-slate-400 dark:text-slate-500">
@@ -697,6 +762,10 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                     <label for="editOpNrKatalogowy" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Kod wózka / Nr katalogowy</label>
                     <input type="text" id="editOpNrKatalogowy" placeholder="Podaj nr katalogowy..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-200">
                 </div>
+                <div>
+                    <label for="editOpOpis" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Opis / Uwagi</label>
+                    <textarea id="editOpOpis" rows="3" placeholder="Podaj opis lub uwagi..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-200 resize-none"></textarea>
+                </div>
             </div>
 
             <div class="mt-6 flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -707,6 +776,117 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                     Zapisz zmiany
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Szczegółów Operacji (Pełna zawartość i duże zdjęcia) -->
+    <div id="operationDetailsModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300" onclick="closeOperationDetailsModal()">
+        <div id="operationDetailsModalContainer" class="bg-white dark:bg-[#18181b] rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-200/80 dark:border-zinc-800 p-5 sm:p-7 shadow-2xl transform scale-95 transition-transform duration-300 overflow-hidden" onclick="event.stopPropagation()">
+            
+            <!-- Nagłówek Modala -->
+            <div class="flex items-start justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-4 mb-5 shrink-0">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <h3 class="font-bold text-lg sm:text-xl text-slate-800 dark:text-white flex items-center gap-2 font-ubuntu">
+                            <i class="fa-solid fa-file-circle-check text-brand-500"></i> Szczegóły wpisu operacji
+                        </h3>
+                        <span id="detailsOpStorageBadge" class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider"></span>
+                    </div>
+                    <p id="detailsOpSubHeader" class="text-xs text-slate-500 dark:text-slate-400"></p>
+                </div>
+                <button onclick="closeOperationDetailsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg" title="Zamknij (Esc)">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Treść przewijana -->
+            <div class="overflow-y-auto flex-1 space-y-6 pr-1 custom-scrollbar">
+                
+                <!-- 1. DUŻE ZDJĘCIA DOKUMENTACJI -->
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-images text-brand-500"></i> Dokumentacja zdjęciowa (Duże podglądy)
+                    </h4>
+                    <div id="detailsOpImagesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Renderowane dynamicznie -->
+                    </div>
+                </div>
+
+                <!-- 2. KARTA INFORMACJI GŁÓWNYCH I POWIĄZANIA Z BAZĄ -->
+                <div class="bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/60 dark:border-zinc-800/80 p-4 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                        <span class="flex items-center gap-2 font-ubuntu">
+                            <i class="fa-solid fa-truck-ramp-box text-brand-500"></i> Identyfikacja i powiązanie z bazą Saw-Trak
+                        </span>
+                        <span id="detailsOpWozekIdBadge" class="text-[10px] font-mono bg-brand-500/10 text-brand-500 px-2.5 py-0.5 rounded-md font-bold"></span>
+                    </h4>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div class="bg-white dark:bg-zinc-950 p-3 rounded-xl border border-slate-200/50 dark:border-zinc-800/60">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Klient</span>
+                            <span id="detailsOpKlient" class="font-bold text-slate-800 dark:text-slate-100 block truncate">—</span>
+                        </div>
+                        <div class="bg-white dark:bg-zinc-950 p-3 rounded-xl border border-slate-200/50 dark:border-zinc-800/60">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Temat</span>
+                            <span id="detailsOpTemat" class="font-bold text-slate-800 dark:text-slate-100 block truncate">—</span>
+                        </div>
+                        <div class="bg-white dark:bg-zinc-950 p-3 rounded-xl border border-slate-200/50 dark:border-zinc-800/60">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Kod z bazy Saw-Trak</span>
+                            <span id="detailsOpKodZBazy" class="font-bold text-brand-500 font-mono block truncate">—</span>
+                        </div>
+                        <div class="bg-white dark:bg-zinc-950 p-3 rounded-xl border border-slate-200/50 dark:border-zinc-800/60">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Model z bazy Saw-Trak</span>
+                            <span id="detailsOpModelZBazy" class="font-bold text-slate-800 dark:text-slate-100 block truncate">—</span>
+                        </div>
+                    </div>
+
+                    <div id="detailsOpOpisContainer" class="bg-white dark:bg-zinc-950 p-3.5 rounded-xl border border-slate-200/50 dark:border-zinc-800/60 hidden">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1.5 mb-1">
+                            <i class="fa-solid fa-align-left text-brand-500"></i> Opis / Uwagi
+                        </span>
+                        <div id="detailsOpOpis" class="text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed font-normal"></div>
+                    </div>
+
+                    <div id="detailsOpCatalogLinkContainer" class="pt-1 flex items-center justify-end"></div>
+                </div>
+
+                <!-- 3. PARAMETRY TABLICZKI ZNAMIONOWEJ -->
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                        <i class="fa-solid fa-id-card text-brand-500"></i> Odczytane parametry tabliczki znamionowej
+                    </h4>
+                    <div id="detailsOpPlateParamsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                        <!-- Renderowane dynamicznie -->
+                    </div>
+                </div>
+
+                <!-- 4. PARAMETRY EKRANU / WYŚWIETLACZA -->
+                <div id="detailsOpScreenParamsSection" class="hidden">
+                    <h4 class="text-xs font-bold text-sky-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                        <i class="fa-solid fa-desktop text-sky-500"></i> Odczytane parametry ekranu / wyświetlacza
+                    </h4>
+                    <div id="detailsOpScreenParamsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                        <!-- Renderowane dynamicznie -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Stopka Modala -->
+            <div class="mt-5 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between shrink-0">
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline-block font-ubuntu">
+                    System Skanera Saw-Trak v2.5
+                </span>
+                <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                    <button onclick="closeOperationDetailsModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all">
+                        Zamknij
+                    </button>
+                    <button id="detailsOpEditBtn" class="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-pen-to-square"></i> Edytuj operację
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -721,6 +901,42 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
     </div>
 
     <script>
+        // --- Sidebar Navigation / Tab Switching ---
+        function switchTab(tabId) {
+            // Hide all tab views
+            document.querySelectorAll('.tab-view-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Remove active styles from all nav buttons
+            document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-500', 'text-white', 'shadow-lg', 'shadow-brand-500/20', 'active-nav-tab');
+                btn.classList.add('text-slate-600', 'dark:text-slate-300', 'hover:bg-slate-100', 'dark:hover:bg-zinc-800/60');
+            });
+
+            // Show target tab view
+            const targetView = document.getElementById('tabView-' + tabId);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+            }
+
+            // Highlight active nav button
+            const activeBtn = document.getElementById('navBtn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600', 'dark:text-slate-300', 'hover:bg-slate-100', 'dark:hover:bg-zinc-800/60');
+                activeBtn.classList.add('bg-brand-500', 'text-white', 'shadow-lg', 'shadow-brand-500/20', 'active-nav-tab');
+            }
+
+            // Refresh data if switching
+            if (tabId === 'catalog' && typeof loadDbCatalog === 'function') {
+                loadDbCatalog();
+            } else if (tabId === 'registry' && typeof loadOperations === 'function') {
+                loadOperations();
+            }
+
+            localStorage.setItem('sawtrak_active_tab', tabId);
+        }
+
         let uploadedFileBase64 = "";
         let parsedResults = null;
         let matchedWozek = null;
@@ -1079,7 +1295,13 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 uploadPlaceholder.classList.add('hidden'); 
                 previewWrapper.classList.remove('hidden'); 
                 processBtn.disabled = false;
-                showToast("Zdjęcie tabliczki wczytane poprawnie", "success");
+                showToast("Zdjęcie tabliczki wczytane — rozpoczynam automatyczną analizę...", "info");
+                // Automatyczna analiza od razu po załadowaniu zdjęcia (przycisk pozostaje aktywny do ew. ponownego uruchomienia)
+                setTimeout(() => {
+                    if (processBtn && !processBtn.disabled) {
+                        processBtn.click();
+                    }
+                }, 100);
             };
             reader.readAsDataURL(file);
         }
@@ -1132,7 +1354,13 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 uploadPlaceholderScreen.classList.add('hidden'); 
                 previewWrapperScreen.classList.remove('hidden'); 
                 processBtnScreen.disabled = false;
-                showToast("Zdjęcie ekranu wczytane poprawnie", "success");
+                showToast("Zdjęcie ekranu wczytane — rozpoczynam automatyczną analizę...", "info");
+                // Automatyczna analiza od razu po załadowaniu zdjęcia ekranu (przycisk pozostaje aktywny)
+                setTimeout(() => {
+                    if (processBtnScreen && !processBtnScreen.disabled) {
+                        processBtnScreen.click();
+                    }
+                }, 100);
             };
             reader.readAsDataURL(file);
         }
@@ -1785,7 +2013,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }
         }
 
-        // Save scanned details with additional inputs: Klient and Temat to the separate 'operacje' table
+        // Save scanned details with additional inputs: Klient, Temat, and Opis to the separate 'operacje' table
         async function saveOperationWithDetails() {
             const combinedData = { ...(parsedResults || {}), ...(parsedScreenResults || {}) };
 
@@ -1800,20 +2028,21 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 return;
             }
 
-            const klientVal = document.getElementById('opKlient').value.trim();
-            const tematVal = document.getElementById('opTemat').value.trim();
+            const klientVal = document.getElementById('opKlient') ? document.getElementById('opKlient').value.trim() : "";
+            const tematVal = document.getElementById('opTemat') ? document.getElementById('opTemat').value.trim() : "";
+            const opisVal = document.getElementById('opOpis') ? document.getElementById('opOpis').value.trim() : "";
 
-            if (!klientVal && !tematVal) {
-                if (!confirm("Zapisujesz operację bez podania Klienta oraz Tematu. Czy chcesz kontynuować?")) {
+            if (!klientVal && !tematVal && !opisVal) {
+                if (!confirm("Zapisujesz operację bez podania Klienta, Tematu oraz Opisu. Czy chcesz kontynuować?")) {
                     return;
                 }
             }
 
-            await saveOperationToDatabase(serialNum, klientVal, tematVal);
+            await saveOperationToDatabase(serialNum, klientVal, tematVal, opisVal);
         }
 
         // Save a scanned plate log with base64 images, client details, screen params, and matched forklift ID
-        async function saveOperationToDatabase(serialNumber, klientVal, tematVal) {
+        async function saveOperationToDatabase(serialNumber, klientVal, tematVal, opisVal = "") {
             showToast("Zapisywanie operacji w bazie...", "info");
             
             const combinedData = { ...(parsedResults || {}), ...(parsedScreenResults || {}) };
@@ -1826,6 +2055,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 model: modelVal,
                 klient: klientVal,
                 temat: tematVal,
+                opis: opisVal,
                 parametry: parsedResults || {},
                 parametry_ekranu: parsedScreenResults || {},
                 image_data: uploadedFileBase64 ? `data:image/jpeg;base64,${uploadedFileBase64}` : "",
@@ -1839,6 +2069,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 model: record.model,
                 klient: record.klient,
                 temat: record.temat,
+                opis: record.opis,
                 parametry: { ...(parsedResults || {}), ...(parsedScreenResults ? { "_ekran": parsedScreenResults } : {}) },
                 image_data: record.image_data || record.image_data_screen || "",
                 created_at: record.created_at
@@ -1913,8 +2144,10 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     // Clear inputs on success
                     const kInput = document.getElementById('opKlient');
                     const tInput = document.getElementById('opTemat');
+                    const oInput = document.getElementById('opOpis');
                     if (kInput) kInput.value = "";
                     if (tInput) tInput.value = "";
+                    if (oInput) oInput.value = "";
 
                     // Hide SQL Setup alert if database table worked
                     const alertEl = document.getElementById('sqlSetupAlert');
@@ -2008,6 +2241,64 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }, 300);
         }
 
+        // Helper do dopasowywania wózka do operacji
+        function resolveWozekForOperation(op) {
+            if (!op) return null;
+            if (op.wozek_data) return op.wozek_data;
+
+            const catalog = window.wozkiCatalogCache || [];
+            const map = window.wozkiMapCache || {};
+
+            const opWozekId = getOpWozekId(op);
+            if (opWozekId !== null && opWozekId !== undefined && map[String(opWozekId)]) {
+                return map[String(opWozekId)];
+            }
+
+            if (!Array.isArray(catalog) || catalog.length === 0) return null;
+
+            const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            // 1. Dopasowanie po kodzie seryjnym / katalogowym
+            const opCode = getOpCode(op);
+            const opNrNorm = norm(opCode);
+            if (opNrNorm) {
+                let found = catalog.find(w => {
+                    const wCode = norm(getWozekCode(w));
+                    return wCode && wCode === opNrNorm;
+                });
+                if (found) return found;
+
+                found = catalog.find(w => {
+                    const wCode = norm(getWozekCode(w));
+                    return wCode && (wCode.includes(opNrNorm) || opNrNorm.includes(wCode));
+                });
+                if (found) return found;
+            }
+
+            // 2. Dopasowanie po parametrach ze skanu
+            let paramsObj = op.parametry;
+            if (typeof paramsObj === 'string') {
+                try { paramsObj = JSON.parse(paramsObj); } catch (e) { paramsObj = null; }
+            }
+            if (paramsObj && typeof paramsObj === 'object') {
+                for (const [pk, pv] of Object.entries(paramsObj)) {
+                    const lowKey = pk.toLowerCase();
+                    if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('serial') || lowKey.includes('fabryczny') || lowKey.includes('kod')) {
+                        const paramNorm = norm(pv);
+                        if (paramNorm && paramNorm.length >= 3) {
+                            const found = catalog.find(w => {
+                                const wCode = norm(getWozekCode(w));
+                                return wCode && (wCode === paramNorm || wCode.includes(paramNorm) || paramNorm.includes(wCode));
+                            });
+                            if (found) return found;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
         // Load operations history log from Supabase or localStorage fallback
         async function loadOperations() {
             const listContainer = document.getElementById('operationsListContainer');
@@ -2018,6 +2309,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             const filterWozekId = document.getElementById('filterWozekId').value.toLowerCase().trim();
             const filterKlient = document.getElementById('filterKlient').value.toLowerCase().trim();
             const filterTemat = document.getElementById('filterTemat').value.toLowerCase().trim();
+            const filterOpis = document.getElementById('filterOpis') ? document.getElementById('filterOpis').value.toLowerCase().trim() : "";
             const filterNrKatalogowy = document.getElementById('filterNrKatalogowy').value.toLowerCase().trim();
 
             try {
@@ -2045,6 +2337,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     if (filterWozekId) queryParams.append('wozek_id', filterWozekId);
                     if (filterKlient) queryParams.append('klient', filterKlient);
                     if (filterTemat) queryParams.append('temat', filterTemat);
+                    if (filterOpis) queryParams.append('opis', filterOpis);
                     if (filterNrKatalogowy) queryParams.append('nrkatalogowy', filterNrKatalogowy);
 
                     const response = await fetch(`/api/supabase/list-operations?${queryParams.toString()}`);
@@ -2136,64 +2429,10 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                 }
                             }
                         });
+                        window.wozkiMapCache = wozkiMap;
                     }
                 } catch (wErr) {
                     console.warn("Błąd ładowania mapy wózków:", wErr);
-                }
-
-                // Helper do dopasowywania wózka do operacji w static/server mode
-                function resolveWozekForOperation(op) {
-                    if (!op) return null;
-                    if (op.wozek_data) return op.wozek_data;
-
-                    const opWozekId = getOpWozekId(op);
-                    if (opWozekId !== null && opWozekId !== undefined && wozkiMap[String(opWozekId)]) {
-                        return wozkiMap[String(opWozekId)];
-                    }
-
-                    if (!Array.isArray(wozkiCatalog) || wozkiCatalog.length === 0) return null;
-
-                    const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-                    // 1. Dopasowanie po kodzie seryjnym / katalogowym
-                    const opCode = getOpCode(op);
-                    const opNrNorm = norm(opCode);
-                    if (opNrNorm) {
-                        let found = wozkiCatalog.find(w => {
-                            const wCode = norm(getWozekCode(w));
-                            return wCode && wCode === opNrNorm;
-                        });
-                        if (found) return found;
-
-                        found = wozkiCatalog.find(w => {
-                            const wCode = norm(getWozekCode(w));
-                            return wCode && (wCode.includes(opNrNorm) || opNrNorm.includes(wCode));
-                        });
-                        if (found) return found;
-                    }
-
-                    // 2. Dopasowanie po parametrach ze skanu
-                    let paramsObj = op.parametry;
-                    if (typeof paramsObj === 'string') {
-                        try { paramsObj = JSON.parse(paramsObj); } catch (e) { paramsObj = null; }
-                    }
-                    if (paramsObj && typeof paramsObj === 'object') {
-                        for (const [pk, pv] of Object.entries(paramsObj)) {
-                            const lowKey = pk.toLowerCase();
-                            if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('serial') || lowKey.includes('fabryczny') || lowKey.includes('kod')) {
-                                const paramNorm = norm(pv);
-                                if (paramNorm && paramNorm.length >= 3) {
-                                    const found = wozkiCatalog.find(w => {
-                                        const wCode = norm(getWozekCode(w));
-                                        return wCode && (wCode === paramNorm || wCode.includes(paramNorm) || paramNorm.includes(wCode));
-                                    });
-                                    if (found) return found;
-                                }
-                            }
-                        }
-                    }
-
-                    return null;
                 }
 
                 // Fetch local operations
@@ -2216,7 +2455,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 }
 
                 // Robust client-side filtering for both local and DB entries
-                if (filterId || filterWozekId || filterKlient || filterTemat || filterNrKatalogowy) {
+                if (filterId || filterWozekId || filterKlient || filterTemat || filterOpis || filterNrKatalogowy) {
                     list = list.filter(op => {
                         const matchedWozek = resolveWozekForOperation(op);
                         const opWozekId = matchedWozek ? (getWozekId(matchedWozek) || getOpWozekId(op)) : getOpWozekId(op);
@@ -2227,11 +2466,12 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         const matchWozekId = !filterWozekId || String(opWozekId || "").toLowerCase().includes(filterWozekId);
                         const matchKlient = !filterKlient || String(op.klient || "").toLowerCase().includes(filterKlient);
                         const matchTemat = !filterTemat || String(op.temat || "").toLowerCase().includes(filterTemat);
+                        const matchOpis = !filterOpis || String(op.opis || "").toLowerCase().includes(filterOpis);
                         const matchNr = !filterNrKatalogowy || 
                                         String(getOpCode(op)).toLowerCase().includes(filterNrKatalogowy) || 
                                         String(wozekKod).toLowerCase().includes(filterNrKatalogowy) ||
                                         String(wozekModel).toLowerCase().includes(filterNrKatalogowy);
-                        return matchId && matchWozekId && matchKlient && matchTemat && matchNr;
+                        return matchId && matchWozekId && matchKlient && matchTemat && matchOpis && matchNr;
                     });
                 }
 
@@ -2405,6 +2645,13 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                         </span>
                                     </div>
 
+                                    ${op.opis ? `
+                                        <div class="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100/60 dark:bg-zinc-900/60 px-2.5 py-1 rounded-xl border border-slate-200/50 dark:border-zinc-800/60 flex items-start gap-1.5">
+                                            <i class="fa-solid fa-align-left text-brand-500 text-[10px] mt-0.5 shrink-0"></i>
+                                            <span class="font-medium">${op.opis}</span>
+                                        </div>
+                                    ` : ''}
+
                                     <!-- Parametry tabliczki -->
                                     ${tagsHtml ? `
                                         <div class="pt-0.5">
@@ -2441,6 +2688,9 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                         <i class="fa-solid fa-magnifying-glass text-[9px]"></i> Brak powiązania
                                     </button>
                                 `}
+                                <button onclick="openOperationDetailsModal('${op.id}', ${isLocal})" class="p-2 bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0" title="Pokaż pełne szczegóły wpisu i duże zdjęcia">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
                                 <button onclick="openEditOperationModal('${op.id}', ${isLocal})" class="p-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0" title="Edytuj operację">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
@@ -2516,6 +2766,280 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }
         }
 
+        // Details operation modal functions
+        function openOperationDetailsModal(opId, isLocal) {
+            if (!window.currentOperations) {
+                showToast("Wpisy nie zostały załadowane.", "error");
+                return;
+            }
+
+            const op = window.currentOperations.find(o => String(o.id) === String(opId));
+            if (!op) {
+                showToast("Nie znaleziono szczegółów tej operacji.", "error");
+                return;
+            }
+
+            const opDate = op.created_at ? new Date(op.created_at).toLocaleString('pl-PL') : "Nieznana data";
+            const matchedWozek = resolveWozekForOperation(op);
+            const rawOpWozekId = getOpWozekId(op);
+            const resolvedWozekId = matchedWozek ? (getWozekId(matchedWozek) || rawOpWozekId) : rawOpWozekId;
+            
+            let kodZBazy = "—";
+            let modelZBazy = "—";
+            if (matchedWozek) {
+                kodZBazy = getWozekCode(matchedWozek) || "Brak kodu";
+                modelZBazy = getWozekModel(matchedWozek) || "Brak modelu";
+            }
+
+            // Storage badge
+            const storageBadge = document.getElementById('detailsOpStorageBadge');
+            if (storageBadge) {
+                if (isLocal) {
+                    storageBadge.className = "text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-amber-500/15 text-amber-500 border border-amber-500/30";
+                    storageBadge.textContent = "Pamięć lokalna";
+                } else {
+                    storageBadge.className = "text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/30";
+                    storageBadge.textContent = "W bazie Supabase";
+                }
+            }
+
+            // Subheader
+            const subHeader = document.getElementById('detailsOpSubHeader');
+            if (subHeader) {
+                subHeader.innerHTML = `
+                    <span class="font-bold text-slate-700 dark:text-slate-300">Klient: ${op.klient || '—'}</span> &bull; 
+                    <span>Temat: ${op.temat || '—'}</span> &bull; 
+                    <span>Data wpisu: ${opDate}</span>
+                `;
+            }
+
+            // Main Info Card
+            const elKlient = document.getElementById('detailsOpKlient');
+            if (elKlient) elKlient.textContent = op.klient || "—";
+
+            const elTemat = document.getElementById('detailsOpTemat');
+            if (elTemat) elTemat.textContent = op.temat || "—";
+
+            const elKod = document.getElementById('detailsOpKodZBazy');
+            if (elKod) elKod.textContent = kodZBazy;
+
+            const elModel = document.getElementById('detailsOpModelZBazy');
+            if (elModel) elModel.textContent = modelZBazy;
+
+            // Opis / Uwagi
+            const opisContainer = document.getElementById('detailsOpOpisContainer');
+            const opisEl = document.getElementById('detailsOpOpis');
+            if (opisContainer && opisEl) {
+                if (op.opis && op.opis.trim()) {
+                    opisEl.textContent = op.opis;
+                    opisContainer.classList.remove('hidden');
+                } else {
+                    opisEl.textContent = "";
+                    opisContainer.classList.add('hidden');
+                }
+            }
+
+            const wozekIdBadge = document.getElementById('detailsOpWozekIdBadge');
+            if (wozekIdBadge) {
+                if (resolvedWozekId) {
+                    wozekIdBadge.textContent = `ID wózka: ${resolvedWozekId}`;
+                    wozekIdBadge.classList.remove('hidden');
+                } else {
+                    wozekIdBadge.textContent = `Brak ID w bazie`;
+                    wozekIdBadge.classList.remove('hidden');
+                }
+            }
+
+            // Catalog link button
+            const catalogLinkContainer = document.getElementById('detailsOpCatalogLinkContainer');
+            const targetCatalogCode = (kodZBazy !== '—' && kodZBazy !== 'Brak kodu') ? kodZBazy : op.nrkatalogowy;
+            if (catalogLinkContainer) {
+                if (targetCatalogCode) {
+                    catalogLinkContainer.innerHTML = `
+                        <button onclick="closeOperationDetailsModal(); switchTab('catalog'); setTimeout(() => selectCatalogItem('${targetCatalogCode.replace(/'/g, "\\'")}'), 100);" class="px-3.5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-brand-500/20">
+                            <i class="fa-solid fa-truck-front"></i> Otwórz ten wózek w katalogu Saw-Trak
+                        </button>
+                    `;
+                } else {
+                    catalogLinkContainer.innerHTML = '';
+                }
+            }
+
+            // Images Grid
+            const hasPlateImage = op.image_data && op.image_data.length > 50;
+            const plateImgSrc = hasPlateImage ? (op.image_data.startsWith('data:') ? op.image_data : `data:image/jpeg;base64,${op.image_data}`) : '';
+
+            const screenImageDataRaw = op.image_data_screen || op.zdjecie_ekranu || '';
+            const hasScreenImage = screenImageDataRaw && screenImageDataRaw.length > 50;
+            const screenImgSrc = hasScreenImage ? (screenImageDataRaw.startsWith('data:') ? screenImageDataRaw : `data:image/jpeg;base64,${screenImageDataRaw}`) : '';
+
+            const imagesGrid = document.getElementById('detailsOpImagesGrid');
+            let imagesHtml = '';
+
+            if (hasPlateImage) {
+                imagesHtml += `
+                    <div class="bg-slate-900 rounded-2xl border border-slate-700/80 p-3 flex flex-col justify-between gap-2.5 relative group">
+                        <div class="w-full flex items-center justify-between text-white text-xs px-1">
+                            <span class="font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-id-card text-brand-400"></i> Tabliczka znamionowa
+                            </span>
+                            <button onclick="viewFullImage('${plateImgSrc.replace(/'/g, "\\'")}')" class="text-[10px] bg-slate-800 hover:bg-brand-500 text-slate-200 hover:text-white px-2.5 py-1 rounded-lg transition-all font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-expand"></i> Pełny ekran
+                            </button>
+                        </div>
+                        <div class="w-full h-64 sm:h-80 flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden cursor-pointer" onclick="viewFullImage('${plateImgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby otworzyć na pełnym ekranie">
+                            <img src="${plateImgSrc}" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" alt="Tabliczka znamionowa">
+                        </div>
+                        <span class="text-[10px] text-slate-400 text-center italic">Kliknij w zdjęcie, aby powiększyć</span>
+                    </div>
+                `;
+            }
+
+            if (hasScreenImage) {
+                imagesHtml += `
+                    <div class="bg-sky-950/40 rounded-2xl border border-sky-800/80 p-3 flex flex-col justify-between gap-2.5 relative group">
+                        <div class="w-full flex items-center justify-between text-white text-xs px-1">
+                            <span class="font-bold flex items-center gap-1.5 text-sky-200">
+                                <i class="fa-solid fa-desktop text-sky-400"></i> Ekran / Wyświetlacz
+                            </span>
+                            <button onclick="viewFullImage('${screenImgSrc.replace(/'/g, "\\'")}')" class="text-[10px] bg-sky-900/80 hover:bg-sky-500 text-sky-100 hover:text-white px-2.5 py-1 rounded-lg transition-all font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-expand"></i> Pełny ekran
+                            </button>
+                        </div>
+                        <div class="w-full h-64 sm:h-80 flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden cursor-pointer" onclick="viewFullImage('${screenImgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby otworzyć na pełnym ekranie">
+                            <img src="${screenImgSrc}" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" alt="Zdjęcie ekranu">
+                        </div>
+                        <span class="text-[10px] text-sky-300/70 text-center italic">Kliknij w zdjęcie, aby powiększyć</span>
+                    </div>
+                `;
+            }
+
+            if (!hasPlateImage && !hasScreenImage) {
+                imagesHtml = `
+                    <div class="col-span-full bg-slate-100 dark:bg-zinc-900/40 rounded-2xl border border-dashed border-slate-300 dark:border-zinc-800 p-8 text-center text-slate-400 dark:text-slate-500">
+                        <i class="fa-solid fa-image-slash text-3xl mb-2 block text-slate-300 dark:text-zinc-700"></i>
+                        <p class="text-xs font-bold">Brak załączonych zdjęć dla tego wpisu</p>
+                    </div>
+                `;
+            }
+
+            if (imagesGrid) imagesGrid.innerHTML = imagesHtml;
+
+            // Parse parameters
+            let paramsObj = {};
+            if (typeof op.parametry === 'string') {
+                try { paramsObj = JSON.parse(op.parametry); } catch (e) { paramsObj = {}; }
+            } else {
+                paramsObj = op.parametry || {};
+            }
+
+            let paramsScreenObj = {};
+            if (op.parametry_ekranu) {
+                if (typeof op.parametry_ekranu === 'string') {
+                    try { paramsScreenObj = JSON.parse(op.parametry_ekranu); } catch (e) { paramsScreenObj = {}; }
+                } else {
+                    paramsScreenObj = op.parametry_ekranu || {};
+                }
+            } else if (paramsObj && paramsObj._ekran) {
+                paramsScreenObj = paramsObj._ekran || {};
+            }
+
+            // Plate params grid
+            const plateParamsGrid = document.getElementById('detailsOpPlateParamsGrid');
+            let plateParamsHtml = '';
+
+            if (op.model) {
+                plateParamsHtml += `
+                    <div class="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 flex flex-col justify-between">
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Model ze skanu</span>
+                        <span class="text-xs font-black text-slate-800 dark:text-slate-100 select-all">${op.model}</span>
+                    </div>
+                `;
+            }
+            if (op.nrkatalogowy) {
+                plateParamsHtml += `
+                    <div class="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 flex flex-col justify-between">
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Nr katalogowy / Seryjny</span>
+                        <span class="text-xs font-black text-brand-500 select-all">${op.nrkatalogowy}</span>
+                    </div>
+                `;
+            }
+
+            for (const [pk, pv] of Object.entries(paramsObj)) {
+                if (pk === '_ekran') continue;
+                plateParamsHtml += `
+                    <div class="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 flex flex-col justify-between">
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block truncate">${pk}</span>
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-100 select-all">${pv}</span>
+                    </div>
+                `;
+            }
+
+            if (!plateParamsHtml) {
+                plateParamsHtml = `
+                    <div class="col-span-full text-xs text-slate-400 italic p-3 bg-slate-50 dark:bg-zinc-900/30 rounded-xl text-center">
+                        Brak szczegółowych parametrów tabliczki
+                    </div>
+                `;
+            }
+            if (plateParamsGrid) plateParamsGrid.innerHTML = plateParamsHtml;
+
+            // Screen params grid
+            const screenParamsSection = document.getElementById('detailsOpScreenParamsSection');
+            const screenParamsGrid = document.getElementById('detailsOpScreenParamsGrid');
+            let screenParamsHtml = '';
+
+            for (const [pk, pv] of Object.entries(paramsScreenObj)) {
+                screenParamsHtml += `
+                    <div class="bg-sky-50/70 dark:bg-sky-950/20 p-3 rounded-xl border border-sky-200/60 dark:border-sky-900/40 flex flex-col justify-between">
+                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase block truncate">${pk}</span>
+                        <span class="text-xs font-bold text-sky-900 dark:text-sky-100 select-all">${pv}</span>
+                    </div>
+                `;
+            }
+
+            if (screenParamsSection && screenParamsGrid) {
+                if (Object.keys(paramsScreenObj).length > 0) {
+                    screenParamsGrid.innerHTML = screenParamsHtml;
+                    screenParamsSection.classList.remove('hidden');
+                } else {
+                    screenParamsSection.classList.add('hidden');
+                }
+            }
+
+            // Edit button handler
+            const editBtn = document.getElementById('detailsOpEditBtn');
+            if (editBtn) {
+                editBtn.onclick = () => {
+                    closeOperationDetailsModal();
+                    openEditOperationModal(opId, isLocal);
+                };
+            }
+
+            // Show modal
+            const modal = document.getElementById('operationDetailsModal');
+            const container = document.getElementById('operationDetailsModalContainer');
+            if (modal && container) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    container.classList.remove('scale-95');
+                }, 10);
+            }
+        }
+
+        function closeOperationDetailsModal() {
+            const modal = document.getElementById('operationDetailsModal');
+            const container = document.getElementById('operationDetailsModalContainer');
+            if (!modal || !container) return;
+
+            modal.classList.add('opacity-0');
+            container.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
         // Edit operations management functions
         let editingOpId = null;
         let editingOpIsLocal = false;
@@ -2539,6 +3063,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             document.getElementById('editOpTemat').value = op.temat || "";
             document.getElementById('editOpModel').value = op.model || "";
             document.getElementById('editOpNrKatalogowy').value = op.nrkatalogowy || "";
+            const editOpisEl = document.getElementById('editOpOpis');
+            if (editOpisEl) editOpisEl.value = op.opis || "";
             
             const modal = document.getElementById('editOperationModal');
             const container = document.getElementById('editOperationModalContainer');
@@ -2570,6 +3096,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             const tematVal = document.getElementById('editOpTemat').value.trim();
             const modelVal = document.getElementById('editOpModel').value.trim();
             const nrKatalogowyVal = document.getElementById('editOpNrKatalogowy').value.trim();
+            const opisVal = document.getElementById('editOpOpis') ? document.getElementById('editOpOpis').value.trim() : "";
             
             showToast("Zapisywanie zmian...", "info");
             
@@ -2577,7 +3104,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 klient: klientVal,
                 temat: tematVal,
                 model: modelVal,
-                nrkatalogowy: nrKatalogowyVal
+                nrkatalogowy: nrKatalogowyVal,
+                opis: opisVal
             };
             
             try {
@@ -2664,11 +3192,12 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 
         // Clear filtering search inputs
         function clearOperationsFilters() {
-            document.getElementById('filterId').value = "";
-            document.getElementById('filterWozekId').value = "";
-            document.getElementById('filterKlient').value = "";
-            document.getElementById('filterTemat').value = "";
-            document.getElementById('filterNrKatalogowy').value = "";
+            if (document.getElementById('filterId')) document.getElementById('filterId').value = "";
+            if (document.getElementById('filterWozekId')) document.getElementById('filterWozekId').value = "";
+            if (document.getElementById('filterKlient')) document.getElementById('filterKlient').value = "";
+            if (document.getElementById('filterTemat')) document.getElementById('filterTemat').value = "";
+            if (document.getElementById('filterOpis')) document.getElementById('filterOpis').value = "";
+            if (document.getElementById('filterNrKatalogowy')) document.getElementById('filterNrKatalogowy').value = "";
             loadOperations();
             showToast("Wyczyszczono filtry rejestru", "info");
         }
@@ -3027,12 +3556,15 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             showToast("Odświeżono bazę Supabase", "info");
         });
 
-        // Initialize Catalog on load
+        // Initialize App on load
         window.addEventListener('DOMContentLoaded', async () => {
             updateConnectionStatusUI();
             await fetchServerConfig();
             await loadDbCatalog();
             await loadOperations();
+            
+            const savedTab = localStorage.getItem('sawtrak_active_tab') || 'new-entry';
+            switchTab(savedTab);
         });
     </script>
 </body>

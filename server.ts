@@ -410,7 +410,7 @@ app.get("/api/supabase/list-operations", async (req, res) => {
       return res.status(500).json({ error: "Supabase client is not initialized." });
     }
 
-    const { id, klient, temat, nrkatalogowy, wozek_id } = req.query;
+    const { id, klient, temat, nrkatalogowy, wozek_id, opis } = req.query;
     let query = supabase.from("operacje").select("*");
 
     if (id) {
@@ -437,6 +437,9 @@ app.get("/api/supabase/list-operations", async (req, res) => {
     }
     if (temat) {
       query = query.ilike("temat", `%${String(temat).trim()}%`);
+    }
+    if (opis) {
+      query = query.ilike("opis", `%${String(opis).trim()}%`);
     }
     if (nrkatalogowy) {
       query = query.ilike("nrkatalogowy", `%${String(nrkatalogowy).trim()}%`);
