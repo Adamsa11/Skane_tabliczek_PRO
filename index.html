@@ -441,17 +441,60 @@
                             </div>
                         </div>
                 
-                <!-- Formularz wyszukiwania -->
-                <div class="space-y-2.5 mb-4">
+                <!-- Formularz wyszukiwania multi-pole -->
+                <div class="space-y-3 mb-5">
+                    <!-- Ogólne wyszukiwanie we wszystkich polach -->
                     <div class="relative">
-                        <input type="text" id="dbSearchInput" placeholder="Wpisz NRKATALOGOWY wózka..." class="w-full text-xs py-2.5 px-3 pl-8 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                        <input type="text" id="dbSearchInput" oninput="debounceSearchDbCatalog()" placeholder="Szukaj we wszystkich polach bazy (np. LINDE, 2021, 48V, 230352, nr fabryczny, udźwig...)..." class="w-full text-xs py-2.5 px-3 pl-8 bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-800 dark:text-slate-100">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-xs text-slate-400"></i>
                     </div>
+
+                    <!-- Filtrowanie po konkretnych polach bazy -->
+                    <div class="bg-[#F9F9F9] dark:bg-[#111111]/40 rounded-2xl border border-slate-200/50 dark:border-zinc-800/80 p-3.5 space-y-2">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-sliders"></i> Filtry poszczególnych pól
+                            </span>
+                            <button onclick="clearDbSearch()" class="text-[10px] text-slate-400 hover:text-brand-500 font-bold transition-all">
+                                <i class="fa-solid fa-filter-circle-xmark"></i> Wyczyść filtry
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                            <div>
+                                <label for="catFilterNrKatalogowy" class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Kod / Nr katalogowy</label>
+                                <input type="text" id="catFilterNrKatalogowy" placeholder="np. 230352..." oninput="debounceSearchDbCatalog()" class="w-full text-xs py-1.5 px-2.5 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-lg outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                            <div>
+                                <label for="catFilterTypWozka" class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Typ / Model wózka</label>
+                                <input type="text" id="catFilterTypWozka" placeholder="np. H25T, E16..." oninput="debounceSearchDbCatalog()" class="w-full text-xs py-1.5 px-2.5 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-lg outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                            <div>
+                                <label for="catFilterNrFabryczny" class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Nr fabryczny</label>
+                                <input type="text" id="catFilterNrFabryczny" placeholder="Filtruj nr fabryczny..." oninput="debounceSearchDbCatalog()" class="w-full text-xs py-1.5 px-2.5 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-lg outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                            <div>
+                                <label for="catFilterRok" class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Rok produkcji</label>
+                                <input type="text" id="catFilterRok" placeholder="np. 2020..." oninput="debounceSearchDbCatalog()" class="w-full text-xs py-1.5 px-2.5 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-lg outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                            <div>
+                                <label for="catFilterUdzwig" class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Udźwig</label>
+                                <input type="text" id="catFilterUdzwig" placeholder="np. 2500 kg..." oninput="debounceSearchDbCatalog()" class="w-full text-xs py-1.5 px-2.5 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-lg outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                            <div>
+                                <label for="catFilterNapiecie" class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Napięcie / Bateria</label>
+                                <input type="text" id="catFilterNapiecie" placeholder="np. 48V..." oninput="debounceSearchDbCatalog()" class="w-full text-xs py-1.5 px-2.5 bg-white dark:bg-[#161616] border border-slate-200 dark:border-zinc-800 rounded-lg outline-none focus:border-brand-500 transition-all text-slate-800 dark:text-slate-100">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="flex gap-2">
-                        <button id="btnDbSearch" class="flex-1 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-brand-500/10 hover:shadow-brand-500/20 flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-magnifying-glass"></i> Szukaj
+                        <button id="btnDbSearch" onclick="triggerDbSearch()" class="flex-1 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-brand-500/10 hover:shadow-brand-500/20 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-magnifying-glass"></i> Szukaj w bazie
                         </button>
-                        <button id="btnDbRefresh" title="Odśwież listę" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all flex items-center justify-center">
+                        <button onclick="clearDbSearch()" title="Wyczyść filtry i pokaż wszystkie" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> Wyczyść
+                        </button>
+                        <button id="btnDbRefresh" onclick="loadDbCatalog()" title="Odśwież listę" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all flex items-center justify-center">
                             <i class="fa-solid fa-arrows-rotate"></i>
                         </button>
                     </div>
@@ -2013,6 +2056,59 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }
         }
 
+        // Clear uploaders, parsed AI scan parameters, and matching status after operation save
+        function clearScanDataAndStatus() {
+            // 1. Wyczyść wprowadzenie zdjęć (tabliczka i ekran)
+            if (typeof resetUploader === 'function') resetUploader();
+            if (typeof resetScreenUploader === 'function') resetScreenUploader();
+
+            // 2. Wyczyść odczyt parametrów
+            parsedResults = null;
+            parsedScreenResults = null;
+
+            const resultsBody = document.getElementById('resultsBody');
+            if (resultsBody) resultsBody.innerHTML = '';
+
+            const resultsBodyScreen = document.getElementById('resultsBodyScreen');
+            if (resultsBodyScreen) resultsBodyScreen.innerHTML = '';
+
+            const stateResults = document.getElementById('stateResults');
+            if (stateResults) stateResults.classList.add('hidden');
+
+            const stateResultsScreen = document.getElementById('stateResultsScreen');
+            if (stateResultsScreen) stateResultsScreen.classList.add('hidden');
+
+            const stateIdle = document.getElementById('stateIdle');
+            if (stateIdle) stateIdle.classList.remove('hidden');
+
+            const stateIdleScreen = document.getElementById('stateIdleScreen');
+            if (stateIdleScreen) stateIdleScreen.classList.remove('hidden');
+
+            const saveOpSec = document.getElementById('saveOperationSection');
+            if (saveOpSec) saveOpSec.classList.add('hidden');
+
+            // Wyczyść pola formularza zapisu
+            const kInput = document.getElementById('opKlient');
+            const tInput = document.getElementById('opTemat');
+            const oInput = document.getElementById('opOpis');
+            if (kInput) kInput.value = "";
+            if (tInput) tInput.value = "";
+            if (oInput) oInput.value = "";
+
+            // 3. Wyczyść status dopasowania
+            matchedWozek = null;
+            const badge = document.getElementById('supabaseStatusBadge');
+            if (badge) {
+                badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Oczekiwanie`;
+            }
+
+            const content = document.getElementById('supabaseMatchContent');
+            if (content) {
+                content.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Odczytaj tabliczkę znamionową, aby automatycznie przeszukać bazę Supabase po numerze seryjnym.</p>`;
+            }
+        }
+
         // Save scanned details with additional inputs: Klient, Temat, and Opis to the separate 'operacje' table
         async function saveOperationWithDetails() {
             const combinedData = { ...(parsedResults || {}), ...(parsedScreenResults || {}) };
@@ -2141,13 +2237,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 if (success) {
                     showToast("Operacja została pomyślnie zapisana w bazie danych!", "success");
                     
-                    // Clear inputs on success
-                    const kInput = document.getElementById('opKlient');
-                    const tInput = document.getElementById('opTemat');
-                    const oInput = document.getElementById('opOpis');
-                    if (kInput) kInput.value = "";
-                    if (tInput) tInput.value = "";
-                    if (oInput) oInput.value = "";
+                    // Clear uploaders, scanned parameters, and match status after save
+                    clearScanDataAndStatus();
 
                     // Hide SQL Setup alert if database table worked
                     const alertEl = document.getElementById('sqlSetupAlert');
@@ -2160,6 +2251,9 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 
                 // Always save to localStorage as backup when database save fails
                 saveOperationToLocalStorage(record);
+
+                // Clear uploaders, scanned parameters, and match status after save
+                clearScanDataAndStatus();
 
                 // Automatically show the troubleshooting & SQL setup instructions
                 const alertEl = document.getElementById('sqlSetupAlert');
@@ -3410,77 +3504,154 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 
         // View single catalog item from explorer list
         function selectCatalogItem(serialNumber) {
-            document.getElementById('dbSearchInput').value = serialNumber;
+            if (document.getElementById('dbSearchInput')) document.getElementById('dbSearchInput').value = serialNumber;
             searchDbCatalog(serialNumber);
         }
 
-        // Search the catalog manually
+        let dbSearchDebounceTimer = null;
+        function debounceSearchDbCatalog() {
+            clearTimeout(dbSearchDebounceTimer);
+            dbSearchDebounceTimer = setTimeout(() => {
+                triggerDbSearch();
+            }, 300);
+        }
+
+        function triggerDbSearch() {
+            const query = document.getElementById('dbSearchInput') ? document.getElementById('dbSearchInput').value : '';
+            searchDbCatalog(query);
+        }
+
+        // Helper function to filter wozki rows in-memory across EVERY field
+        function filterWozkiRows(rows, mainQuery, filters) {
+            if (!rows || !Array.isArray(rows)) return [];
+
+            return rows.filter(row => {
+                // 1. Check general query across ALL properties/fields of row
+                if (mainQuery) {
+                    const qLow = mainQuery.toLowerCase();
+                    const qClean = qLow.replace(/[^a-z0-9]/g, "");
+
+                    const matchesAnyField = Object.values(row).some(val => {
+                        if (val === null || val === undefined) return false;
+                        const valStr = String(val).toLowerCase();
+                        if (valStr.includes(qLow)) return true;
+                        if (qClean && valStr.replace(/[^a-z0-9]/g, "").includes(qClean)) return true;
+                        return false;
+                    });
+
+                    if (!matchesAnyField) return false;
+                }
+
+                // 2. Check granular field filters
+                if (filters && typeof filters === 'object') {
+                    if (filters.nrkatalogowy) {
+                        const f = filters.nrkatalogowy.toLowerCase();
+                        const val = String(row.NRKATALOGOWY || row.nrkatalogowy || row.kod || "").toLowerCase();
+                        if (!val.includes(f)) return false;
+                    }
+                    if (filters.typ_wozka) {
+                        const f = filters.typ_wozka.toLowerCase();
+                        const val = String(row.TYP_WOZKA || row.TYP || row.model || "").toLowerCase();
+                        if (!val.includes(f)) return false;
+                    }
+                    if (filters.nr_fabryczny) {
+                        const f = filters.nr_fabryczny.toLowerCase();
+                        const val = String(row.NR_FABRYCZNY || row.nr_fabryczny || "").toLowerCase();
+                        if (!val.includes(f)) return false;
+                    }
+                    if (filters.rok_produkcji) {
+                        const f = filters.rok_produkcji.toLowerCase();
+                        const val = String(row.ROK_PRODUKCJI || row.rok || "").toLowerCase();
+                        if (!val.includes(f)) return false;
+                    }
+                    if (filters.udzwig) {
+                        const f = filters.udzwig.toLowerCase();
+                        const val = String(row.UDZWIG || row.udzwig || "").toLowerCase();
+                        if (!val.includes(f)) return false;
+                    }
+                    if (filters.napiecie) {
+                        const f = filters.napiecie.toLowerCase();
+                        const val = String(row.NAPIECIE || row.BATERIA || row.napiecie || "").toLowerCase();
+                        if (!val.includes(f)) return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        // Search the catalog manually across all fields
         async function searchDbCatalog(searchQuery) {
             const listContainer = document.getElementById('dbListContainer');
-            if (!searchQuery || !searchQuery.trim()) {
+            const recordCountBadge = document.getElementById('dbRecordCount');
+            
+            const mainQuery = (searchQuery !== undefined ? searchQuery : (document.getElementById('dbSearchInput') ? document.getElementById('dbSearchInput').value : '')).trim();
+
+            const fNrKat = document.getElementById('catFilterNrKatalogowy') ? document.getElementById('catFilterNrKatalogowy').value.trim() : '';
+            const fTyp = document.getElementById('catFilterTypWozka') ? document.getElementById('catFilterTypWozka').value.trim() : '';
+            const fNrFabryczny = document.getElementById('catFilterNrFabryczny') ? document.getElementById('catFilterNrFabryczny').value.trim() : '';
+            const fRok = document.getElementById('catFilterRok') ? document.getElementById('catFilterRok').value.trim() : '';
+            const fUdzwig = document.getElementById('catFilterUdzwig') ? document.getElementById('catFilterUdzwig').value.trim() : '';
+            const fNapiecie = document.getElementById('catFilterNapiecie') ? document.getElementById('catFilterNapiecie').value.trim() : '';
+
+            const hasAnyFilter = mainQuery || fNrKat || fTyp || fNrFabryczny || fRok || fUdzwig || fNapiecie;
+
+            if (!hasAnyFilter) {
                 loadDbCatalog();
                 return;
             }
-            
-            listContainer.innerHTML = `<p class="text-slate-400 text-center py-4 text-xs">Wyszukiwanie...</p>`;
-            
+
+            listContainer.innerHTML = `<p class="text-slate-400 text-center py-4 text-xs"><i class="fa-solid fa-spinner animate-spin mr-1.5"></i> Przeszukiwanie wszystkich pól bazy...</p>`;
+
+            const filtersObj = {
+                nrkatalogowy: fNrKat,
+                typ_wozka: fTyp,
+                nr_fabryczny: fNrFabryczny,
+                rok_produkcji: fRok,
+                udzwig: fUdzwig,
+                napiecie: fNapiecie
+            };
+
             try {
                 let matched = [];
-                const cleanQuery = searchQuery.trim();
 
                 if (isStaticMode()) {
-                    // Try exact matches first
-                    let response = await staticSupabaseRequest(`/rest/v1/wozki?NRKATALOGOWY=eq.${encodeURIComponent(cleanQuery)}&select=*`);
+                    // Fetch all records (up to 1000) and perform complete in-memory multi-field matching
+                    const response = await staticSupabaseRequest(`/rest/v1/wozki?select=*&limit=1000`);
                     if (response.ok) {
-                        matched = await response.json();
-                    }
-
-                    if (!matched || matched.length === 0) {
-                        // Try partial lookup
-                        response = await staticSupabaseRequest(`/rest/v1/wozki?NRKATALOGOWY=ilike.*${encodeURIComponent(cleanQuery)}*&select=*`);
-                        if (response.ok) {
-                            matched = await response.json();
-                        }
-                    }
-
-                    // Try in-memory fuzzy match fallback
-                    if (!matched || matched.length === 0) {
-                        response = await staticSupabaseRequest(`/rest/v1/wozki?select=*&limit=1000`);
-                        if (response.ok) {
-                            const allRows = await response.json();
-                            const normSearch = cleanQuery.toLowerCase().replace(/[^a-z0-9]/g, "");
-                            if (normSearch) {
-                                const matchedRows = allRows.filter(row => {
-                                    const dbSerial = String(row.NRKATALOGOWY || row.nrkatalogowy || row.kod || "").trim();
-                                    const normDbSerial = dbSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
-                                    return normDbSerial === normSearch || normDbSerial.includes(normSearch) || normSearch.includes(normDbSerial);
-                                });
-                                if (matchedRows.length > 0) {
-                                    matched = matchedRows;
-                                }
-                            }
-                        }
+                        const allRows = await response.json();
+                        matched = filterWozkiRows(allRows, mainQuery, filtersObj);
                     }
                 } else {
                     const response = await fetch("/api/supabase/lookup", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ serialNumber: searchQuery })
+                        body: JSON.stringify({ 
+                            searchQuery: mainQuery,
+                            filters: filtersObj
+                        })
                     });
                     
                     if (!response.ok) throw new Error("Błąd podczas wyszukiwania.");
                     
                     const result = await response.json();
                     matched = result.data || [];
+
+                    // Also run client-side refinement to guarantee matching on any custom column
+                    if (matched.length > 0) {
+                        matched = filterWozkiRows(matched, mainQuery, filtersObj);
+                    }
                 }
                 
+                if (recordCountBadge) recordCountBadge.textContent = matched.length;
+
                 if (matched.length === 0) {
                     listContainer.innerHTML = `
                         <div class="text-center py-6 text-slate-400 dark:text-slate-500">
                             <i class="fa-solid fa-magnifying-glass text-xl mb-1.5 block text-slate-300"></i>
-                            <p class="text-xs font-semibold">Brak wyników</p>
-                            <p class="text-[10px] max-w-[180px] mx-auto mt-0.5">Brak rekordu z NRKATALOGOWY pasującym do "${searchQuery}".</p>
-                            <button onclick="clearDbSearch()" class="mt-2 text-[10px] text-brand-500 font-bold hover:underline">Wyczyść filtry</button>
+                            <p class="text-xs font-semibold">Brak wyników wyszukiwania</p>
+                            <p class="text-[10px] max-w-[220px] mx-auto mt-0.5">Żaden rekord w bazie nie pasuje do podanych kryteriów wyszukiwania.</p>
+                            <button onclick="clearDbSearch()" class="mt-2 text-[10px] text-brand-500 font-bold hover:underline">Wyczyść wszystkie filtry</button>
                         </div>
                     `;
                     return;
@@ -3509,7 +3680,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         <div class="p-3 rounded-xl bg-brand-50/30 dark:bg-brand-500/5 border border-brand-500/30 text-xs transition-all space-y-2">
                             <div class="flex items-center justify-between gap-2 border-b border-brand-500/10 pb-1.5">
                                 <span class="font-bold text-[11px] text-slate-800 dark:text-white truncate">${modelName}</span>
-                                <span class="text-[9px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-md font-bold uppercase shrink-0">Szczegóły</span>
+                                <span class="text-[9px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-md font-bold uppercase shrink-0">Wynik wyszukiwania</span>
                             </div>
                             <div class="space-y-0.5 text-[10px]">
                                 ${fieldsHtml}
@@ -3519,7 +3690,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                     <i class="fa-solid fa-link"></i> Powiąż ze skanerem
                                 </button>
                                 <button onclick="clearDbSearch()" class="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold transition-all">
-                                    Zamknij
+                                    Pokaż wszystkie
                                 </button>
                             </div>
                         </div>
@@ -3534,8 +3705,15 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
         }
 
         function clearDbSearch() {
-            document.getElementById('dbSearchInput').value = "";
+            if (document.getElementById('dbSearchInput')) document.getElementById('dbSearchInput').value = "";
+            if (document.getElementById('catFilterNrKatalogowy')) document.getElementById('catFilterNrKatalogowy').value = "";
+            if (document.getElementById('catFilterTypWozka')) document.getElementById('catFilterTypWozka').value = "";
+            if (document.getElementById('catFilterNrFabryczny')) document.getElementById('catFilterNrFabryczny').value = "";
+            if (document.getElementById('catFilterRok')) document.getElementById('catFilterRok').value = "";
+            if (document.getElementById('catFilterUdzwig')) document.getElementById('catFilterUdzwig').value = "";
+            if (document.getElementById('catFilterNapiecie')) document.getElementById('catFilterNapiecie').value = "";
             loadDbCatalog();
+            showToast("Wyczyszczono filtry katalogu", "info");
         }
 
         // Attach listeners for Supabase Catalog
