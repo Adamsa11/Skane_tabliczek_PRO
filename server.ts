@@ -12,15 +12,9 @@ app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Initialize Supabase Client safely
+// Initialize Supabase Client safely from environment variables
 const supabaseUrl = process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
-
-// Resolve the correct key. If SUPABASE_SERVICE_ROLE_KEY is set but is actually a publishable key,
-// we prefer the provided secret key to make sure we have RLS bypass privileges.
-let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-if (!supabaseKey || supabaseKey.startsWith("sb_publishable_")) {
-  supabaseKey = "sb_secret_-UNQjh0T27_QdDoBl01EPg_UU8hiyeM";
-}
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || "";
 
 let supabase: any = null;
 try {
@@ -30,6 +24,14 @@ try {
 } catch (err) {
   console.error("Failed to initialize Supabase client:", err);
 }
+
+// Endpoint to provide public Supabase URL and public publishable/anon key to frontend
+app.get("/api/supabase/config", (_req, res) => {
+  return res.json({
+    supabaseUrl: process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co",
+    supabaseAnonKey: process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC"
+  });
+});
 
 // Helper to determine if a Supabase error is due to a missing table
 function checkIfTableMissing(error: any): boolean {

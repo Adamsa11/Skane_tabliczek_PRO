@@ -867,52 +867,27 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             }
         }
 
-        // Resilient REST request runner for static client mode (e.g. GitHub Pages)
+        // REST request runner for static client mode (e.g. GitHub Pages)
         async function staticSupabaseRequest(path, options = {}) {
             const baseUrl = (supabaseUrl || "https://nhqambvmghlhzjtdvljz.supabase.co").replace(/\/+$/, '');
             const fullUrl = path.startsWith('http') ? path : `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
 
             const primaryKey = (supabaseAnonKey && supabaseAnonKey.trim()) ? supabaseAnonKey.trim() : "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
-            const secretKey = "sb_secret_-UNQjh0T27_QdDoBl01EPg_UU8hiyeM";
 
-            const keysToTry = [];
-            if (primaryKey) keysToTry.push(primaryKey);
-            if (secretKey && !keysToTry.includes(secretKey)) keysToTry.push(secretKey);
+            const headers = {
+                "Content-Type": "application/json",
+                "apikey": primaryKey,
+                "Authorization": `Bearer ${primaryKey}`,
+                ...(options.headers || {})
+            };
 
-            let lastRes = null;
-
-            for (const key of keysToTry) {
-                const headers = {
-                    "Content-Type": "application/json",
-                    "apikey": key,
-                    "Authorization": `Bearer ${key}`,
-                    ...(options.headers || {})
-                };
-
-                try {
-                    const res = await fetch(fullUrl, { ...options, headers });
-                    if (res.ok) {
-                        // For GET requests, check if RLS returned an empty array on primary key
-                        if ((!options.method || options.method === 'GET') && key !== secretKey && keysToTry.length > 1) {
-                            const clone = res.clone();
-                            try {
-                                const data = await clone.json();
-                                if (Array.isArray(data) && data.length === 0) {
-                                    lastRes = res;
-                                    continue; // Retry with secret key to bypass RLS restrictions
-                                }
-                            } catch (e) {}
-                        }
-                        return res;
-                    } else {
-                        lastRes = res;
-                    }
-                } catch (err) {
-                    console.warn("staticSupabaseRequest error with key:", key, err);
-                }
+            try {
+                const res = await fetch(fullUrl, { ...options, headers });
+                return res;
+            } catch (err) {
+                console.warn("staticSupabaseRequest error:", err);
+                return new Response(JSON.stringify({ error: "Brak połączenia z Supabase" }), { status: 500 });
             }
-
-            return lastRes || new Response(JSON.stringify({ error: "No connection" }), { status: 500 });
         }
 
         // Utility to format database keys to user-friendly Polish labels
