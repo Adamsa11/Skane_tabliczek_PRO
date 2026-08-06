@@ -14,12 +14,17 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Initialize Supabase Client safely from environment variables
 const supabaseUrl = process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || "";
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
 
 let supabase: any = null;
 try {
   if (supabaseUrl && supabaseKey) {
     supabase = createClient(supabaseUrl, supabaseKey);
+    console.log("Supabase client initialized successfully with URL:", supabaseUrl);
   }
 } catch (err) {
   console.error("Failed to initialize Supabase client:", err);
@@ -205,6 +210,194 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
   }
 });
 
+// Helper functions for partial, diacritics-insensitive string searching
+function normalizeSearchText(str: any): string {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function cleanAlphanumericSearch(str: any): string {
+  return normalizeSearchText(str).replace(/[^a-z0-9]/g, "");
+}
+
+function rowMatchesWozekQuery(row: any, query: string, filters?: any): boolean {
+  if (!row || typeof row !== "object") return false;
+
+  // Extract all textual contents of the row
+  const rowValues = Object.values(row)
+    .filter((v) => v !== null && v !== undefined)
+    .map((v) => normalizeSearchText(v));
+  const fullRowText = rowValues.join(" ");
+  const cleanRowText = cleanAlphanumericSearch(fullRowText);
+
+  // 1. General query search across all fields (multi-token AND partial substring matching)
+  if (query && query.trim()) {
+    const tokens = query.trim().split(/\s+/).filter(Boolean);
+    const matchesAllTokens = tokens.every((token) => {
+      const normTok = normalizeSearchText(token);
+      const cleanTok = cleanAlphanumericSearch(token);
+      if (!normTok) return true;
+
+      // Substring match in joined text or in any individual property
+      if (fullRowText.includes(normTok)) return true;
+      if (cleanTok && cleanRowText.includes(cleanTok)) return true;
+      return rowValues.some((v) => v.includes(normTok));
+    });
+
+    if (!matchesAllTokens) return false;
+  }
+
+  // 2. Granular field filters
+  if (filters && typeof filters === "object") {
+    const matchesField = (filterVal: string, candidateKeys: string[]): boolean => {
+      const fNorm = normalizeSearchText(filterVal);
+      const fClean = cleanAlphanumericSearch(filterVal);
+      if (!fNorm) return true;
+
+      // Check specific candidate keys first
+      for (const [key, val] of Object.entries(row)) {
+        if (val === null || val === undefined) continue;
+        const keyNorm = normalizeSearchText(key);
+        const isCandidate = candidateKeys.some(
+          (cand) => keyNorm === normalizeSearchText(cand) || keyNorm.includes(normalizeSearchText(cand))
+        );
+        if (isCandidate) {
+          const valNorm = normalizeSearchText(val);
+          const valClean = cleanAlphanumericSearch(val);
+          if (valNorm.includes(fNorm) || (fClean.length > 0 && valClean.includes(fClean))) {
+            return true;
+          }
+        }
+      }
+
+      // Fallback: if candidate key was not specifically found, check full row text
+      return fullRowText.includes(fNorm) || (fClean.length > 0 && cleanRowText.includes(fClean));
+    };
+
+    if (
+      filters.nrkatalogowy &&
+      !matchesField(filters.nrkatalogowy, [
+        "NRKATALOGOWY",
+        "nrkatalogowy",
+        "kod",
+        "KOD",
+        "numer",
+        "nr_katalogowy",
+        "NR_KATALOGOWY",
+        "NR_FABRYCZNY",
+        "nr_fabryczny",
+        "numer_fabryczny",
+        "NR_SERYJNY",
+        "nr_seryjny",
+        "serial",
+        "SERIAL",
+        "serial_number",
+        "nr_ewidencyjny",
+        "id",
+        "ID"
+      ])
+    ) {
+      return false;
+    }
+    if (
+      filters.typ_wozka &&
+      !matchesField(filters.typ_wozka, [
+        "TYP_WOZKA",
+        "typ_wozka",
+        "TYP",
+        "typ",
+        "model",
+        "MODEL",
+        "MODEL_WOZKA",
+        "marka",
+        "MARKA",
+        "producent",
+        "PRODUCENT",
+        "nazwa",
+        "NAZWA",
+        "rodzaj",
+        "oznaczenie",
+        "opis"
+      ])
+    ) {
+      return false;
+    }
+    if (
+      filters.nr_fabryczny &&
+      !matchesField(filters.nr_fabryczny, [
+        "NR_FABRYCZNY",
+        "nr_fabryczny",
+        "numer_fabryczny",
+        "NR_SERYJNY",
+        "nr_seryjny",
+        "serial",
+        "SERIAL",
+        "serial_number",
+        "NRKATALOGOWY",
+        "nrkatalogowy",
+        "kod",
+        "numer",
+        "id"
+      ])
+    ) {
+      return false;
+    }
+    if (
+      filters.rok_produkcji &&
+      !matchesField(filters.rok_produkcji, [
+        "ROK_PRODUKCJI",
+        "rok_produkcji",
+        "rok",
+        "ROK",
+        "year",
+        "YEAR",
+        "rok_prod",
+        "data_produkcji",
+        "data"
+      ])
+    ) {
+      return false;
+    }
+    if (
+      filters.udzwig &&
+      !matchesField(filters.udzwig, [
+        "UDZWIG",
+        "udzwig",
+        "capacity",
+        "CAPACITY",
+        "ladownosc",
+        "q",
+        "Q",
+        "udzwig_kg"
+      ])
+    ) {
+      return false;
+    }
+    if (
+      filters.napiecie &&
+      !matchesField(filters.napiecie, [
+        "NAPIECIE",
+        "napiecie",
+        "BATERIA",
+        "bateria",
+        "voltage",
+        "VOLTAGE",
+        "aku",
+        "akumulator",
+        "v"
+      ])
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // 1. Endpoint for looking up forklifts by serial number, query or any field in wozki table
 app.post("/api/supabase/lookup", async (req, res) => {
   try {
@@ -215,95 +408,80 @@ app.post("/api/supabase/lookup", async (req, res) => {
     const { serialNumber, searchQuery, filters } = req.body;
     const query = String(searchQuery || serialNumber || "").trim();
 
-    let data: any[] | null = null;
+    const hasQuery = query.length > 0;
+    const hasFilters =
+      filters &&
+      typeof filters === "object" &&
+      Object.values(filters).some((v) => String(v || "").trim().length > 0);
 
-    // 1. If general query provided, attempt multi-column search
-    if (query) {
-      const cleanQuery = query;
+    // If no query and no filters, return first 50 records
+    if (!hasQuery && !hasFilters) {
+      const { data, error } = await supabase.from("wozki").select("*").limit(50);
+      if (error) throw error;
+      return res.json({ success: true, data: data || [] });
+    }
 
-      // Try exact / ilike match on NRKATALOGOWY first
-      const exactRes = await supabase
-        .from("wozki")
-        .select("*")
-        .ilike("NRKATALOGOWY", `%${cleanQuery}%`);
-      
-      if (!exactRes.error && exactRes.data && exactRes.data.length > 0) {
-        data = exactRes.data;
-      } else {
-        // Try OR search across standard columns
-        const orCols = ["NRKATALOGOWY", "TYP_WOZKA", "NR_FABRYCZNY", "ROK_PRODUKCJI", "UDZWIG", "NAPIECIE", "BATERIA", "TYP", "SRODEK_CIEZKOSCI"];
-        const orClause = orCols.map(col => `${col}.ilike.%${cleanQuery}%`).join(",");
-        
-        const orRes = await supabase
-          .from("wozki")
-          .select("*")
-          .or(orClause);
+    // Build Supabase PostgreSQL query
+    let queryBuilder = supabase.from("wozki").select("*");
 
-        if (!orRes.error && orRes.data && orRes.data.length > 0) {
-          data = orRes.data;
+    if (hasQuery) {
+      const tokens = query.split(/\s+/).filter(Boolean);
+      for (const tok of tokens) {
+        const sanitized = tok.replace(/[(),%]/g, "").trim();
+        if (!sanitized) continue;
+        const orExpr = `Kod.ilike.%${sanitized}%,NRKATALOGOWY.ilike.%${sanitized}%,MODEL.ilike.%${sanitized}%,Marka.ilike.%${sanitized}%,Nazwa.ilike.%${sanitized}%,Opis.ilike.%${sanitized}%`;
+        queryBuilder = queryBuilder.or(orExpr);
+      }
+    }
+
+    if (hasFilters && filters) {
+      if (filters.nrkatalogowy && String(filters.nrkatalogowy).trim()) {
+        const val = String(filters.nrkatalogowy).replace(/[(),%]/g, "").trim();
+        queryBuilder = queryBuilder.or(`Kod.ilike.%${val}%,NRKATALOGOWY.ilike.%${val}%`);
+      }
+      if (filters.typ_wozka && String(filters.typ_wozka).trim()) {
+        const val = String(filters.typ_wozka).replace(/[(),%]/g, "").trim();
+        queryBuilder = queryBuilder.or(`MODEL.ilike.%${val}%,Marka.ilike.%${val}%,Nazwa.ilike.%${val}%`);
+      }
+      if (filters.nr_fabryczny && String(filters.nr_fabryczny).trim()) {
+        const val = String(filters.nr_fabryczny).replace(/[(),%]/g, "").trim();
+        queryBuilder = queryBuilder.or(`NRKATALOGOWY.ilike.%${val}%,Opis.ilike.%${val}%,Kod.ilike.%${val}%`);
+      }
+      if (filters.rok_produkcji && String(filters.rok_produkcji).trim()) {
+        const val = String(filters.rok_produkcji).replace(/[(),%]/g, "").trim();
+        queryBuilder = queryBuilder.or(`Opis.ilike.%${val}%,Nazwa.ilike.%${val}%`);
+      }
+      if (filters.udzwig && String(filters.udzwig).trim()) {
+        const val = String(filters.udzwig).replace(/[(),%]/g, "").trim();
+        queryBuilder = queryBuilder.or(`Opis.ilike.%${val}%,Nazwa.ilike.%${val}%`);
+      }
+      if (filters.napiecie && String(filters.napiecie).trim()) {
+        const val = String(filters.napiecie).replace(/[(),%]/g, "").trim();
+        queryBuilder = queryBuilder.or(`Opis.ilike.%${val}%,Nazwa.ilike.%${val}%`);
+      }
+    }
+
+    queryBuilder = queryBuilder.limit(100);
+    let { data: matchedRows, error } = await queryBuilder;
+
+    if (error) {
+      console.error("Supabase query error:", error);
+      throw error;
+    }
+
+    // Fallback: if 0 results found and query has alphanumeric characters (e.g. dashes removed)
+    if ((!matchedRows || matchedRows.length === 0) && hasQuery) {
+      const cleanAlpha = cleanAlphanumericSearch(query);
+      if (cleanAlpha && cleanAlpha !== query.toLowerCase()) {
+        const fallbackOr = `Kod.ilike.%${cleanAlpha}%,NRKATALOGOWY.ilike.%${cleanAlpha}%,MODEL.ilike.%${cleanAlpha}%,Marka.ilike.%${cleanAlpha}%,Nazwa.ilike.%${cleanAlpha}%,Opis.ilike.%${cleanAlpha}%`;
+        const fallbackRes = await supabase.from("wozki").select("*").or(fallbackOr).limit(100);
+        if (fallbackRes.data && fallbackRes.data.length > 0) {
+          matchedRows = fallbackRes.data;
         }
       }
     }
 
-    // 2. Comprehensive fallback: Fetch all rows (up to 1000) and perform in-memory search across EVERY field
-    if (!data || data.length === 0) {
-      const allRows = await supabase
-        .from("wozki")
-        .select("*")
-        .limit(1000);
-      
-      if (!allRows.error && allRows.data && allRows.data.length > 0) {
-        let matched = allRows.data;
-        
-        // Filter by general search query across ALL fields
-        if (query) {
-          const qLow = query.toLowerCase();
-          const qClean = qLow.replace(/[^a-z0-9]/g, "");
-          
-          matched = matched.filter((row: any) => {
-            return Object.values(row).some((val: any) => {
-              if (val === null || val === undefined) return false;
-              const valStr = String(val).toLowerCase();
-              if (valStr.includes(qLow)) return true;
-              if (qClean && valStr.replace(/[^a-z0-9]/g, "").includes(qClean)) return true;
-              return false;
-            });
-          });
-        }
-
-        // Apply granular field filters if present
-        if (filters && typeof filters === 'object') {
-          if (filters.nrkatalogowy) {
-            const f = filters.nrkatalogowy.toLowerCase().trim();
-            matched = matched.filter((r: any) => String(r.NRKATALOGOWY || r.nrkatalogowy || "").toLowerCase().includes(f));
-          }
-          if (filters.typ_wozka) {
-            const f = filters.typ_wozka.toLowerCase().trim();
-            matched = matched.filter((r: any) => String(r.TYP_WOZKA || r.TYP || r.model || "").toLowerCase().includes(f));
-          }
-          if (filters.nr_fabryczny) {
-            const f = filters.nr_fabryczny.toLowerCase().trim();
-            matched = matched.filter((r: any) => String(r.NR_FABRYCZNY || "").toLowerCase().includes(f));
-          }
-          if (filters.rok_produkcji) {
-            const f = filters.rok_produkcji.toLowerCase().trim();
-            matched = matched.filter((r: any) => String(r.ROK_PRODUKCJI || r.rok || "").toLowerCase().includes(f));
-          }
-          if (filters.udzwig) {
-            const f = filters.udzwig.toLowerCase().trim();
-            matched = matched.filter((r: any) => String(r.UDZWIG || "").toLowerCase().includes(f));
-          }
-          if (filters.napiecie) {
-            const f = filters.napiecie.toLowerCase().trim();
-            matched = matched.filter((r: any) => String(r.NAPIECIE || r.BATERIA || "").toLowerCase().includes(f));
-          }
-        }
-
-        data = matched;
-      }
-    }
-
-    return res.json({ success: true, data: data || [] });
+    return res.json({ success: true, data: matchedRows || [] });
   } catch (error: any) {
     console.error("Supabase lookup error:", error);
     return res.status(500).json({ error: error.message || "Błąd wyszukiwania w bazie danych." });
@@ -320,18 +498,10 @@ app.get("/api/supabase/list", async (req, res) => {
     const { data, error } = await supabase
       .from("wozki")
       .select("*")
-      .order("id", { ascending: false })
-      .limit(50);
+      .limit(2000);
 
-    // If 'id' ordering fails (perhaps no 'id' column), fallback to standard select
     if (error) {
-      const fallback = await supabase
-        .from("wozki")
-        .select("*")
-        .limit(50);
-      
-      if (fallback.error) throw fallback.error;
-      return res.json({ success: true, data: fallback.data || [] });
+      throw error;
     }
 
     return res.json({ success: true, data: data || [] });
