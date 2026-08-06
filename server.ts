@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Enable CORS and parse JSON request bodies up to 50MB (necessary for high-res base64 images)
 app.use(cors());

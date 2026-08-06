@@ -1016,8 +1016,10 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         function isStaticMode() {
             if (currentMode === 'static') return true;
             if (currentMode === 'server') return false;
-            // auto-detect: only default to static mode on actual GitHub Pages (github.io)
-            return window.location.hostname.includes('github.io');
+            // auto-detect: static mode on GitHub Pages (github.io), file protocol, or static hosts without Node backend
+            return window.location.hostname.includes('github.io') || 
+                   window.location.protocol === 'file:' || 
+                   (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !window.location.hostname.includes('run.app') && !window.location.hostname.includes('ais-'));
         }
 
         // HTML escaping utility for safe DOM injection
@@ -1440,7 +1442,12 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         // Direct Client-side Gemini API Caller (Solution B / Static Pages)
         async function performClientSideOcr(mimeType, base64Data, model, promptType = 'plate') {
             if (!geminiApiKey) {
-                throw new Error("Wymagany jest klucz API Gemini w trybie statycznym! Kliknij ikonę ustawień w prawym górnym rogu i wprowadź klucz.");
+                if (settingsToggle) {
+                    setTimeout(() => {
+                        settingsToggle.click();
+                    }, 200);
+                }
+                throw new Error("Wymagany jest klucz API Gemini w trybie statycznym / GitHub Pages! Otworzono okno ustawień — wprowadź swój bezpłatny klucz API Google Gemini (pobierz z aistudio.google.com/app/apikey).");
             }
             
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
@@ -1523,26 +1530,40 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 const mimeType = imageInput.files[0] ? imageInput.files[0].type : "image/jpeg";
                 
                 let resData;
-                if (isStaticMode()) {
+                let usedServer = false;
+                if (!isStaticMode()) {
+                    try {
+                        const response = await fetch("/api/analyze", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                mimeType: mimeType,
+                                imageBase64: uploadedFileBase64,
+                                model: selectedModel,
+                                promptType: 'plate'
+                            })
+                        });
+
+                        if (response.ok) {
+                            resData = await response.json();
+                            usedServer = true;
+                        } else {
+                            const errData = await response.json().catch(() => ({}));
+                            // If 404 (static host) or server error, allow fallback
+                            if (response.status === 404) {
+                                console.warn("Endpoint /api/analyze nie znaleziony (tryb statyczny / GitHub Pages) - przełączam na bezpośredni OCR.");
+                            } else {
+                                throw new Error(errData.error || `Błąd serwera (${response.status})`);
+                            }
+                        }
+                    } catch (netErr) {
+                        console.warn("Błąd połączenia z /api/analyze, próba OCR bezpośredniego:", netErr);
+                    }
+                }
+
+                if (!usedServer) {
                     const parsed = await performClientSideOcr(mimeType, uploadedFileBase64, selectedModel, 'plate');
                     resData = { data: parsed };
-                } else {
-                    const response = await fetch("/api/analyze", {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            mimeType: mimeType,
-                            imageBase64: uploadedFileBase64,
-                            model: selectedModel,
-                            promptType: 'plate'
-                        })
-                    });
-
-                    if (!response.ok) {
-                        const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.error || `Błąd serwera (${response.status})`);
-                    }
-                    resData = await response.json();
                 }
 
                 parsedResults = resData.data;
@@ -1599,26 +1620,39 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     const mimeType = (imageInputScreen.files && imageInputScreen.files[0]) ? imageInputScreen.files[0].type : "image/jpeg";
                     
                     let resData;
-                    if (isStaticMode()) {
+                    let usedServer = false;
+                    if (!isStaticMode()) {
+                        try {
+                            const response = await fetch("/api/analyze", {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    mimeType: mimeType,
+                                    imageBase64: uploadedScreenFileBase64,
+                                    model: selectedModel,
+                                    promptType: 'screen'
+                                })
+                            });
+
+                            if (response.ok) {
+                                resData = await response.json();
+                                usedServer = true;
+                            } else {
+                                const errData = await response.json().catch(() => ({}));
+                                if (response.status === 404) {
+                                    console.warn("Endpoint /api/analyze nie znaleziony (tryb statyczny / GitHub Pages) - przełączam na bezpośredni OCR ekranu.");
+                                } else {
+                                    throw new Error(errData.error || `Błąd serwera (${response.status})`);
+                                }
+                            }
+                        } catch (netErr) {
+                            console.warn("Błąd połączenia z /api/analyze, próba OCR ekranu bezpośredniego:", netErr);
+                        }
+                    }
+
+                    if (!usedServer) {
                         const parsed = await performClientSideOcr(mimeType, uploadedScreenFileBase64, selectedModel, 'screen');
                         resData = { data: parsed };
-                    } else {
-                        const response = await fetch("/api/analyze", {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                mimeType: mimeType,
-                                imageBase64: uploadedScreenFileBase64,
-                                model: selectedModel,
-                                promptType: 'screen'
-                            })
-                        });
-
-                        if (!response.ok) {
-                            const errData = await response.json().catch(() => ({}));
-                            throw new Error(errData.error || `Błąd serwera (${response.status})`);
-                        }
-                        resData = await response.json();
                     }
 
                     parsedScreenResults = resData.data;
