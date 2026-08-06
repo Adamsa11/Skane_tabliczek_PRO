@@ -46,21 +46,25 @@ Aplikacja będzie dostępna w przeglądarce pod adresem:
 
 ## 🌐 Uruchomienie na GitHub Pages (Hosting Statyczny)
 
-Aplikacja posiada wbudowany **tryb bezserwerowy (Static Mode)**, dzięki czemu może działać bezpośrednio na darmowym hostingu **GitHub Pages**:
+Aplikacja posiada wbudowany **tryb bezserwerowy (Static Mode)** oraz dodany plik `.nojekyll` i automatyczny workflow GitHub Actions, co zapobiega zawieszaniu się procesu budowania Jekyll na GitHub Pages:
 
-1. W swoim repozytorium na GitHubie wejdź w zakładkę **Settings** (Ustawienia).
-2. W menu bocznym po lewej stronie wybierz **Pages**.
-3. W sekcji **Build and deployment**:
-   - **Source**: `Deploy from a branch`
-   - **Branch**: `main` (lub `master`), folder: `/ (root)`
-   - Kliknij **Save**.
-4. Po około 1 minucie Twoja strona będzie dostępna pod adresem:  
-   `https://twoj-login.github.io/nazwa-repozytorium/`
-5. Po otwarciu strony:
-   - Kliknij ikonkę **Ustawień ⚙️** w prawym górnym rogu.
-   - Wklej swój bezpłatny klucz API Google Gemini (z [Google AI Studio](https://aistudio.google.com/app/apikey)).
-   - Kliknij **Zapisz ustawienia**.
-   - Gotowe! Aplikacja wykonuje odczyt OCR oraz zapytania do bazy Supabase bezpośrednio z przeglądarki.
+### Opcja 1: Automatyczny deploy przez GitHub Actions (Zalecane)
+1. W repozytorium na GitHub przejdź do zakładki **Settings** -> **Pages**.
+2. W sekcji **Build and deployment** w polu **Source** wybierz: **GitHub Actions**.
+3. Wejdź w zakładkę **Actions** u góry i zobaczysz, jak proces *Deploy to GitHub Pages* kończy się sukcesem w kilkanaście sekund.
+4. Twoja strona będzie dostępna pod adresem: `https://twoj-login.github.io/nazwa-repozytorium/`.
+
+### Opcja 2: Klasyczny Deploy z gałęzi (Deploy from a branch)
+1. W repozytorium na GitHub przejdź do zakładki **Settings** -> **Pages**.
+2. W sekcji **Build and deployment** w polu **Source** wybierz: **Deploy from a branch**.
+3. Wybierz gałąź **main** (lub **master**) oraz folder `/ (root)` i kliknij **Save**.
+4. Dzięki dodanemu do repozytorium plikowi `.nojekyll` GitHub nie zawiesi się na przetwarzaniu Jekyll.
+
+### Pierwsze uruchomienie na GitHub Pages:
+1. Otwórz wdrożoną stronę w przeglądarce.
+2. Kliknij ikonkę **Ustawień ⚙️** w prawym górnym rogu.
+3. Wklej swój bezpłatny klucz API Google Gemini (pobierz go z [Google AI Studio](https://aistudio.google.com/app/apikey)).
+4. Kliknij **Zapisz ustawienia**. Aplikacja będzie od razu gotowa do pracy i połączona z bazą Supabase!
 
 ---
 
