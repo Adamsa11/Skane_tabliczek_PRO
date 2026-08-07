@@ -5,26 +5,27 @@ import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 
 // Enable CORS and parse JSON request bodies up to 50MB (necessary for high-res base64 images)
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Initialize Supabase Client safely from environment variables
-const supabaseUrl = process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.SUPABASE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+// Initialize Supabase Client safely from environment variables or fallback defaults
+const defaultSupabaseUrl = "https://nhqambvmghlhzjtdvljz.supabase.co";
+const defaultSupabaseAnonKey = "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+
+const supabaseUrl = process.env.SUPABASE_URL || defaultSupabaseUrl;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || defaultSupabaseAnonKey;
 
 let supabase: any = null;
 try {
   if (supabaseUrl && supabaseKey) {
     supabase = createClient(supabaseUrl, supabaseKey);
-    console.log("Supabase client initialized successfully with URL:", supabaseUrl);
+    console.log(`Supabase client initialized successfully for URL: ${supabaseUrl}`);
+  } else {
+    console.warn("Supabase credentials missing: URL or Key is empty.");
   }
 } catch (err) {
   console.error("Failed to initialize Supabase client:", err);
@@ -33,8 +34,8 @@ try {
 // Endpoint to provide public Supabase URL and public publishable/anon key to frontend
 app.get("/api/supabase/config", (_req, res) => {
   return res.json({
-    supabaseUrl: process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co",
-    supabaseAnonKey: process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC"
+    supabaseUrl: supabaseUrl,
+    supabaseAnonKey: process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || defaultSupabaseAnonKey
   });
 });
 
@@ -210,6 +211,73 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
   }
 });
 
+// In-memory catalog cache for fast lookup & list of all forklift records
+let cachedWozkiCatalog: any[] = [];
+let lastCatalogFetchTime = 0;
+let isFetchingCatalog = false;
+
+async function fetchFullWozkiCatalog(): Promise<any[]> {
+  if (isFetchingCatalog) return cachedWozkiCatalog;
+  isFetchingCatalog = true;
+
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+
+    // Fetch all records in parallel chunks (0-999, 1000-1999, ... up to 12000)
+    const promises: Promise<any[]>[] = [];
+    for (let i = 0; i < 12; i++) {
+      const from = i * 1000;
+      const to = (i + 1) * 1000 - 1;
+      promises.push(
+        fetch(`${supabaseUrl}/rest/v1/wozki?select=*`, {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            Range: `${from}-${to}`
+          }
+        }).then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
+          }
+          return [];
+        }).catch((err) => {
+          console.warn(`[Supabase] Chunk ${from}-${to} fetch failed:`, err.message);
+          return [];
+        })
+      );
+    }
+
+    const pages = await Promise.all(promises);
+    const all = pages.flat();
+
+    if (all.length > 0) {
+      // Deduplicate by id or Kod
+      const uniqueMap = new Map();
+      all.forEach((item) => {
+        if (!item) return;
+        const key = item.id !== undefined && item.id !== null ? String(item.id) : String(item.Kod || item.NRKATALOGOWY || "");
+        if (key && !uniqueMap.has(key)) {
+          uniqueMap.set(key, item);
+        }
+      });
+      cachedWozkiCatalog = Array.from(uniqueMap.values());
+      lastCatalogFetchTime = Date.now();
+      console.log(`[Supabase] Cached ${cachedWozkiCatalog.length} wozki records in memory.`);
+    }
+  } catch (err: any) {
+    console.error("[Supabase] fetchFullWozkiCatalog error:", err.message);
+  } finally {
+    isFetchingCatalog = false;
+  }
+
+  return cachedWozkiCatalog;
+}
+
+// Initial background load on startup
+fetchFullWozkiCatalog().catch(console.error);
+
 // Helper functions for partial, diacritics-insensitive string searching
 function normalizeSearchText(str: any): string {
   if (str === null || str === undefined) return "";
@@ -274,123 +342,41 @@ function rowMatchesWozekQuery(row: any, query: string, filters?: any): boolean {
         }
       }
 
-      // Fallback: if candidate key was not specifically found, check full row text
+      // Fallback: if candidate key was not specifically matched, check full row text
       return fullRowText.includes(fNorm) || (fClean.length > 0 && cleanRowText.includes(fClean));
     };
 
-    if (
-      filters.nrkatalogowy &&
-      !matchesField(filters.nrkatalogowy, [
-        "NRKATALOGOWY",
-        "nrkatalogowy",
-        "kod",
-        "KOD",
-        "numer",
-        "nr_katalogowy",
-        "NR_KATALOGOWY",
-        "NR_FABRYCZNY",
-        "nr_fabryczny",
-        "numer_fabryczny",
-        "NR_SERYJNY",
-        "nr_seryjny",
-        "serial",
-        "SERIAL",
-        "serial_number",
-        "nr_ewidencyjny",
-        "id",
-        "ID"
-      ])
-    ) {
+    if (filters.kod && !matchesField(filters.kod, ["Kod", "kod", "KOD", "id", "ID", "NRKATALOGOWY", "nrkatalogowy"])) {
       return false;
     }
-    if (
-      filters.typ_wozka &&
-      !matchesField(filters.typ_wozka, [
-        "TYP_WOZKA",
-        "typ_wozka",
-        "TYP",
-        "typ",
-        "model",
-        "MODEL",
-        "MODEL_WOZKA",
-        "marka",
-        "MARKA",
-        "producent",
-        "PRODUCENT",
-        "nazwa",
-        "NAZWA",
-        "rodzaj",
-        "oznaczenie",
-        "opis"
-      ])
-    ) {
+    if (filters.nrkatalogowy && !matchesField(filters.nrkatalogowy, ["NRKATALOGOWY", "nrkatalogowy", "kod", "Kod", "numer", "nr_katalogowy", "id", "ID"])) {
       return false;
     }
-    if (
-      filters.nr_fabryczny &&
-      !matchesField(filters.nr_fabryczny, [
-        "NR_FABRYCZNY",
-        "nr_fabryczny",
-        "numer_fabryczny",
-        "NR_SERYJNY",
-        "nr_seryjny",
-        "serial",
-        "SERIAL",
-        "serial_number",
-        "NRKATALOGOWY",
-        "nrkatalogowy",
-        "kod",
-        "numer",
-        "id"
-      ])
-    ) {
+    if (filters.marka && !matchesField(filters.marka, ["Marka", "marka", "MARKA", "PRODUCENT", "producent", "PRODUCENT_WOZKA", "Nazwa", "nazwa"])) {
       return false;
     }
-    if (
-      filters.rok_produkcji &&
-      !matchesField(filters.rok_produkcji, [
-        "ROK_PRODUKCJI",
-        "rok_produkcji",
-        "rok",
-        "ROK",
-        "year",
-        "YEAR",
-        "rok_prod",
-        "data_produkcji",
-        "data"
-      ])
-    ) {
+    if (filters.model && !matchesField(filters.model, ["MODEL", "model", "MODEL_WOZKA", "model_wozka", "TYP_WOZKA", "typ_wozka", "TYP", "typ", "OZNACZENIE", "Nazwa", "nazwa"])) {
       return false;
     }
-    if (
-      filters.udzwig &&
-      !matchesField(filters.udzwig, [
-        "UDZWIG",
-        "udzwig",
-        "capacity",
-        "CAPACITY",
-        "ladownosc",
-        "q",
-        "Q",
-        "udzwig_kg"
-      ])
-    ) {
+    if (filters.typ_wozka && !matchesField(filters.typ_wozka, ["TYP_WOZKA", "TYP", "MODEL", "model", "marka", "Marka", "producent", "nazwa", "Nazwa", "rodzaj"])) {
       return false;
     }
-    if (
-      filters.napiecie &&
-      !matchesField(filters.napiecie, [
-        "NAPIECIE",
-        "napiecie",
-        "BATERIA",
-        "bateria",
-        "voltage",
-        "VOLTAGE",
-        "aku",
-        "akumulator",
-        "v"
-      ])
-    ) {
+    if (filters.nazwa && !matchesField(filters.nazwa, ["Nazwa", "nazwa", "NAZWA", "NAZWA_WOZKA", "Opis", "opis", "MODEL", "model"])) {
+      return false;
+    }
+    if (filters.opis && !matchesField(filters.opis, ["Opis", "opis", "OPIS", "parametry", "silnik", "mth", "bateria", "udzwig", "rok"])) {
+      return false;
+    }
+    if (filters.nr_fabryczny && !matchesField(filters.nr_fabryczny, ["NR_FABRYCZNY", "nr_fabryczny", "nr_seryjny", "serial", "numer_fabryczny", "NRKATALOGOWY", "Kod"])) {
+      return false;
+    }
+    if (filters.rok_produkcji && !matchesField(filters.rok_produkcji, ["ROK_PRODUKCJI", "rok", "year", "rok_prod", "Opis", "opis"])) {
+      return false;
+    }
+    if (filters.udzwig && !matchesField(filters.udzwig, ["UDZWIG", "udzwig", "capacity", "ladownosc", "q", "Opis", "opis", "Nazwa", "nazwa"])) {
+      return false;
+    }
+    if (filters.napiecie && !matchesField(filters.napiecie, ["NAPIECIE", "napiecie", "BATERIA", "bateria", "voltage", "aku", "Opis", "opis"])) {
       return false;
     }
   }
@@ -401,110 +387,70 @@ function rowMatchesWozekQuery(row: any, query: string, filters?: any): boolean {
 // 1. Endpoint for looking up forklifts by serial number, query or any field in wozki table
 app.post("/api/supabase/lookup", async (req, res) => {
   try {
-    if (!supabase) {
-      return res.status(500).json({ error: "Supabase client is not initialized. Please verify configuration." });
-    }
-
     const { serialNumber, searchQuery, filters } = req.body;
     const query = String(searchQuery || serialNumber || "").trim();
 
+    // Ensure we have catalog records in memory
+    if (cachedWozkiCatalog.length === 0 || Date.now() - lastCatalogFetchTime > 300000) {
+      await fetchFullWozkiCatalog();
+    }
+
+    let rows = cachedWozkiCatalog;
     const hasQuery = query.length > 0;
-    const hasFilters =
-      filters &&
-      typeof filters === "object" &&
-      Object.values(filters).some((v) => String(v || "").trim().length > 0);
+    const hasFilters = filters && typeof filters === "object" && Object.values(filters).some((v) => String(v || "").trim().length > 0);
 
-    // If no query and no filters, return first 50 records
-    if (!hasQuery && !hasFilters) {
-      const { data, error } = await supabase.from("wozki").select("*").limit(50);
-      if (error) throw error;
-      return res.json({ success: true, data: data || [] });
-    }
-
-    // Build Supabase PostgreSQL query
-    let queryBuilder = supabase.from("wozki").select("*");
-
-    if (hasQuery) {
-      const tokens = query.split(/\s+/).filter(Boolean);
-      for (const tok of tokens) {
-        const sanitized = tok.replace(/[(),%]/g, "").trim();
-        if (!sanitized) continue;
-        const orExpr = `Kod.ilike.%${sanitized}%,NRKATALOGOWY.ilike.%${sanitized}%,MODEL.ilike.%${sanitized}%,Marka.ilike.%${sanitized}%,Nazwa.ilike.%${sanitized}%,Opis.ilike.%${sanitized}%`;
-        queryBuilder = queryBuilder.or(orExpr);
+    // If cache has records, filter them
+    let matched: any[] = [];
+    if (rows.length > 0) {
+      if (!hasQuery && !hasFilters) {
+        matched = rows;
+      } else {
+        matched = rows.filter((row: any) => rowMatchesWozekQuery(row, query, filters));
       }
     }
 
-    if (hasFilters && filters) {
-      if (filters.nrkatalogowy && String(filters.nrkatalogowy).trim()) {
-        const val = String(filters.nrkatalogowy).replace(/[(),%]/g, "").trim();
-        queryBuilder = queryBuilder.or(`Kod.ilike.%${val}%,NRKATALOGOWY.ilike.%${val}%`);
-      }
-      if (filters.typ_wozka && String(filters.typ_wozka).trim()) {
-        const val = String(filters.typ_wozka).replace(/[(),%]/g, "").trim();
-        queryBuilder = queryBuilder.or(`MODEL.ilike.%${val}%,Marka.ilike.%${val}%,Nazwa.ilike.%${val}%`);
-      }
-      if (filters.nr_fabryczny && String(filters.nr_fabryczny).trim()) {
-        const val = String(filters.nr_fabryczny).replace(/[(),%]/g, "").trim();
-        queryBuilder = queryBuilder.or(`NRKATALOGOWY.ilike.%${val}%,Opis.ilike.%${val}%,Kod.ilike.%${val}%`);
-      }
-      if (filters.rok_produkcji && String(filters.rok_produkcji).trim()) {
-        const val = String(filters.rok_produkcji).replace(/[(),%]/g, "").trim();
-        queryBuilder = queryBuilder.or(`Opis.ilike.%${val}%,Nazwa.ilike.%${val}%`);
-      }
-      if (filters.udzwig && String(filters.udzwig).trim()) {
-        const val = String(filters.udzwig).replace(/[(),%]/g, "").trim();
-        queryBuilder = queryBuilder.or(`Opis.ilike.%${val}%,Nazwa.ilike.%${val}%`);
-      }
-      if (filters.napiecie && String(filters.napiecie).trim()) {
-        const val = String(filters.napiecie).replace(/[(),%]/g, "").trim();
-        queryBuilder = queryBuilder.or(`Opis.ilike.%${val}%,Nazwa.ilike.%${val}%`);
-      }
-    }
-
-    queryBuilder = queryBuilder.limit(100);
-    let { data: matchedRows, error } = await queryBuilder;
-
-    if (error) {
-      console.error("Supabase query error:", error);
-      throw error;
-    }
-
-    // Fallback: if 0 results found and query has alphanumeric characters (e.g. dashes removed)
-    if ((!matchedRows || matchedRows.length === 0) && hasQuery) {
-      const cleanAlpha = cleanAlphanumericSearch(query);
-      if (cleanAlpha && cleanAlpha !== query.toLowerCase()) {
-        const fallbackOr = `Kod.ilike.%${cleanAlpha}%,NRKATALOGOWY.ilike.%${cleanAlpha}%,MODEL.ilike.%${cleanAlpha}%,Marka.ilike.%${cleanAlpha}%,Nazwa.ilike.%${cleanAlpha}%,Opis.ilike.%${cleanAlpha}%`;
-        const fallbackRes = await supabase.from("wozki").select("*").or(fallbackOr).limit(100);
-        if (fallbackRes.data && fallbackRes.data.length > 0) {
-          matchedRows = fallbackRes.data;
+    // If query has exact match or if cache returned few items, also query Supabase directly for redundancy
+    if (supabase && (hasQuery || hasFilters)) {
+      try {
+        let sbQuery = supabase.from("wozki").select("*");
+        if (hasQuery) {
+          const encQ = query.replace(/[%,*]/g, "");
+          sbQuery = sbQuery.or(`Kod.ilike.*${encQ}*,NRKATALOGOWY.ilike.*${encQ}*,MODEL.ilike.*${encQ}*,Marka.ilike.*${encQ}*,Nazwa.ilike.*${encQ}*,Opis.ilike.*${encQ}*`);
         }
+        const { data: directData } = await sbQuery.limit(100);
+        if (Array.isArray(directData) && directData.length > 0) {
+          const existingIds = new Set(matched.map((m: any) => String(m.id !== undefined ? m.id : m.Kod)));
+          directData.forEach((item: any) => {
+            const idKey = String(item.id !== undefined ? item.id : item.Kod);
+            if (!existingIds.has(idKey)) {
+              if (rowMatchesWozekQuery(item, query, filters)) {
+                matched.push(item);
+                existingIds.add(idKey);
+              }
+            }
+          });
+        }
+      } catch (directErr) {
+        console.warn("[Supabase lookup] Direct fallback error:", directErr);
       }
     }
 
-    return res.json({ success: true, data: matchedRows || [] });
+    return res.json({ success: true, data: matched });
   } catch (error: any) {
     console.error("Supabase lookup error:", error);
     return res.status(500).json({ error: error.message || "Błąd wyszukiwania w bazie danych." });
   }
 });
 
-// 2. Endpoint for listing recent forklifts
+// 2. Endpoint for listing all forklifts
 app.get("/api/supabase/list", async (req, res) => {
   try {
-    if (!supabase) {
-      return res.status(500).json({ error: "Supabase client is not initialized." });
+    // If cache is empty or older than 5 minutes, refresh
+    if (cachedWozkiCatalog.length === 0 || Date.now() - lastCatalogFetchTime > 300000) {
+      await fetchFullWozkiCatalog();
     }
 
-    const { data, error } = await supabase
-      .from("wozki")
-      .select("*")
-      .limit(2000);
-
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ success: true, data: data || [] });
+    return res.json({ success: true, data: cachedWozkiCatalog || [] });
   } catch (error: any) {
     console.error("Supabase list error:", error);
     return res.status(500).json({ error: error.message || "Błąd pobierania danych z bazy." });
@@ -550,14 +496,6 @@ app.post("/api/supabase/insert", async (req, res) => {
       error: error.message || "Błąd dodawania rekordu. Upewnij się, że nie naruszasz reguł RLS w Supabase." 
     });
   }
-});
-
-// Endpoint to return Supabase configuration (URL and key) for the static client fallback
-app.get("/api/supabase/config", (req, res) => {
-  return res.json({
-    supabaseUrl: supabaseUrl,
-    supabaseAnonKey: supabaseKey || process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC"
-  });
 });
 
 // 4. Endpoint to save operations/scans with client, topic, image and timestamp
@@ -621,41 +559,66 @@ app.get("/api/supabase/list-operations", async (req, res) => {
     }
 
     const { id, klient, temat, nrkatalogowy, wozek_id, opis } = req.query;
-    let query = supabase.from("operacje").select("*");
+    let baseQuery = supabase.from("operacje").select("*");
 
     if (id) {
       const cleanId = String(id).trim();
       const parsedId = parseInt(cleanId, 10);
       if (!isNaN(parsedId) && String(parsedId) === cleanId) {
-        query = query.eq("id", parsedId);
+        baseQuery = baseQuery.eq("id", parsedId);
       } else {
-        // Fallback for UUIDs or textual IDs
-        query = query.eq("id", cleanId);
+        baseQuery = baseQuery.eq("id", cleanId);
       }
     }
     if (wozek_id) {
       const cleanWozekId = String(wozek_id).trim();
       const parsedWozekId = parseInt(cleanWozekId, 10);
       if (!isNaN(parsedWozekId) && String(parsedWozekId) === cleanWozekId) {
-        query = query.eq("wozek_id", parsedWozekId);
+        baseQuery = baseQuery.eq("wozek_id", parsedWozekId);
       } else {
-        query = query.eq("wozek_id", cleanWozekId);
+        baseQuery = baseQuery.eq("wozek_id", cleanWozekId);
       }
     }
     if (klient) {
-      query = query.ilike("klient", `%${String(klient).trim()}%`);
+      baseQuery = baseQuery.ilike("klient", `%${String(klient).trim()}%`);
     }
     if (temat) {
-      query = query.ilike("temat", `%${String(temat).trim()}%`);
+      baseQuery = baseQuery.ilike("temat", `%${String(temat).trim()}%`);
     }
     if (opis) {
-      query = query.ilike("opis", `%${String(opis).trim()}%`);
+      baseQuery = baseQuery.ilike("opis", `%${String(opis).trim()}%`);
     }
     if (nrkatalogowy) {
-      query = query.ilike("nrkatalogowy", `%${String(nrkatalogowy).trim()}%`);
+      baseQuery = baseQuery.ilike("nrkatalogowy", `%${String(nrkatalogowy).trim()}%`);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(100);
+    let data: any[] | null = null;
+    let error: any = null;
+
+    // Try ordering by created_at descending first
+    try {
+      const resOrdered = await baseQuery.order("created_at", { ascending: false }).limit(100);
+      data = resOrdered.data;
+      error = resOrdered.error;
+    } catch (ordErr) {
+      console.warn("Order by created_at failed, attempting unordered fetch:", ordErr);
+    }
+
+    // Fallback without created_at ordering if column does not exist
+    if (error || !data) {
+      try {
+        let fallbackQuery = supabase.from("operacje").select("*").limit(100);
+        if (id) fallbackQuery = fallbackQuery.eq("id", String(id).trim());
+        if (wozek_id) fallbackQuery = fallbackQuery.eq("wozek_id", String(wozek_id).trim());
+        const resUnordered = await fallbackQuery;
+        if (!resUnordered.error) {
+          data = resUnordered.data;
+          error = null;
+        }
+      } catch (fbErr) {
+        console.warn("Fallback unordered fetch also encountered error:", fbErr);
+      }
+    }
 
     if (error) {
       if (checkIfTableMissing(error)) {
