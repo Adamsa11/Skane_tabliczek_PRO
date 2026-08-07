@@ -168,6 +168,31 @@
                         <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie tabliczki
                     </h3>
                     
+                    <!-- Baner klucza API dla trybu GitHub Pages / Bezserwerowego -->
+                    <div id="staticKeyBanner" class="hidden mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs">
+                        <div class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-key text-amber-500 text-sm mt-0.5"></i>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="font-bold text-slate-800 dark:text-slate-100">Tryb GitHub Pages / Bezserwerowy</p>
+                                    <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded">Wymaga klucza AI</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                    Na hostingu statycznym (GitHub Pages) do odczytu tabliczek potrzebny jest darmowy klucz Google Gemini API.
+                                </p>
+                                <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                                    <input type="password" id="quickApiKeyInput" placeholder="Wklej klucz AIzaSy..." class="text-xs py-1.5 px-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 flex-1 min-w-[160px] text-slate-800 dark:text-slate-200 font-mono">
+                                    <button onclick="saveQuickApiKey()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
+                                        <i class="fa-solid fa-check"></i> Zapisz
+                                    </button>
+                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] text-brand-500 hover:underline font-bold flex items-center gap-1">
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Pobierz darmowy klucz
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
                         <input type="file" id="imageInput" accept="image/*" class="hidden">
                         
@@ -757,9 +782,15 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                             <i class="fa-solid fa-eye" id="eyeIcon"></i>
                         </button>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
-                        Bezpiecznie zapisany lokalnie w Twojej przeglądarce. Pobierz bezpłatny klucz na <a href="https://aistudio.google.com/" target="_blank" class="text-brand-500 font-bold hover:underline inline-flex items-center gap-0.5">Google AI Studio <i class="fa-solid fa-up-right-from-square text-[8px]"></i></a>.
-                    </p>
+                    <div class="flex items-center justify-between mt-1.5 gap-2">
+                        <p class="text-[10px] text-slate-400 leading-relaxed">
+                            Pobierz bezpłatny klucz na <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-brand-500 font-bold hover:underline inline-flex items-center gap-0.5">Google AI Studio <i class="fa-solid fa-up-right-from-square text-[8px]"></i></a>.
+                        </p>
+                        <button type="button" onclick="testGeminiApiKey()" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all shrink-0 flex items-center gap-1">
+                            <i class="fa-solid fa-bolt text-brand-500"></i> Testuj Gemini
+                        </button>
+                    </div>
+                    <div id="geminiTestResult" class="hidden mt-2 p-2 rounded-xl text-[11px]"></div>
                 </div>
 
                 <div id="supabaseConfigContainer" class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
@@ -771,6 +802,13 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                         <label for="supabaseKeyInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Supabase Anon / Service Key</label>
                         <input type="password" id="supabaseKeyInput" placeholder="Wklej klucz..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
                     </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <button type="button" onclick="testSupabaseConnection()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-database text-emerald-500"></i> Testuj połączenie z bazą
+                        </button>
+                        <span id="supabaseTestStatus" class="text-[10px] text-slate-400"></span>
+                    </div>
+                    <div id="supabaseTestResult" class="hidden p-2 rounded-xl text-[11px]"></div>
                 </div>
             </div>
 
@@ -1002,39 +1040,142 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         let matchedWozek = null;
 
         // --- Connection Mode Setup & Variables ---
+        let hasServerBackend = false;
         let currentMode = localStorage.getItem('sawtrak_conn_mode') || 'auto';
         let geminiApiKey = localStorage.getItem('sawtrak_gemini_key') || '';
         let supabaseUrl = localStorage.getItem('sawtrak_supabase_url') || "https://nhqambvmghlhzjtdvljz.supabase.co";
         let supabaseAnonKey = localStorage.getItem('sawtrak_supabase_anon_key') || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
 
-        // Fetch correct credentials from Node server and persist them in localStorage for Static Mode (e.g., GitHub Pages)
-        async function fetchServerConfig() {
-            if (!isStaticMode()) {
-                try {
-                    const response = await fetch('/api/supabase/config');
-                    if (response.ok) {
-                        const config = await response.json();
-                        if (config.supabaseUrl && config.supabaseUrl !== "https://nhqambvmghlhzjtdvljz.supabase.co") {
-                            localStorage.setItem('sawtrak_supabase_url', config.supabaseUrl);
-                            supabaseUrl = config.supabaseUrl;
-                        }
-                        if (config.supabaseAnonKey && config.supabaseAnonKey !== "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC") {
-                            localStorage.setItem('sawtrak_supabase_anon_key', config.supabaseAnonKey);
-                            supabaseAnonKey = config.supabaseAnonKey;
-                        }
-                    }
-                } catch (err) {
-                    console.error("Błąd pobierania konfiguracji z serwera:", err);
-                }
-            }
-        }
-
-        // Determine if we are in direct-client (static) mode
+        // Determine if we are in direct-client (static) mode (e.g. GitHub Pages)
         function isStaticMode() {
             if (currentMode === 'static') return true;
             if (currentMode === 'server') return false;
-            // auto-detect: only default to static mode on actual GitHub Pages (github.io)
-            return window.location.hostname.includes('github.io');
+            // auto-detect: static mode if on GitHub Pages, file://, or when no server backend is running
+            if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+                return true;
+            }
+            return !hasServerBackend;
+        }
+
+        // Initialize and detect server capabilities
+        async function fetchServerConfig() {
+            try {
+                const response = await fetch('/api/supabase/config', { cache: 'no-store' });
+                if (response.ok) {
+                    const config = await response.json();
+                    hasServerBackend = true;
+                    if (config.supabaseUrl && config.supabaseUrl !== "https://nhqambvmghlhzjtdvljz.supabase.co") {
+                        localStorage.setItem('sawtrak_supabase_url', config.supabaseUrl);
+                        supabaseUrl = config.supabaseUrl;
+                    }
+                    if (config.supabaseAnonKey && config.supabaseAnonKey !== "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC") {
+                        localStorage.setItem('sawtrak_supabase_anon_key', config.supabaseAnonKey);
+                        supabaseAnonKey = config.supabaseAnonKey;
+                    }
+                } else {
+                    hasServerBackend = false;
+                }
+            } catch (err) {
+                hasServerBackend = false;
+            }
+            updateConnectionStatusUI();
+        }
+
+        // Quick API key save handler from the banner
+        function saveQuickApiKey() {
+            const input = document.getElementById('quickApiKeyInput');
+            if (!input || !input.value.trim()) {
+                showToast("Wprowadź poprawny klucz Google Gemini API!", "error");
+                return;
+            }
+            geminiApiKey = input.value.trim();
+            localStorage.setItem('sawtrak_gemini_key', geminiApiKey);
+            if (geminiApiKeyInput) geminiApiKeyInput.value = geminiApiKey;
+            updateConnectionStatusUI();
+            showToast("Klucz Gemini API został zapisany pomyślnie!", "success");
+        }
+
+        // Test Gemini API key function
+        async function testGeminiApiKey() {
+            const keyToTest = (geminiApiKeyInput ? geminiApiKeyInput.value.trim() : '') || geminiApiKey;
+            const resEl = document.getElementById('geminiTestResult');
+            if (!resEl) return;
+
+            if (!keyToTest) {
+                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Wprowadź klucz API przed testem.`;
+                resEl.classList.remove('hidden');
+                return;
+            }
+
+            resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-blue-500/10 text-blue-500 border border-blue-500/20";
+            resEl.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-1"></i> Testowanie połączenia z Google Gemini API...`;
+            resEl.classList.remove('hidden');
+
+            const testModels = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-3.1-flash-lite'];
+            let lastError = "";
+            let successModel = "";
+
+            for (const m of testModels) {
+                try {
+                    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${keyToTest}`;
+                    const res = await fetch(testUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: "ping" }] }]
+                        })
+                    });
+
+                    if (res.ok) {
+                        successModel = m;
+                        break;
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        lastError = err?.error?.message || `HTTP ${res.status}`;
+                    }
+                } catch (e) {
+                    lastError = e.message || "Błąd sieci";
+                }
+            }
+
+            if (successModel) {
+                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <b>Klucz poprawny!</b> Połączono z modelem ${successModel}.`;
+            } else {
+                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Błąd testu: ${escapeHtml(lastError)}`;
+            }
+        }
+
+        // Test Supabase connection function
+        async function testSupabaseConnection() {
+            const resEl = document.getElementById('supabaseTestResult');
+            const statusEl = document.getElementById('supabaseTestStatus');
+            if (!resEl) return;
+
+            resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-blue-500/10 text-blue-500 border border-blue-500/20";
+            resEl.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-1"></i> Testowanie połączenia z bazą Supabase...`;
+            resEl.classList.remove('hidden');
+
+            try {
+                const res = await staticSupabaseRequest('/rest/v1/wozki?select=id&limit=5');
+                if (res.ok) {
+                    const data = await res.json();
+                    const count = Array.isArray(data) ? data.length : 0;
+                    resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+                    resEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <b>Połączono z Supabase!</b> Pomyślnie odczytano dane z tabeli wózków.`;
+                    if (statusEl) statusEl.textContent = "Połączono";
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                    resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Błąd połączenia: ${escapeHtml(err.message || 'Brak dostępu')}`;
+                    if (statusEl) statusEl.textContent = "Błąd";
+                }
+            } catch (e) {
+                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Błąd sieci: ${escapeHtml(e.message || 'Nie można połączyć')}`;
+            }
         }
 
         // --- Key Field Normalization Helpers ---
@@ -1445,10 +1586,16 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         // Direct Client-side Gemini API Caller (Solution B / Static Pages)
         async function performClientSideOcr(mimeType, base64Data, model, promptType = 'plate') {
             if (!geminiApiKey) {
-                throw new Error("Wymagany jest klucz API Gemini w trybie statycznym! Kliknij ikonę ustawień w prawym górnym rogu i wprowadź klucz.");
+                // Highlight settings
+                if (settingsAlertDot) settingsAlertDot.classList.remove('hidden');
+                const quickInput = document.getElementById('quickApiKeyInput');
+                const staticBanner = document.getElementById('staticKeyBanner');
+                if (staticBanner) staticBanner.classList.remove('hidden');
+                if (quickInput) quickInput.focus();
+                
+                showToast("Wymagany jest klucz Google Gemini API na hostingu statycznym!", "error");
+                throw new Error("Wymagany jest klucz API Gemini w trybie statycznym! Wklej klucz w polu powyżej lub kliknij ikonę ustawień w prawym górnym rogu.");
             }
-            
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
             
             let promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
 Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
@@ -1470,7 +1617,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         { text: promptText },
                         {
                             inlineData: {
-                                mimeType: mimeType,
+                                mimeType: mimeType || "image/jpeg",
                                 data: base64Data
                             }
                         }
@@ -1481,29 +1628,52 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 }
             };
 
-            const res = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
+            const candidateModels = [model, 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-3.1-flash-lite'].filter((m, i, arr) => m && arr.indexOf(m) === i);
+            let lastErrMessage = "";
 
-            if (!res.ok) {
-                const errJson = await res.json().catch(() => ({}));
-                throw new Error(errJson?.error?.message || `Błąd połączenia z Gemini API (${res.status})`);
+            for (const candidate of candidateModels) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${geminiApiKey}`;
+                    const res = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (!res.ok) {
+                        const errJson = await res.json().catch(() => ({}));
+                        lastErrMessage = errJson?.error?.message || `HTTP ${res.status}`;
+                        // If model not found or unsupported, continue to next candidate
+                        if (res.status === 404 || res.status === 400) {
+                            continue;
+                        }
+                        throw new Error(lastErrMessage);
+                    }
+
+                    const data = await res.json();
+                    let responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!responseText) {
+                        continue;
+                    }
+
+                    // Clean JSON string from markdown fences if any
+                    responseText = responseText.trim();
+                    if (responseText.startsWith('```json')) {
+                        responseText = responseText.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+                    } else if (responseText.startsWith('```')) {
+                        responseText = responseText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                    }
+
+                    return JSON.parse(responseText.trim());
+                } catch (err) {
+                    lastErrMessage = err.message || "Błąd parsowania";
+                    if (!candidateModels[candidateModels.indexOf(candidate) + 1]) {
+                        throw err;
+                    }
+                }
             }
 
-            const data = await res.json();
-            const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!responseText) {
-                throw new Error("Model Gemini nie zwrócił poprawnej odpowiedzi.");
-            }
-
-            try {
-                return JSON.parse(responseText.trim());
-            } catch (e) {
-                console.error("JSON parsing error of response:", responseText);
-                throw new Error("Sztuczna inteligencja zwróciła dane w niepoprawnym formacie. Spróbuj ponownie.");
-            }
+            throw new Error(`Błąd połączenia z Gemini API: ${lastErrMessage}`);
         }
 
         processBtn.addEventListener('click', async () => {
