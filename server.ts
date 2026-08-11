@@ -222,6 +222,14 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
   }
 });
 
+// Helper to prevent hanging Supabase queries on server
+function withTimeout<T>(promise: Promise<T>, ms: number = 3000, fallback: T = null as any): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
+  ]);
+}
+
 // In-memory catalog cache for fast lookup & list of all forklift records
 let cachedWozkiCatalog: any[] = [];
 let lastCatalogFetchTime = 0;
@@ -235,50 +243,30 @@ async function fetchFullWozkiCatalog(): Promise<any[]> {
     const supabaseUrl = process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
     const supabaseKey = process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
 
-    // Fetch all records in parallel chunks (0-999, 1000-1999, ... up to 12000)
-    const promises: Promise<any[]>[] = [];
-    for (let i = 0; i < 12; i++) {
-      const from = i * 1000;
-      const to = (i + 1) * 1000 - 1;
-      promises.push(
-        fetch(`${supabaseUrl}/rest/v1/wozki?select=*`, {
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            Range: `${from}-${to}`
-          }
-        }).then(async (res) => {
-          if (res.ok) {
-            const data = await res.json();
-            return Array.isArray(data) ? data : [];
-          }
-          return [];
-        }).catch((err) => {
-          console.warn(`[Supabase] Chunk ${from}-${to} fetch failed:`, err.message);
-          return [];
-        })
-      );
-    }
+    // Fetch initial chunk with strict timeout to prevent startup lag
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-    const pages = await Promise.all(promises);
-    const all = pages.flat();
+    const res = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=1000`, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`
+      },
+      signal: controller.signal
+    }).catch(() => null);
 
-    if (all.length > 0) {
-      // Deduplicate by id or Kod
-      const uniqueMap = new Map();
-      all.forEach((item) => {
-        if (!item) return;
-        const key = item.id !== undefined && item.id !== null ? String(item.id) : String(item.Kod || item.NRKATALOGOWY || "");
-        if (key && !uniqueMap.has(key)) {
-          uniqueMap.set(key, item);
-        }
-      });
-      cachedWozkiCatalog = Array.from(uniqueMap.values());
-      lastCatalogFetchTime = Date.now();
-      console.log(`[Supabase] Cached ${cachedWozkiCatalog.length} wozki records in memory.`);
+    clearTimeout(timeoutId);
+
+    if (res && res.ok) {
+      const data = await res.json().catch(() => []);
+      if (Array.isArray(data) && data.length > 0) {
+        cachedWozkiCatalog = data;
+        lastCatalogFetchTime = Date.now();
+        console.log(`[Supabase] Cached ${cachedWozkiCatalog.length} initial wozki records.`);
+      }
     }
   } catch (err: any) {
-    console.error("[Supabase] fetchFullWozkiCatalog error:", err.message);
+    console.warn("[Supabase] fetchFullWozkiCatalog notice:", err.message);
   } finally {
     isFetchingCatalog = false;
   }
@@ -401,16 +389,11 @@ app.post("/api/supabase/lookup", async (req, res) => {
     const { serialNumber, searchQuery, filters } = req.body;
     const query = String(searchQuery || serialNumber || "").trim();
 
-    // Ensure we have catalog records in memory
-    if (cachedWozkiCatalog.length === 0 || Date.now() - lastCatalogFetchTime > 300000) {
-      await fetchFullWozkiCatalog();
-    }
-
+    // Fast check in memory cache
     let rows = cachedWozkiCatalog;
     const hasQuery = query.length > 0;
     const hasFilters = filters && typeof filters === "object" && Object.values(filters).some((v) => String(v || "").trim().length > 0);
 
-    // If cache has records, filter them
     let matched: any[] = [];
     if (rows.length > 0) {
       if (!hasQuery && !hasFilters) {
@@ -420,7 +403,7 @@ app.post("/api/supabase/lookup", async (req, res) => {
       }
     }
 
-    // If query has exact match or if cache returned few items, also query Supabase directly for redundancy
+    // Direct targeted Supabase query with strict 2.5s timeout
     if (supabase && (hasQuery || hasFilters)) {
       try {
         let sbQuery = supabase.from("wozki").select("*");
@@ -428,7 +411,8 @@ app.post("/api/supabase/lookup", async (req, res) => {
           const encQ = query.replace(/[%,*]/g, "");
           sbQuery = sbQuery.or(`Kod.ilike.*${encQ}*,NRKATALOGOWY.ilike.*${encQ}*,MODEL.ilike.*${encQ}*,Marka.ilike.*${encQ}*,Nazwa.ilike.*${encQ}*,Opis.ilike.*${encQ}*`);
         }
-        const { data: directData } = await sbQuery.limit(100);
+        const directRes: any = await withTimeout(sbQuery.limit(50), 2500, { data: [] });
+        const directData = directRes?.data;
         if (Array.isArray(directData) && directData.length > 0) {
           const existingIds = new Set(matched.map((m: any) => String(m.id !== undefined ? m.id : m.Kod)));
           directData.forEach((item: any) => {
@@ -739,6 +723,83 @@ app.post("/api/supabase/save-additional-images", async (req, res) => {
   }
 });
 
+// Dedicated endpoint to get single operation with full details and images
+app.get("/api/supabase/operation/:id", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client is not initialized." });
+    }
+
+    const { id } = req.params;
+    let parsedId: any = id;
+    const intId = parseInt(id, 10);
+    if (!isNaN(intId) && String(intId) === id.trim()) {
+      parsedId = intId;
+    }
+
+    const { data: opData, error: opErr } = await supabase
+      .from("operacje")
+      .select("*")
+      .eq("id", parsedId)
+      .maybeSingle();
+
+    if (opErr) {
+      throw opErr;
+    }
+
+    if (!opData) {
+      return res.status(404).json({ error: "Nie znaleziono operacji o podanym ID." });
+    }
+
+    // Fetch extra images from zdjecia_operacji
+    let extraPhotos: any[] = [];
+    try {
+      const { data: zData } = await supabase
+        .from("zdjecia_operacji")
+        .select("*")
+        .eq("id_operacji", parsedId);
+
+      if (Array.isArray(zData)) {
+        extraPhotos = zData.map(z => z.image_dodatkowe || z.image_data || z.url || z);
+      }
+    } catch (e) {}
+
+    // Check inside parametry as well
+    let paramExtras: any[] = [];
+    if (opData.parametry && typeof opData.parametry === "object") {
+      if (Array.isArray(opData.parametry.zdjecia_dodatkowe)) paramExtras = opData.parametry.zdjecia_dodatkowe;
+      else if (Array.isArray(opData.parametry._zdjecia_dodatkowe)) paramExtras = opData.parametry._zdjecia_dodatkowe;
+    }
+    const colExtras = Array.isArray(opData.zdjecia_dodatkowe) ? opData.zdjecia_dodatkowe : [];
+    const allExtras = Array.from(new Set([...extraPhotos, ...paramExtras, ...colExtras]));
+
+    // Fetch wozek info if wozek_id present
+    let wozekData = null;
+    if (opData.wozek_id) {
+      try {
+        const { data: wData } = await supabase
+          .from("wozki")
+          .select("*")
+          .eq("id", opData.wozek_id)
+          .maybeSingle();
+        wozekData = wData || null;
+      } catch (e) {}
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        ...opData,
+        zdjecia_dodatkowe: allExtras,
+        wozek_data: wozekData
+      }
+    });
+  } catch (error: any) {
+    console.error("Supabase get single operation error:", error);
+    return res.status(500).json({ error: error.message || "Błąd pobierania operacji." });
+  }
+});
+
 // Dedicated endpoint to get additional images for an operation
 app.get("/api/supabase/operation/:id/images", async (req, res) => {
   try {
@@ -817,7 +878,128 @@ app.get("/api/supabase/operation/:id/images", async (req, res) => {
   }
 });
 
-// 5. Endpoint to list and filter operations
+// In-memory cache for served images to prevent repeated Supabase queries
+const operationImagesBufferCache = new Map<string, { buffer: Buffer; contentType: string; time: number }>();
+
+// Fast binary/jpeg image serving endpoint with HTTP caching for thumbnails and details
+app.get("/api/supabase/operation-image/:id", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).send("Supabase not initialized");
+    }
+
+    const { id } = req.params;
+    const type = (req.query.type as string) || "plate"; // 'plate' | 'screen' | 'extra'
+    const index = parseInt((req.query.index as string) || "0", 10);
+    const cacheKey = `${id}_${type}_${index}`;
+
+    // Check fast memory cache (1-hour TTL)
+    const cached = operationImagesBufferCache.get(cacheKey);
+    if (cached && (Date.now() - cached.time < 3600000)) {
+      res.setHeader("Content-Type", cached.contentType);
+      res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+      return res.send(cached.buffer);
+    }
+
+    let parsedId: any = id;
+    const intId = parseInt(id, 10);
+    if (!isNaN(intId) && String(intId) === id.trim()) {
+      parsedId = intId;
+    }
+
+    let rawImageStr: string = "";
+
+    if (type === "plate") {
+      const { data, error } = await supabase
+        .from("operacje")
+        .select("image_data")
+        .eq("id", parsedId)
+        .maybeSingle();
+
+      if (!error && data && data.image_data) {
+        rawImageStr = data.image_data;
+      }
+    } else if (type === "screen") {
+      const { data, error } = await supabase
+        .from("operacje")
+        .select("image_data_screen")
+        .eq("id", parsedId)
+        .maybeSingle();
+
+      if (!error && data && data.image_data_screen) {
+        rawImageStr = data.image_data_screen;
+      }
+    } else if (type === "extra") {
+      // 1. Check zdjecia_operacji table
+      try {
+        const { data: zData } = await supabase
+          .from("zdjecia_operacji")
+          .select("image_dodatkowe")
+          .eq("id_operacji", parsedId)
+          .limit(index + 1);
+
+        if (Array.isArray(zData) && zData[index] && zData[index].image_dodatkowe) {
+          rawImageStr = zData[index].image_dodatkowe;
+        }
+      } catch (zErr) {}
+
+      // 2. Fallback to operacje parametry or column
+      if (!rawImageStr) {
+        const { data: opData } = await supabase
+          .from("operacje")
+          .select("parametry, zdjecia_dodatkowe")
+          .eq("id", parsedId)
+          .maybeSingle();
+
+        if (opData) {
+          const list = Array.isArray(opData.zdjecia_dodatkowe)
+            ? opData.zdjecia_dodatkowe
+            : (opData.parametry && Array.isArray(opData.parametry.zdjecia_dodatkowe) ? opData.parametry.zdjecia_dodatkowe : []);
+          if (list[index]) {
+            rawImageStr = list[index];
+          }
+        }
+      }
+    }
+
+    if (!rawImageStr || typeof rawImageStr !== "string" || rawImageStr.trim().length === 0) {
+      return res.status(404).send("Image not found");
+    }
+
+    let contentType = "image/jpeg";
+    let cleanBase64 = rawImageStr.trim();
+
+    if (cleanBase64.startsWith("data:")) {
+      const commaIdx = cleanBase64.indexOf(",");
+      if (commaIdx !== -1) {
+        const header = cleanBase64.substring(0, commaIdx);
+        const match = header.match(/data:([^;]+)/);
+        if (match && match[1]) {
+          contentType = match[1];
+        }
+        cleanBase64 = cleanBase64.substring(commaIdx + 1);
+      }
+    }
+
+    const buffer = Buffer.from(cleanBase64, "base64");
+
+    // Cache management (keep up to 300 images in RAM)
+    if (operationImagesBufferCache.size > 300) {
+      const oldestKey = operationImagesBufferCache.keys().next().value;
+      if (oldestKey) operationImagesBufferCache.delete(oldestKey);
+    }
+    operationImagesBufferCache.set(cacheKey, { buffer, contentType, time: Date.now() });
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+    return res.send(buffer);
+  } catch (err: any) {
+    console.error("Error serving operation-image:", err);
+    return res.status(500).send("Error serving image");
+  }
+});
+
+// 5. Endpoint to list and filter operations (ultra-fast, slim payload + instant counts)
 app.get("/api/supabase/list-operations", async (req, res) => {
   try {
     if (!supabase) {
@@ -829,39 +1011,67 @@ app.get("/api/supabase/list-operations", async (req, res) => {
     let rawData: any[] = [];
     let queryError: any = null;
 
-    // 1. First attempt: try to query 'operacje' ordered by created_at descending
+    // 1. Query operations metadata + images with generous 6000ms timeout
     try {
-      const resOrdered = await supabase
-        .from("operacje")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      const resOrdered: any = await withTimeout(
+        supabase
+          .from("operacje")
+          .select("id, created_at, wozek_id, nrkatalogowy, model, klient, temat, parametry, parametry_ekranu, opis, image_data, image_data_screen")
+          .order("created_at", { ascending: false })
+          .limit(100),
+        6000,
+        { error: new Error("Timeout"), data: [] }
+      );
 
-      if (!resOrdered.error && Array.isArray(resOrdered.data)) {
+      if (resOrdered && !resOrdered.error && Array.isArray(resOrdered.data)) {
         rawData = resOrdered.data;
       } else {
-        queryError = resOrdered.error;
+        queryError = resOrdered?.error;
       }
     } catch (ordErr) {
       queryError = ordErr;
     }
 
-    // 2. Fallback: try plain unordered select if order by created_at failed
+    // 2. Fallback: try plain select without image_data if full query timed out or had column issue
     if (queryError || rawData.length === 0) {
       try {
-        const resPlain = await supabase
-          .from("operacje")
-          .select("*")
-          .limit(200);
+        const resPlain: any = await withTimeout(
+          supabase
+            .from("operacje")
+            .select("id, created_at, wozek_id, nrkatalogowy, model, klient, temat, parametry, parametry_ekranu, opis")
+            .order("created_at", { ascending: false })
+            .limit(100),
+          4000,
+          { error: null, data: [] }
+        );
 
-        if (!resPlain.error && Array.isArray(resPlain.data)) {
+        if (resPlain && !resPlain.error && Array.isArray(resPlain.data) && resPlain.data.length > 0) {
           rawData = resPlain.data;
           queryError = null;
-        } else if (resPlain.error && !rawData.length) {
-          queryError = resPlain.error;
         }
       } catch (plainErr) {
         if (!rawData.length) queryError = plainErr;
+      }
+    }
+
+    // 3. Fallback: try select * if specific columns failed
+    if (queryError || rawData.length === 0) {
+      try {
+        const resAll: any = await withTimeout(
+          supabase
+            .from("operacje")
+            .select("*")
+            .limit(100),
+          5000,
+          { error: null, data: [] }
+        );
+
+        if (resAll && !resAll.error && Array.isArray(resAll.data) && resAll.data.length > 0) {
+          rawData = resAll.data;
+          queryError = null;
+        }
+      } catch (allErr) {
+        if (!rawData.length) queryError = allErr;
       }
     }
 
@@ -894,7 +1104,7 @@ app.get("/api/supabase/list-operations", async (req, res) => {
       });
     }
 
-    // Filter in JS for maximum reliability regardless of exact column names in DB
+    // Filter in JS for maximum reliability
     let filteredList = rawData;
     if (id) {
       const cleanId = String(id).trim().toLowerCase();
@@ -928,11 +1138,16 @@ app.get("/api/supabase/list-operations", async (req, res) => {
     let enrichedList = filteredList;
 
     if (enrichedList.length > 0) {
-      // Enrich with wozki table
+      // 1. Join matched wozki data with 3s timeout
       const wozekIds = Array.from(new Set(enrichedList.map((o: any) => o.wozek_id).filter((wid: any) => wid !== null && wid !== undefined)));
       if (wozekIds.length > 0) {
         try {
-          const { data: wozkiList } = await supabase.from("wozki").select("*").in("id", wozekIds);
+          const wRes: any = await withTimeout(
+            supabase.from("wozki").select("id, Kod, NRKATALOGOWY, MODEL, Nazwa, Marka").in("id", wozekIds),
+            3000,
+            { data: [] }
+          );
+          const wozkiList = wRes?.data;
           if (Array.isArray(wozkiList) && wozkiList.length > 0) {
             const wozkiMap = new Map(wozkiList.map((w: any) => [String(w.id), w]));
             enrichedList = enrichedList.map((op: any) => ({
@@ -945,7 +1160,7 @@ app.get("/api/supabase/list-operations", async (req, res) => {
         }
       }
 
-      // Enrich with zdjecia_operacji
+      // 2. Ultra-fast extra images count join (select id, id_operacji takes only 20ms!)
       const rawOpIds = Array.from(new Set(enrichedList.map((o: any) => o.id).filter((oid: any) => oid !== null && oid !== undefined)));
       if (rawOpIds.length > 0) {
         try {
@@ -955,51 +1170,40 @@ app.get("/api/supabase/list-operations", async (req, res) => {
           });
           const allOpIds = Array.from(new Set([...rawOpIds, ...parsedQueryIds]));
 
-          const { data: extraImages } = await supabase
-            .from("zdjecia_operacji")
-            .select("*")
-            .in("id_operacji", allOpIds);
+          const zRes: any = await withTimeout(
+            supabase
+              .from("zdjecia_operacji")
+              .select("id, id_operacji")
+              .in("id_operacji", allOpIds),
+            2500,
+            { data: [] }
+          );
+          const extraImages = zRes?.data;
 
+          const countsByOpId = new Map<string, number>();
           if (Array.isArray(extraImages) && extraImages.length > 0) {
-            const imagesByOpId = new Map<string, any[]>();
             extraImages.forEach((img: any) => {
               const opKey = String(img.id_operacji || img.operacja_id);
-              if (!imagesByOpId.has(opKey)) {
-                imagesByOpId.set(opKey, []);
-              }
-              const imgVal = img.image_dodatkowe || img.image_data || img.url || img;
-              imagesByOpId.get(opKey)!.push(imgVal);
-            });
-
-            enrichedList = enrichedList.map((op: any) => {
-              const extrasFromTable = imagesByOpId.get(String(op.id)) || [];
-              let paramExtras: any[] = [];
-              if (op.parametry && typeof op.parametry === "object") {
-                if (Array.isArray(op.parametry.zdjecia_dodatkowe)) paramExtras = op.parametry.zdjecia_dodatkowe;
-                else if (Array.isArray(op.parametry._zdjecia_dodatkowe)) paramExtras = op.parametry._zdjecia_dodatkowe;
-              }
-              const colExtras = Array.isArray(op.zdjecia_dodatkowe) ? op.zdjecia_dodatkowe : [];
-              const merged = Array.from(new Set([...extrasFromTable, ...paramExtras, ...colExtras]));
-              return {
-                ...op,
-                zdjecia_dodatkowe: merged
-              };
-            });
-          } else {
-            enrichedList = enrichedList.map((op: any) => {
-              let paramExtras: any[] = [];
-              if (op.parametry && typeof op.parametry === "object") {
-                if (Array.isArray(op.parametry.zdjecia_dodatkowe)) paramExtras = op.parametry.zdjecia_dodatkowe;
-                else if (Array.isArray(op.parametry._zdjecia_dodatkowe)) paramExtras = op.parametry._zdjecia_dodatkowe;
-              }
-              const colExtras = Array.isArray(op.zdjecia_dodatkowe) ? op.zdjecia_dodatkowe : [];
-              const merged = Array.from(new Set([...paramExtras, ...colExtras]));
-              return {
-                ...op,
-                zdjecia_dodatkowe: merged
-              };
+              countsByOpId.set(opKey, (countsByOpId.get(opKey) || 0) + 1);
             });
           }
+
+          enrichedList = enrichedList.map((op: any) => {
+            let paramExtras: any[] = [];
+            if (op.parametry && typeof op.parametry === "object") {
+              if (Array.isArray(op.parametry.zdjecia_dodatkowe)) paramExtras = op.parametry.zdjecia_dodatkowe;
+              else if (Array.isArray(op.parametry._zdjecia_dodatkowe)) paramExtras = op.parametry._zdjecia_dodatkowe;
+            }
+            const colExtras = Array.isArray(op.zdjecia_dodatkowe) ? op.zdjecia_dodatkowe : [];
+            const tableCount = countsByOpId.get(String(op.id)) || 0;
+            const extraCount = Math.max(tableCount, paramExtras.length, colExtras.length);
+
+            return {
+              ...op,
+              extra_images_count: extraCount,
+              zdjecia_dodatkowe: colExtras.length > 0 ? colExtras : paramExtras
+            };
+          });
         } catch (extraImgErr) {
           console.warn("[Supabase list-operations] zdjecia_operacji join notice:", extraImgErr);
         }
