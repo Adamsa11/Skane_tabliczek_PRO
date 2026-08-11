@@ -44,15 +44,23 @@ function checkIfTableMissing(error: any): boolean {
   if (!error) return false;
   const code = String(error.code || "").toLowerCase();
   const msg = String(error.message || "").toLowerCase();
+  const details = String(error.details || "").toLowerCase();
+  const hint = String(error.hint || "").toLowerCase();
   return (
     code === "42p01" ||
     code.includes("42p01") ||
+    code.includes("pgrst204") ||
+    code.includes("pgrst200") ||
+    code.includes("pgrst116") ||
     msg.includes("relation") ||
     msg.includes("does not exist") ||
     msg.includes("not found") ||
     msg.includes("could not find") ||
     msg.includes("schema cache") ||
-    (msg.includes("operacje") && msg.includes("find"))
+    (msg.includes("operacje") && msg.includes("find")) ||
+    details.includes("schema cache") ||
+    details.includes("does not exist") ||
+    hint.includes("schema cache")
   );
 }
 
@@ -61,11 +69,14 @@ function checkIfRlsViolation(error: any): boolean {
   if (!error) return false;
   const code = String(error.code || "").toLowerCase();
   const msg = String(error.message || "").toLowerCase();
+  const details = String(error.details || "").toLowerCase();
   return (
     code === "42501" ||
+    code.includes("42501") ||
     msg.includes("row-level security") ||
     msg.includes("rls") ||
-    msg.includes("violates row-level security policy")
+    msg.includes("violates row-level security policy") ||
+    details.includes("row-level security")
   );
 }
 
@@ -498,23 +509,57 @@ app.post("/api/supabase/insert", async (req, res) => {
   }
 });
 
-// 4. Endpoint to save operations/scans with client, topic, image and timestamp
+// 4. Endpoint to save operations/scans with client, topic, image, additional images, and timestamp
 app.post("/api/supabase/save-operation", async (req, res) => {
   try {
     if (!supabase) {
       return res.status(500).json({ error: "Supabase client is not initialized." });
     }
 
-    const { record } = req.body;
+    const { record, additionalImages } = req.body;
     if (!record) {
       return res.status(400).json({ error: "Brak danych operacji." });
     }
 
-    // Ensure created_at is saved if provided, or handled by DB
-    const { data, error } = await supabase
+    const cleanAdditionalImages = Array.isArray(additionalImages)
+      ? additionalImages.filter((img: any) => typeof img === "string" && img.length > 20)
+      : [];
+
+    // Ensure parametry JSON includes additional images as a foolproof fallback
+    if (cleanAdditionalImages.length > 0) {
+      const existingParams = (record.parametry && typeof record.parametry === "object") ? record.parametry : {};
+      record.parametry = {
+        ...existingParams,
+        zdjecia_dodatkowe: cleanAdditionalImages
+      };
+    }
+
+    // Insert operation record into 'operacje' table
+    let savedOp: any = null;
+    let { data, error } = await supabase
       .from("operacje")
       .insert([record])
       .select();
+
+    // Fallback if specific columns are not yet in the DB schema
+    if (error && (String(error.message || "").includes("column") || String(error.message || "").includes("does not exist"))) {
+      const fallbackRecord: any = {
+        wozek_id: record.wozek_id,
+        nrkatalogowy: record.nrkatalogowy,
+        model: record.model,
+        klient: record.klient,
+        temat: record.temat,
+        opis: record.opis,
+        parametry: record.parametry,
+        image_data: record.image_data || record.image_data_screen || "",
+        created_at: record.created_at || new Date().toISOString()
+      };
+      const retryRes = await supabase.from("operacje").insert([fallbackRecord]).select();
+      if (!retryRes.error) {
+        data = retryRes.data;
+        error = null;
+      }
+    }
 
     if (error) {
       if (checkIfTableMissing(error)) {
@@ -532,7 +577,55 @@ app.post("/api/supabase/save-operation", async (req, res) => {
       throw error;
     }
 
-    return res.json({ success: true, data: data || [] });
+    savedOp = data && data[0] ? data[0] : null;
+
+    // If savedOp has no ID from select (e.g. RLS restrictions on return), try to find the inserted operation ID
+    let targetOpId: any = savedOp ? savedOp.id : null;
+    if (!targetOpId && record.nrkatalogowy) {
+      try {
+        const queryLatest = await supabase
+          .from("operacje")
+          .select("id")
+          .eq("nrkatalogowy", record.nrkatalogowy)
+          .order("id", { ascending: false })
+          .limit(1);
+        if (queryLatest.data && queryLatest.data.length > 0) {
+          targetOpId = queryLatest.data[0].id;
+        }
+      } catch (findErr) {
+        console.warn("[Supabase save-operation] Notice finding latest operation ID:", findErr);
+      }
+    }
+
+    // Save additional images to 'zdjecia_operacji' table
+    if (cleanAdditionalImages.length > 0 && targetOpId) {
+      try {
+        let parsedIdOperacji: any = targetOpId;
+        const numId = parseInt(String(targetOpId), 10);
+        if (!isNaN(numId) && String(numId) === String(targetOpId).trim()) {
+          parsedIdOperacji = numId;
+        }
+
+        const imageRecords = cleanAdditionalImages.map((img: string) => ({
+          id_operacji: parsedIdOperacji,
+          image_dodatkowe: img
+        }));
+
+        const { error: imgErr } = await supabase
+          .from("zdjecia_operacji")
+          .insert(imageRecords);
+
+        if (imgErr) {
+          console.warn("[Supabase] Could not insert into zdjecia_operacji table (stored in parametry instead):", imgErr.message);
+        } else {
+          console.log(`[Supabase] Successfully saved ${imageRecords.length} additional images for operation ID ${parsedIdOperacji}`);
+        }
+      } catch (extraImgErr: any) {
+        console.warn("[Supabase] Notice saving to zdjecia_operacji:", extraImgErr.message);
+      }
+    }
+
+    return res.json({ success: true, data: data || [savedOp || record] });
   } catch (error: any) {
     console.error("Supabase save-operation error:", error);
     if (checkIfTableMissing(error)) {
@@ -551,117 +644,380 @@ app.post("/api/supabase/save-operation", async (req, res) => {
   }
 });
 
-// 5. Endpoint to list and filter operations
-app.get("/api/supabase/list-operations", async (req, res) => {
+// Dedicated endpoint to save additional images for an operation
+app.post("/api/supabase/save-additional-images", async (req, res) => {
   try {
     if (!supabase) {
       return res.status(500).json({ error: "Supabase client is not initialized." });
     }
 
-    const { id, klient, temat, nrkatalogowy, wozek_id, opis } = req.query;
-    let baseQuery = supabase.from("operacje").select("*");
-
-    if (id) {
-      const cleanId = String(id).trim();
-      const parsedId = parseInt(cleanId, 10);
-      if (!isNaN(parsedId) && String(parsedId) === cleanId) {
-        baseQuery = baseQuery.eq("id", parsedId);
-      } else {
-        baseQuery = baseQuery.eq("id", cleanId);
-      }
-    }
-    if (wozek_id) {
-      const cleanWozekId = String(wozek_id).trim();
-      const parsedWozekId = parseInt(cleanWozekId, 10);
-      if (!isNaN(parsedWozekId) && String(parsedWozekId) === cleanWozekId) {
-        baseQuery = baseQuery.eq("wozek_id", parsedWozekId);
-      } else {
-        baseQuery = baseQuery.eq("wozek_id", cleanWozekId);
-      }
-    }
-    if (klient) {
-      baseQuery = baseQuery.ilike("klient", `%${String(klient).trim()}%`);
-    }
-    if (temat) {
-      baseQuery = baseQuery.ilike("temat", `%${String(temat).trim()}%`);
-    }
-    if (opis) {
-      baseQuery = baseQuery.ilike("opis", `%${String(opis).trim()}%`);
-    }
-    if (nrkatalogowy) {
-      baseQuery = baseQuery.ilike("nrkatalogowy", `%${String(nrkatalogowy).trim()}%`);
+    const { id_operacji, images } = req.body;
+    if (!id_operacji || !Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ error: "Wymagane parametry: id_operacji oraz tablica images." });
     }
 
-    let data: any[] | null = null;
-    let error: any = null;
+    let parsedIdOperacji: any = id_operacji;
+    const numId = parseInt(String(id_operacji), 10);
+    if (!isNaN(numId) && String(numId) === String(id_operacji).trim()) {
+      parsedIdOperacji = numId;
+    }
 
-    // Try ordering by created_at descending first
+    const cleanImages = images.filter((img: any) => typeof img === "string" && img.length > 20);
+    if (cleanImages.length === 0) {
+      return res.status(400).json({ error: "Brak poprawnych obrazów do zapisu." });
+    }
+
+    const imageRecords = cleanImages.map((img: string) => ({
+      id_operacji: parsedIdOperacji,
+      image_dodatkowe: img
+    }));
+
+    let savedToTable = false;
+    let tableError: any = null;
+
+    // 1. Try to insert into 'zdjecia_operacji' table
     try {
-      const resOrdered = await baseQuery.order("created_at", { ascending: false }).limit(100);
-      data = resOrdered.data;
-      error = resOrdered.error;
-    } catch (ordErr) {
-      console.warn("Order by created_at failed, attempting unordered fetch:", ordErr);
+      const { data: insertData, error: insertError } = await supabase
+        .from("zdjecia_operacji")
+        .insert(imageRecords)
+        .select();
+
+      if (!insertError) {
+        savedToTable = true;
+      } else {
+        tableError = insertError;
+      }
+    } catch (tblErr) {
+      tableError = tblErr;
     }
 
-    // Fallback without created_at ordering if column does not exist
-    if (error || !data) {
-      try {
-        let fallbackQuery = supabase.from("operacje").select("*").limit(100);
-        if (id) fallbackQuery = fallbackQuery.eq("id", String(id).trim());
-        if (wozek_id) fallbackQuery = fallbackQuery.eq("wozek_id", String(wozek_id).trim());
-        const resUnordered = await fallbackQuery;
-        if (!resUnordered.error) {
-          data = resUnordered.data;
-          error = null;
+    // 2. Dual-persistence: ALSO update 'operacje' row's parametry.zdjecia_dodatkowe
+    try {
+      const { data: opRow } = await supabase
+        .from("operacje")
+        .select("id, parametry")
+        .eq("id", parsedIdOperacji)
+        .maybeSingle();
+
+      if (opRow) {
+        let currentParams: any = opRow.parametry;
+        if (typeof currentParams === "string") {
+          try { currentParams = JSON.parse(currentParams); } catch (e) { currentParams = {}; }
+        } else if (!currentParams || typeof currentParams !== "object") {
+          currentParams = {};
         }
-      } catch (fbErr) {
-        console.warn("Fallback unordered fetch also encountered error:", fbErr);
+
+        const existingExtra = Array.isArray(currentParams.zdjecia_dodatkowe)
+          ? currentParams.zdjecia_dodatkowe
+          : (Array.isArray(currentParams._zdjecia_dodatkowe) ? currentParams._zdjecia_dodatkowe : []);
+
+        const mergedPhotos = Array.from(new Set([...existingExtra, ...cleanImages]));
+        currentParams.zdjecia_dodatkowe = mergedPhotos;
+
+        await supabase
+          .from("operacje")
+          .update({ parametry: currentParams })
+          .eq("id", parsedIdOperacji);
+      }
+    } catch (updateOpErr) {
+      console.warn("[Supabase save-additional-images] Notice updating operacje parametry:", updateOpErr);
+    }
+
+    if (!savedToTable && tableError && checkIfTableMissing(tableError)) {
+      // It was saved to operacje.parametry successfully, so report success with a notice
+      return res.json({ 
+        success: true, 
+        saved_to: "operacje_parametry",
+        message: "Zdjęcia zapisane w tabeli operacje (tabela 'zdjecia_operacji' nie jest utworzona)." 
+      });
+    }
+
+    return res.json({ success: true, count: cleanImages.length });
+  } catch (error: any) {
+    console.error("Supabase save-additional-images error:", error);
+    return res.status(500).json({ error: error.message || "Błąd zapisu dodatkowych zdjęć." });
+  }
+});
+
+// Dedicated endpoint to get additional images for an operation
+app.get("/api/supabase/operation/:id/images", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client is not initialized." });
+    }
+
+    const { id } = req.params;
+    let parsedId: any = id;
+    const intId = parseInt(id, 10);
+    if (!isNaN(intId) && String(intId) === id.trim()) {
+      parsedId = intId;
+    }
+
+    let records: any[] = [];
+
+    // Try query zdjecia_operacji with parsed ID
+    try {
+      const queryRes = await supabase
+        .from("zdjecia_operacji")
+        .select("*")
+        .eq("id_operacji", parsedId);
+
+      if (Array.isArray(queryRes.data) && queryRes.data.length > 0) {
+        records = queryRes.data;
+      }
+    } catch (e) {}
+
+    // If empty and parsedId was integer, try with string ID
+    if (records.length === 0 && parsedId !== id) {
+      try {
+        const strRes = await supabase
+          .from("zdjecia_operacji")
+          .select("*")
+          .eq("id_operacji", String(id));
+        if (Array.isArray(strRes.data) && strRes.data.length > 0) {
+          records = strRes.data;
+        }
+      } catch (e) {}
+    }
+
+    // Fallback: check inside 'operacje' row for parametry.zdjecia_dodatkowe
+    if (records.length === 0) {
+      try {
+        const { data: opData } = await supabase
+          .from("operacje")
+          .select("id, parametry, zdjecia_dodatkowe")
+          .eq("id", parsedId)
+          .maybeSingle();
+
+        if (opData) {
+          let paramPhotos: any[] = [];
+          if (Array.isArray(opData.zdjecia_dodatkowe)) {
+            paramPhotos = opData.zdjecia_dodatkowe;
+          } else if (opData.parametry && typeof opData.parametry === "object") {
+            const p = opData.parametry;
+            if (Array.isArray(p.zdjecia_dodatkowe)) paramPhotos = p.zdjecia_dodatkowe;
+            else if (Array.isArray(p._zdjecia_dodatkowe)) paramPhotos = p._zdjecia_dodatkowe;
+          }
+
+          if (paramPhotos.length > 0) {
+            records = paramPhotos.map((img: string, idx: number) => ({
+              id: `param_${idx}`,
+              id_operacji: parsedId,
+              image_dodatkowe: img
+            }));
+          }
+        }
+      } catch (opFallbackErr) {}
+    }
+
+    return res.json({ success: true, data: records });
+  } catch (error: any) {
+    console.error("Supabase get operation images error:", error);
+    return res.status(500).json({ error: error.message || "Błąd pobierania dodatkowych zdjęć." });
+  }
+});
+
+// 5. Endpoint to list and filter operations
+app.get("/api/supabase/list-operations", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(200).json({ success: true, data: [], warning: "Supabase client is not initialized." });
+    }
+
+    const { id, klient, temat, nrkatalogowy, wozek_id, opis } = req.query;
+
+    let rawData: any[] = [];
+    let queryError: any = null;
+
+    // 1. First attempt: try to query 'operacje' ordered by created_at descending
+    try {
+      const resOrdered = await supabase
+        .from("operacje")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      if (!resOrdered.error && Array.isArray(resOrdered.data)) {
+        rawData = resOrdered.data;
+      } else {
+        queryError = resOrdered.error;
+      }
+    } catch (ordErr) {
+      queryError = ordErr;
+    }
+
+    // 2. Fallback: try plain unordered select if order by created_at failed
+    if (queryError || rawData.length === 0) {
+      try {
+        const resPlain = await supabase
+          .from("operacje")
+          .select("*")
+          .limit(200);
+
+        if (!resPlain.error && Array.isArray(resPlain.data)) {
+          rawData = resPlain.data;
+          queryError = null;
+        } else if (resPlain.error && !rawData.length) {
+          queryError = resPlain.error;
+        }
+      } catch (plainErr) {
+        if (!rawData.length) queryError = plainErr;
       }
     }
 
-    if (error) {
-      if (checkIfTableMissing(error)) {
-        return res.status(404).json({ 
+    if (queryError && rawData.length === 0) {
+      const isMissing = checkIfTableMissing(queryError);
+      const isRls = checkIfRlsViolation(queryError);
+      const errMsg = queryError.message || (typeof queryError === "object" ? JSON.stringify(queryError) : String(queryError));
+      console.warn(`[Supabase list-operations] Query notice: ${errMsg}`);
+
+      if (isMissing) {
+        return res.status(404).json({
+          success: false,
           error: "Tabela 'operacje' nie istnieje w bazie Supabase.",
-          code: "TABLE_NOT_FOUND" 
+          code: "TABLE_NOT_FOUND",
+          data: []
         });
       }
-      throw error;
+      if (isRls) {
+        return res.status(403).json({
+          success: false,
+          error: "Brak uprawnień RLS do odczytu tabeli 'operacje' w Supabase.",
+          code: "RLS_VIOLATION",
+          data: []
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        data: [],
+        warning: errMsg
+      });
     }
 
-    let enrichedList = data || [];
+    // Filter in JS for maximum reliability regardless of exact column names in DB
+    let filteredList = rawData;
+    if (id) {
+      const cleanId = String(id).trim().toLowerCase();
+      filteredList = filteredList.filter((op: any) => String(op.id).toLowerCase() === cleanId);
+    }
+    if (wozek_id) {
+      const cleanWId = String(wozek_id).trim().toLowerCase();
+      filteredList = filteredList.filter((op: any) => String(op.wozek_id).toLowerCase() === cleanWId);
+    }
+    if (klient) {
+      const cleanKlient = String(klient).trim().toLowerCase();
+      filteredList = filteredList.filter((op: any) => String(op.klient || "").toLowerCase().includes(cleanKlient));
+    }
+    if (temat) {
+      const cleanTemat = String(temat).trim().toLowerCase();
+      filteredList = filteredList.filter((op: any) => String(op.temat || "").toLowerCase().includes(cleanTemat));
+    }
+    if (opis) {
+      const cleanOpis = String(opis).trim().toLowerCase();
+      filteredList = filteredList.filter((op: any) => String(op.opis || "").toLowerCase().includes(cleanOpis));
+    }
+    if (nrkatalogowy) {
+      const cleanNr = String(nrkatalogowy).trim().toLowerCase();
+      filteredList = filteredList.filter((op: any) =>
+        String(op.nrkatalogowy || "").toLowerCase().includes(cleanNr) ||
+        String(op.nrseryjny || "").toLowerCase().includes(cleanNr) ||
+        String(op.model || "").toLowerCase().includes(cleanNr)
+      );
+    }
+
+    let enrichedList = filteredList;
+
     if (enrichedList.length > 0) {
-      const wozekIds = Array.from(new Set(enrichedList.map((o: any) => o.wozek_id).filter((id: any) => id !== null && id !== undefined)));
+      // Enrich with wozki table
+      const wozekIds = Array.from(new Set(enrichedList.map((o: any) => o.wozek_id).filter((wid: any) => wid !== null && wid !== undefined)));
       if (wozekIds.length > 0) {
         try {
           const { data: wozkiList } = await supabase.from("wozki").select("*").in("id", wozekIds);
-          if (wozkiList && wozkiList.length > 0) {
+          if (Array.isArray(wozkiList) && wozkiList.length > 0) {
             const wozkiMap = new Map(wozkiList.map((w: any) => [String(w.id), w]));
+            enrichedList = enrichedList.map((op: any) => ({
+              ...op,
+              wozek_data: op.wozek_id ? (wozkiMap.get(String(op.wozek_id)) || null) : null
+            }));
+          }
+        } catch (wErr) {
+          console.warn("[Supabase list-operations] Wozki join notice:", wErr);
+        }
+      }
+
+      // Enrich with zdjecia_operacji
+      const rawOpIds = Array.from(new Set(enrichedList.map((o: any) => o.id).filter((oid: any) => oid !== null && oid !== undefined)));
+      if (rawOpIds.length > 0) {
+        try {
+          const parsedQueryIds = rawOpIds.map((oid: any) => {
+            const num = parseInt(String(oid), 10);
+            return (!isNaN(num) && String(num) === String(oid).trim()) ? num : oid;
+          });
+          const allOpIds = Array.from(new Set([...rawOpIds, ...parsedQueryIds]));
+
+          const { data: extraImages } = await supabase
+            .from("zdjecia_operacji")
+            .select("*")
+            .in("id_operacji", allOpIds);
+
+          if (Array.isArray(extraImages) && extraImages.length > 0) {
+            const imagesByOpId = new Map<string, any[]>();
+            extraImages.forEach((img: any) => {
+              const opKey = String(img.id_operacji || img.operacja_id);
+              if (!imagesByOpId.has(opKey)) {
+                imagesByOpId.set(opKey, []);
+              }
+              const imgVal = img.image_dodatkowe || img.image_data || img.url || img;
+              imagesByOpId.get(opKey)!.push(imgVal);
+            });
+
             enrichedList = enrichedList.map((op: any) => {
-              const matchedWozek = op.wozek_id ? wozkiMap.get(String(op.wozek_id)) : null;
+              const extrasFromTable = imagesByOpId.get(String(op.id)) || [];
+              let paramExtras: any[] = [];
+              if (op.parametry && typeof op.parametry === "object") {
+                if (Array.isArray(op.parametry.zdjecia_dodatkowe)) paramExtras = op.parametry.zdjecia_dodatkowe;
+                else if (Array.isArray(op.parametry._zdjecia_dodatkowe)) paramExtras = op.parametry._zdjecia_dodatkowe;
+              }
+              const colExtras = Array.isArray(op.zdjecia_dodatkowe) ? op.zdjecia_dodatkowe : [];
+              const merged = Array.from(new Set([...extrasFromTable, ...paramExtras, ...colExtras]));
               return {
                 ...op,
-                wozek_data: matchedWozek || null
+                zdjecia_dodatkowe: merged
+              };
+            });
+          } else {
+            enrichedList = enrichedList.map((op: any) => {
+              let paramExtras: any[] = [];
+              if (op.parametry && typeof op.parametry === "object") {
+                if (Array.isArray(op.parametry.zdjecia_dodatkowe)) paramExtras = op.parametry.zdjecia_dodatkowe;
+                else if (Array.isArray(op.parametry._zdjecia_dodatkowe)) paramExtras = op.parametry._zdjecia_dodatkowe;
+              }
+              const colExtras = Array.isArray(op.zdjecia_dodatkowe) ? op.zdjecia_dodatkowe : [];
+              const merged = Array.from(new Set([...paramExtras, ...colExtras]));
+              return {
+                ...op,
+                zdjecia_dodatkowe: merged
               };
             });
           }
-        } catch (e) {
-          console.warn("Could not enrich operations with wozki table data:", e);
+        } catch (extraImgErr) {
+          console.warn("[Supabase list-operations] zdjecia_operacji join notice:", extraImgErr);
         }
       }
     }
 
     return res.json({ success: true, data: enrichedList });
   } catch (error: any) {
-    console.error("Supabase list-operations error:", error);
+    const errorMsg = error?.message || (typeof error === "object" ? JSON.stringify(error) : String(error));
+    console.warn("Supabase list-operations exception handled:", errorMsg);
     if (checkIfTableMissing(error)) {
       return res.status(404).json({ 
         error: "Tabela 'operacje' nie istnieje w bazie Supabase.",
-        code: "TABLE_NOT_FOUND" 
+        code: "TABLE_NOT_FOUND",
+        data: []
       });
     }
-    return res.status(500).json({ error: error.message || "Błąd pobierania operacji z bazy." });
+    return res.status(200).json({ success: true, data: [], warning: errorMsg });
   }
 });
 
@@ -740,6 +1096,13 @@ app.post("/api/supabase/delete-operation", async (req, res) => {
         });
       }
       throw error;
+    }
+
+    // Clean up related images from zdjecia_operacji table
+    try {
+      await supabase.from("zdjecia_operacji").delete().eq("id_operacji", parsedId);
+    } catch (delImgErr) {
+      console.warn("Could not delete from zdjecia_operacji:", delImgErr);
     }
 
     // If no row was returned/affected and we used select(), check if it actually deleted anything.

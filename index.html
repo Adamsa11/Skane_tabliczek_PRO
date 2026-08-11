@@ -269,6 +269,53 @@
                     </button>
                 </div>
 
+                <!-- 1c. Dodatkowe zdjęcia wózka / uszkodzeń / osprzętu -->
+                <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
+                            <i class="fa-solid fa-camera-retro"></i> Dodatkowe zdjęcia wózka
+                        </h3>
+                        <span id="extraImagesCountBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 transition-all">
+                            0 zdjęć
+                        </span>
+                    </div>
+
+                    <!-- Dropzone dla wielu dodatkowych zdjęć -->
+                    <div id="dropzoneExtra" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-4 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[130px] group">
+                        <input type="file" id="imageInputExtra" accept="image/*" multiple class="hidden">
+                        
+                        <div id="uploadPlaceholderExtra" class="flex flex-col items-center py-2">
+                            <div class="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-500 mb-2 transition-transform group-hover:scale-110">
+                                <i class="fa-solid fa-images text-xl"></i>
+                            </div>
+                            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200">Dodaj dodatkowe zdjęcia</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5 max-w-[220px]">stan ogólny, widły, bateria, uszkodzenia (kliknij lub przeciągnij wiele plików)</p>
+                        </div>
+                    </div>
+
+                    <!-- Galeria miniatur dodanych zdjęć -->
+                    <div id="extraImagesGalleryContainer" class="hidden mt-3 space-y-2.5">
+                        <div class="flex items-center justify-between text-[11px] pb-1 border-b border-slate-100 dark:border-zinc-800/80">
+                            <span class="font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-layer-group text-brand-500 text-[10px]"></i> Wybrane (<span id="extraImagesCountText">0</span>):
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="document.getElementById('imageInputExtra').click()" class="text-[10px] text-brand-500 hover:underline font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-plus text-[9px]"></i> Dodaj kolejne
+                                </button>
+                                <span class="text-slate-300 dark:text-zinc-700">|</span>
+                                <button type="button" onclick="clearAllExtraImages()" class="text-[10px] text-red-500 hover:underline font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-trash-can text-[9px]"></i> Wyczyść
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="extraImagesGallery" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
+                            <!-- Dynamicznie wstawiane miniatury -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Status dopasowania Supabase -->
                 <div id="supabaseMatchSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
                     <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
@@ -294,6 +341,20 @@
                         <i class="fa-solid fa-floppy-disk"></i> Zapisz operację w bazie
                     </h3>
                     <div class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 space-y-3 transition-all">
+                        <!-- Podsumowanie załączonych zdjęć -->
+                        <div class="flex items-center justify-between text-[11px] bg-white dark:bg-[#111111]/70 px-3 py-2 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 text-slate-500 dark:text-slate-400">
+                            <span class="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
+                                <i class="fa-solid fa-paperclip text-brand-500"></i> Zdjęcia do zapisu:
+                            </span>
+                            <div class="flex items-center gap-2 text-[10px] font-semibold flex-wrap justify-end">
+                                <span id="saveOpPlateBadge" class="flex items-center gap-1"><i class="fa-solid fa-id-card text-[9px]"></i> Tabliczka: <strong class="text-slate-800 dark:text-slate-200">Brak</strong></span>
+                                <span>•</span>
+                                <span id="saveOpScreenBadge" class="flex items-center gap-1"><i class="fa-solid fa-desktop text-[9px]"></i> Ekran: <strong class="text-slate-800 dark:text-slate-200">Brak</strong></span>
+                                <span>•</span>
+                                <span id="saveOpExtraBadge" class="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-bold"><i class="fa-solid fa-images text-[9px]"></i> Dodatkowe: 0</span>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label for="opKlient" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Klient</label>
@@ -645,6 +706,16 @@ CREATE TABLE IF NOT EXISTS operacje (
 ALTER TABLE operacje ADD COLUMN IF NOT EXISTS opis text;
 ALTER TABLE operacje ADD COLUMN IF NOT EXISTS parametry_ekranu jsonb;
 ALTER TABLE operacje ADD COLUMN IF NOT EXISTS image_data_screen text;
+ALTER TABLE operacje ADD COLUMN IF NOT EXISTS zdjecia_dodatkowe text[];
+
+-- NOWA TABELA NA DODATKOWE ZDJĘCIA WÓZKA:
+CREATE TABLE IF NOT EXISTS zdjecia_operacji (
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    id_operacji bigint REFERENCES operacje(id) ON DELETE CASCADE,
+    image_dodatkowe text NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_zdjecia_operacji_id_operacji ON zdjecia_operacji(id_operacji);
 
 CREATE TABLE IF NOT EXISTS wozki (
     id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -665,6 +736,7 @@ CREATE TABLE IF NOT EXISTS wozki (
 
 -- KROK 2: Wyłączenie RLS (Zalecane dla najprostszego zapisu i odczytu)
 ALTER TABLE IF EXISTS operacje DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS zdjecia_operacji DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
 
 -- LUB OPCJA B (Bezpieczna, włączenie RLS z jawnym dostępem anonimowym):
@@ -889,13 +961,58 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             <!-- Treść przewijana -->
             <div class="overflow-y-auto flex-1 space-y-6 pr-1 custom-scrollbar">
                 
-                <!-- 1. DUŻE ZDJĘCIA DOKUMENTACJI -->
-                <div>
-                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-images text-brand-500"></i> Dokumentacja zdjęciowa (Duże podglądy)
-                    </h4>
+                <!-- 1. GŁÓWNA DOKUMENTACJA ZDJĘCIOWA (Tabliczka znamionowa & Ekran / Licznik) -->
+                <div id="detailsOpMainImagesCard" class="bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/60 dark:border-zinc-800/80 p-4 sm:p-5 space-y-4">
+                    <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-200/50 dark:border-zinc-800/60">
+                        <div class="flex items-center gap-2.5">
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2 font-ubuntu">
+                                <i class="fa-solid fa-id-card text-brand-500"></i> Zdjęcia główne (Tabliczka & Ekran)
+                            </h4>
+                            <span id="detailsOpMainPhotosCountBadge" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 border border-brand-200/50 dark:border-brand-500/30">0 zdjęć</span>
+                        </div>
+                    </div>
+
+                    <!-- Główne zdjęcia: Tabliczka Znamionowa oraz Ekran / Licznik -->
                     <div id="detailsOpImagesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Renderowane dynamicznie -->
+                    </div>
+
+                    <!-- Komunikat o braku zdjęć głównych -->
+                    <div id="detailsOpNoMainPhotosPlaceholder" class="hidden bg-white dark:bg-zinc-950/60 rounded-2xl border border-dashed border-slate-300 dark:border-zinc-800 p-5 text-center text-slate-400 dark:text-slate-500 space-y-1">
+                        <i class="fa-solid fa-image-slash text-xl text-slate-300 dark:text-zinc-700"></i>
+                        <p class="text-xs font-bold">Brak zdjęcia tabliczki oraz ekranu dla tego wpisu</p>
+                    </div>
+                </div>
+
+                <!-- 2. DEDYKOWANA SEKCJA: DODATKOWE ZDJĘCIA (Dodatkowe zdjęcia wózka) -->
+                <div id="detailsOpExtraImagesCard" class="bg-purple-950/5 dark:bg-purple-950/20 rounded-2xl border border-purple-200/60 dark:border-purple-800/40 p-4 sm:p-5 space-y-4">
+                    <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-purple-200/50 dark:border-purple-800/40">
+                        <div class="flex items-center gap-2.5">
+                            <h4 class="text-xs font-bold text-purple-900 dark:text-purple-200 uppercase tracking-wider flex items-center gap-2 font-ubuntu">
+                                <i class="fa-solid fa-camera-retro text-purple-500"></i> Dodatkowe zdjęcia wózka
+                            </h4>
+                            <span id="detailsOpExtraImagesCountBadge" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-300/60 dark:border-purple-700/60">0 zdjęć</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="file" id="modalAddExtraPhotosInput" accept="image/*" multiple class="hidden">
+                            <button type="button" id="btnModalAddPhotos" onclick="document.getElementById('modalAddExtraPhotosInput').click()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Dołącz kolejne zdjęcia
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Siatka dodatkowych zdjęć wózka -->
+                    <div id="detailsOpExtraImagesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                        <!-- Renderowane dynamicznie -->
+                    </div>
+
+                    <!-- Komunikat o braku dodatkowych zdjęć -->
+                    <div id="detailsOpNoExtraPhotosPlaceholder" class="hidden bg-white/70 dark:bg-zinc-950/60 rounded-2xl border border-dashed border-purple-300/60 dark:border-purple-800/40 p-6 text-center text-slate-400 dark:text-slate-400 space-y-2">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-950/60 flex items-center justify-center text-purple-500 mx-auto">
+                            <i class="fa-solid fa-images text-lg"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Brak dodatkowych zdjęć wózka w tym wpisie</p>
+                        <p class="text-[11px] text-slate-400 max-w-md mx-auto">Możesz w każdej chwili dołączyć zdjęcia stanu ogólnego, wideł, masztu, baterii lub uszkodzeń klikając przycisk <strong>"Dołącz kolejne zdjęcia"</strong> powyżej.</p>
                     </div>
                 </div>
 
@@ -979,11 +1096,16 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
 
     <!-- Modal Podglądu Pełnego Zdjęcia (Lightbox) -->
     <div id="imageLightboxModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300" onclick="closeLightbox()">
-        <div class="relative max-w-3xl w-full flex flex-col items-center justify-center" onclick="event.stopPropagation()">
-            <button onclick="closeLightbox()" class="absolute -top-12 right-0 bg-slate-900/80 hover:bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <img id="lightboxImage" class="max-h-[80vh] w-auto max-w-full rounded-2xl shadow-2xl border border-zinc-800 object-contain" src="" alt="Pełny obraz">
+        <div class="relative max-w-4xl w-full flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+            <div class="absolute -top-12 right-0 flex items-center gap-2">
+                <button type="button" onclick="downloadImageFile(document.getElementById('lightboxImage').src, 'zdjecie-wozka-' + Date.now() + '.jpg')" class="bg-slate-900/90 hover:bg-brand-500 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-lg text-xs font-bold cursor-pointer">
+                    <i class="fa-solid fa-download"></i> Pobierz
+                </button>
+                <button type="button" onclick="closeLightbox()" class="bg-slate-900/90 hover:bg-red-600 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg text-base cursor-pointer" title="Zamknij (Esc)">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <img id="lightboxImage" class="max-h-[82vh] w-auto max-w-full rounded-2xl shadow-2xl border border-zinc-800 object-contain bg-black/40" src="" alt="Pełny obraz">
         </div>
     </div>
 
@@ -1581,6 +1703,206 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             if (stateIdleScreen) stateIdleScreen.classList.remove('hidden'); 
             if (stateLoadingScreen) stateLoadingScreen.classList.add('hidden'); 
             if (stateResultsScreen) stateResultsScreen.classList.add('hidden');
+            if (typeof updatePhotoBadgesSummary === 'function') updatePhotoBadgesSummary();
+        }
+
+        // Extra Images DOM references & handlers
+        let extraImagesList = []; // Array of data URLs (base64 strings)
+        const dropzoneExtra = document.getElementById('dropzoneExtra');
+        const imageInputExtra = document.getElementById('imageInputExtra');
+        const extraImagesGalleryContainer = document.getElementById('extraImagesGalleryContainer');
+        const extraImagesGallery = document.getElementById('extraImagesGallery');
+        const extraImagesCountBadge = document.getElementById('extraImagesCountBadge');
+        const extraImagesCountText = document.getElementById('extraImagesCountText');
+
+        // Compression utility to compress uploaded photos before storing/sending
+        function compressImageFile(file, maxWidth = 1600, maxHeight = 1600, quality = 0.82) {
+            return new Promise((resolve) => {
+                if (!file || !file.type || !file.type.startsWith('image/')) {
+                    resolve(null);
+                    return;
+                }
+
+                // Protect against signature shifts (e.g. compressImageFile(file, 1600, 0.85))
+                if (typeof maxHeight === 'number' && maxHeight <= 1 && quality === 0.82) {
+                    quality = maxHeight;
+                    maxHeight = 1600;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let width = img.width || 1200;
+                        let height = img.height || 900;
+                        const targetMaxW = (typeof maxWidth === 'number' && maxWidth > 1) ? maxWidth : 1600;
+                        const targetMaxH = (typeof maxHeight === 'number' && maxHeight > 1) ? maxHeight : 1600;
+
+                        if (width > targetMaxW || height > targetMaxH) {
+                            if (width / height > targetMaxW / targetMaxH) {
+                                height = Math.round((height * targetMaxW) / width);
+                                width = targetMaxW;
+                            } else {
+                                width = Math.round((width * targetMaxH) / height);
+                                height = targetMaxH;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = Math.max(1, width);
+                        canvas.height = Math.max(1, height);
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = () => resolve(e.target.result);
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (dropzoneExtra) {
+            dropzoneExtra.addEventListener('dragover', (e) => { e.preventDefault(); dropzoneExtra.classList.add('border-brand-500', 'bg-brand-50/10'); });
+            dropzoneExtra.addEventListener('dragleave', () => { dropzoneExtra.classList.remove('border-brand-500', 'bg-brand-50/10'); });
+            dropzoneExtra.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzoneExtra.classList.remove('border-brand-500', 'bg-brand-50/10');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleExtraFiles(e.dataTransfer.files);
+                }
+            });
+            dropzoneExtra.addEventListener('click', () => { if (imageInputExtra) imageInputExtra.click(); });
+        }
+
+        if (imageInputExtra) {
+            imageInputExtra.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    handleExtraFiles(e.target.files);
+                    imageInputExtra.value = '';
+                }
+            });
+        }
+
+        async function handleExtraFiles(filesList) {
+            const files = Array.from(filesList).filter(f => f && f.type.startsWith('image/'));
+            if (files.length === 0) {
+                showToast("Wybierz poprawne pliki graficzne (JPEG, PNG, WebP).", "error");
+                return;
+            }
+
+            showToast(`Wczytywanie i optymalizacja ${files.length} zdjęć...`, "info");
+            let addedCount = 0;
+
+            for (const file of files) {
+                try {
+                    const compressedDataUrl = await compressImageFile(file, 1600, 1600, 0.82);
+                    if (compressedDataUrl) {
+                        extraImagesList.push(compressedDataUrl);
+                        addedCount++;
+                    }
+                } catch (e) {
+                    console.warn("Błąd kompresji zdjęcia:", e);
+                }
+            }
+
+            renderExtraImagesGallery();
+            updatePhotoBadgesSummary();
+            showToast(`Dodano ${addedCount} dodatkowych zdjęć (łącznie: ${extraImagesList.length}).`, "success");
+        }
+
+        function removeExtraImage(index) {
+            if (index >= 0 && index < extraImagesList.length) {
+                extraImagesList.splice(index, 1);
+                renderExtraImagesGallery();
+                updatePhotoBadgesSummary();
+                showToast("Usunięto zdjęcie z listy.", "info");
+            }
+        }
+
+        function clearAllExtraImages() {
+            extraImagesList = [];
+            renderExtraImagesGallery();
+            updatePhotoBadgesSummary();
+        }
+
+        function renderExtraImagesGallery() {
+            if (!extraImagesGallery || !extraImagesGalleryContainer) return;
+
+            const count = extraImagesList.length;
+            if (extraImagesCountBadge) {
+                extraImagesCountBadge.textContent = `${count} ${count === 1 ? 'zdjęcie' : (count > 1 && count < 5 ? 'zdjęcia' : 'zdjęć')}`;
+                if (count > 0) {
+                    extraImagesCountBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/50 dark:border-purple-800/50 transition-all";
+                } else {
+                    extraImagesCountBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 transition-all";
+                }
+            }
+            if (extraImagesCountText) extraImagesCountText.textContent = count;
+
+            if (count === 0) {
+                extraImagesGalleryContainer.classList.add('hidden');
+                extraImagesGallery.innerHTML = '';
+                return;
+            }
+
+            extraImagesGalleryContainer.classList.remove('hidden');
+
+            let html = '';
+            extraImagesList.forEach((imgUrl, idx) => {
+                html += `
+                    <div class="relative group rounded-xl overflow-hidden aspect-square border border-slate-200/70 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-900 shadow-sm">
+                        <img src="${imgUrl}" class="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105" onclick="viewFullImage('${imgUrl.replace(/'/g, "\\'")}')" alt="Zdjęcie #${idx + 1}">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
+                            <button type="button" onclick="viewFullImage('${imgUrl.replace(/'/g, "\\'")}')" class="w-6 h-6 rounded-lg bg-white/90 dark:bg-zinc-800/90 text-slate-800 dark:text-white hover:bg-brand-500 hover:text-white text-[10px] flex items-center justify-center transition-all shadow" title="Powiększ">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                            <button type="button" onclick="removeExtraImage(${idx})" class="w-6 h-6 rounded-lg bg-red-600/90 hover:bg-red-700 text-white text-[10px] flex items-center justify-center transition-all shadow" title="Usuń zdjęcie">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <span class="absolute bottom-1 left-1 bg-black/70 text-white text-[8px] font-mono px-1 rounded font-bold">#${idx + 1}</span>
+                    </div>
+                `;
+            });
+
+            // Kafelek "Dodaj kolejne (+)"
+            html += `
+                <button type="button" onclick="document.getElementById('imageInputExtra').click()" class="aspect-square rounded-xl border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-purple-500 dark:hover:border-purple-500 flex flex-col items-center justify-center gap-1 bg-slate-50/50 dark:bg-zinc-900/40 text-slate-400 hover:text-purple-500 transition-all p-1 group">
+                    <i class="fa-solid fa-plus text-xs group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[9px] font-bold">Więcej</span>
+                </button>
+            `;
+
+            extraImagesGallery.innerHTML = html;
+        }
+
+        function updatePhotoBadgesSummary() {
+            const plateBadge = document.getElementById('saveOpPlateBadge');
+            const screenBadge = document.getElementById('saveOpScreenBadge');
+            const extraBadge = document.getElementById('saveOpExtraBadge');
+
+            if (plateBadge) {
+                if (uploadedFileBase64) {
+                    plateBadge.innerHTML = `<i class="fa-solid fa-id-card text-[9px] text-emerald-500"></i> Tabliczka: <strong class="text-emerald-600 dark:text-emerald-400">Załączona</strong>`;
+                } else {
+                    plateBadge.innerHTML = `<i class="fa-solid fa-id-card text-[9px]"></i> Tabliczka: <strong class="text-slate-500">Brak</strong>`;
+                }
+            }
+
+            if (screenBadge) {
+                if (uploadedScreenFileBase64) {
+                    screenBadge.innerHTML = `<i class="fa-solid fa-desktop text-[9px] text-sky-500"></i> Ekran: <strong class="text-sky-600 dark:text-sky-400">Załączony</strong>`;
+                } else {
+                    screenBadge.innerHTML = `<i class="fa-solid fa-desktop text-[9px]"></i> Ekran: <strong class="text-slate-500">Brak</strong>`;
+                }
+            }
+
+            if (extraBadge) {
+                const count = extraImagesList.length;
+                extraBadge.innerHTML = `<i class="fa-solid fa-images text-[9px]"></i> Dodatkowe: <strong class="${count > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-slate-500'}">${count}</strong>`;
+            }
         }
 
         // Direct Client-side Gemini API Caller (Solution B / Static Pages)
@@ -2262,11 +2584,12 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }
         }
 
-        // Clear uploaders, parsed AI scan parameters, and matching status after operation save
+        // Clear uploaders, parsed AI scan parameters, extra images, and matching status after operation save
         function clearScanDataAndStatus() {
-            // 1. Wyczyść wprowadzenie zdjęć (tabliczka i ekran)
+            // 1. Wyczyść wprowadzenie zdjęć (tabliczka, ekran oraz dodatkowe zdjęcia)
             if (typeof resetUploader === 'function') resetUploader();
             if (typeof resetScreenUploader === 'function') resetScreenUploader();
+            if (typeof clearAllExtraImages === 'function') clearAllExtraImages();
 
             // 2. Wyczyść odczyt parametrów
             parsedResults = null;
@@ -2313,6 +2636,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             if (content) {
                 content.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Odczytaj tabliczkę znamionową, aby automatycznie przeszukać bazę Supabase po numerze seryjnym.</p>`;
             }
+
+            if (typeof updatePhotoBadgesSummary === 'function') updatePhotoBadgesSummary();
         }
 
         // Save scanned details with additional inputs: Klient, Temat, and Opis to the separate 'operacje' table
@@ -2343,13 +2668,14 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             await saveOperationToDatabase(serialNum, klientVal, tematVal, opisVal);
         }
 
-        // Save a scanned plate log with base64 images, client details, screen params, and matched forklift ID
+        // Save a scanned plate log with base64 images, client details, screen params, extra photos, and matched forklift ID
         async function saveOperationToDatabase(serialNumber, klientVal, tematVal, opisVal = "") {
             showToast("Zapisywanie operacji w bazie...", "info");
             
             const combinedData = { ...(parsedResults || {}), ...(parsedScreenResults || {}) };
             const modelVal = combinedData["Model"] || combinedData["MODEL"] || combinedData["Typ"] || combinedData["TYP"] || "";
             const wozekIdVal = matchedWozek ? (matchedWozek.id || matchedWozek.ID) : null;
+            const extraPhotosToSave = Array.isArray(extraImagesList) ? [...extraImagesList] : [];
 
             const record = {
                 wozek_id: wozekIdVal,
@@ -2358,7 +2684,10 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 klient: klientVal,
                 temat: tematVal,
                 opis: opisVal,
-                parametry: parsedResults || {},
+                parametry: {
+                    ...(parsedResults || {}),
+                    ...(extraPhotosToSave.length > 0 ? { zdjecia_dodatkowe: extraPhotosToSave } : {})
+                },
                 parametry_ekranu: parsedScreenResults || {},
                 image_data: uploadedFileBase64 ? `data:image/jpeg;base64,${uploadedFileBase64}` : "",
                 image_data_screen: uploadedScreenFileBase64 ? `data:image/jpeg;base64,${uploadedScreenFileBase64}` : "",
@@ -2372,7 +2701,11 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 klient: record.klient,
                 temat: record.temat,
                 opis: record.opis,
-                parametry: { ...(parsedResults || {}), ...(parsedScreenResults ? { "_ekran": parsedScreenResults } : {}) },
+                parametry: {
+                    ...(parsedResults || {}),
+                    ...(parsedScreenResults ? { "_ekran": parsedScreenResults } : {}),
+                    ...(extraPhotosToSave.length > 0 ? { zdjecia_dodatkowe: extraPhotosToSave } : {})
+                },
                 image_data: record.image_data || record.image_data_screen || "",
                 created_at: record.created_at
             };
@@ -2402,6 +2735,24 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 
                     if (response.ok) {
                         data = await response.json();
+                        const savedOp = Array.isArray(data) && data[0] ? data[0] : data;
+                        
+                        // Zapis dodatkowych zdjęć w tabeli 'zdjecia_operacji' w Supabase
+                        if (savedOp && savedOp.id && extraPhotosToSave.length > 0) {
+                            try {
+                                const extraRecords = extraPhotosToSave.map(img => ({
+                                    id_operacji: savedOp.id,
+                                    image_dodatkowe: img
+                                }));
+                                await staticSupabaseRequest('/rest/v1/zdjecia_operacji', {
+                                    method: "POST",
+                                    headers: { "Prefer": "return=minimal" },
+                                    body: JSON.stringify(extraRecords)
+                                });
+                            } catch (extraSaveErr) {
+                                console.warn("Błąd zapisu dodatkowych zdjęć do zdjecia_operacji w trybie static:", extraSaveErr);
+                            }
+                        }
                         success = true;
                     } else {
                         const err = await response.json().catch(() => ({}));
@@ -2411,7 +2762,10 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     let response = await fetch("/api/supabase/save-operation", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ record })
+                        body: JSON.stringify({ 
+                            record,
+                            additionalImages: extraPhotosToSave 
+                        })
                     });
                     
                     let resData = {};
@@ -2426,7 +2780,10 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         response = await fetch("/api/supabase/save-operation", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ record: fallbackRecord })
+                            body: JSON.stringify({ 
+                                record: fallbackRecord,
+                                additionalImages: extraPhotosToSave 
+                            })
                         });
                         const fallbackText = await response.text();
                         try { resData = JSON.parse(fallbackText); } catch(e) {}
@@ -2441,9 +2798,9 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 }
 
                 if (success) {
-                    showToast("Operacja została pomyślnie zapisana w bazie danych!", "success");
+                    showToast("Operacja oraz zdjęcia zostały pomyślnie zapisane w bazie danych!", "success");
                     
-                    // Clear uploaders, scanned parameters, and match status after save
+                    // Clear uploaders, scanned parameters, extra images, and match status after save
                     clearScanDataAndStatus();
 
                     // Hide SQL Setup alert if database table worked
@@ -2456,9 +2813,9 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 console.error("Error saving operation to Supabase:", err);
                 
                 // Always save to localStorage as backup when database save fails
-                saveOperationToLocalStorage(record);
+                saveOperationToLocalStorage({ ...record, zdjecia_dodatkowe: extraPhotosToSave });
 
-                // Clear uploaders, scanned parameters, and match status after save
+                // Clear uploaders, scanned parameters, extra images, and match status after save
                 clearScanDataAndStatus();
 
                 // Automatically show the troubleshooting & SQL setup instructions
@@ -2500,6 +2857,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 // Krok 1: Usuń obrazy z właśnie zapisanego rekordu (same dane tekstowe zajmują ułamek kilobajta)
                 recordCopy.image_data = "";
                 recordCopy.image_data_screen = "";
+                recordCopy.zdjecia_dodatkowe = [];
                 localOps[0] = recordCopy;
                 
                 try {
@@ -2511,6 +2869,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     for (let i = 0; i < localOps.length; i++) {
                         localOps[i].image_data = "";
                         localOps[i].image_data_screen = "";
+                        localOps[i].zdjecia_dodatkowe = [];
                     }
                     
                     try {
@@ -2759,6 +3118,33 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     console.warn("Błąd ładowania mapy wózków:", wErr);
                 }
 
+                // Enrich operations with extra images from 'zdjecia_operacji' in static mode if not already enriched
+                if (isStaticMode() && Array.isArray(list) && list.length > 0) {
+                    try {
+                        const dbOpIds = list.map(o => o.id).filter(id => id && !String(id).startsWith('local_'));
+                        if (dbOpIds.length > 0) {
+                            const zRes = await staticSupabaseRequest(`/rest/v1/zdjecia_operacji?id_operacji=in.(${dbOpIds.join(',')})&select=*`);
+                            if (zRes.ok) {
+                                const zData = await zRes.json();
+                                if (Array.isArray(zData)) {
+                                    const zMap = {};
+                                    zData.forEach(item => {
+                                        if (!zMap[item.id_operacji]) zMap[item.id_operacji] = [];
+                                        zMap[item.id_operacji].push(item.image_dodatkowe);
+                                    });
+                                    list.forEach(op => {
+                                        if (zMap[op.id]) {
+                                            op.zdjecia_dodatkowe = zMap[op.id];
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } catch (zErr) {
+                        console.warn("Błąd dołączania zdjecia_operacji w trybie static:", zErr);
+                    }
+                }
+
                 // Fetch local operations
                 let localOps = [];
                 try {
@@ -2878,6 +3264,37 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         if (pk === '_ekran') continue;
                         const lowKey = pk.toLowerCase();
                         if (lowKey.includes('seryjny') || lowKey.includes('katalogowy') || lowKey.includes('model') || lowKey.includes('typ')) continue;
+                        
+                        // zdjecia_dodatkowe - don't show path/base64, only photo count
+                        if (lowKey === 'zdjecia_dodatkowe' || lowKey === '_zdjecia_dodatkowe' || lowKey.includes('zdjecia_dodatkowe')) {
+                            let count = 0;
+                            if (Array.isArray(pv)) count = pv.length;
+                            else if (typeof pv === 'string') {
+                                try {
+                                    const parsed = JSON.parse(pv);
+                                    count = Array.isArray(parsed) ? parsed.length : (parsed ? 1 : 0);
+                                } catch(e) {
+                                    count = pv.trim().length > 0 ? 1 : 0;
+                                }
+                            } else if (typeof pv === 'number') {
+                                count = pv;
+                            }
+                            if (count > 0) {
+                                const label = count === 1 ? '1 zdjęcie' : (count >= 2 && count <= 4 ? `${count} zdjęcia` : `${count} zdjęć`);
+                                tagsHtml += `
+                                    <span class="text-[10px] bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded font-medium border border-purple-200/60 dark:border-purple-800/60 whitespace-nowrap flex items-center gap-1">
+                                        <i class="fa-solid fa-camera text-[9px] text-purple-500"></i> <strong>Dodatkowe zdjęcia:</strong> ${label}
+                                    </span>
+                                `;
+                            }
+                            continue;
+                        }
+
+                        // Skip any raw base64 data URLs or long strings from displaying as ugly text
+                        if (typeof pv === 'string' && (pv.startsWith('data:image') || pv.length > 200)) {
+                            continue;
+                        }
+
                         tagsHtml += `
                             <span class="text-[10px] bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-medium border border-slate-200/40 dark:border-zinc-800/80 whitespace-nowrap">
                                 <strong>${pk}:</strong> ${pv}
@@ -2901,6 +3318,32 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     const hasScreenImage = screenImageDataRaw && screenImageDataRaw.length > 50;
                     const screenImgSrc = hasScreenImage ? (screenImageDataRaw.startsWith('data:') ? screenImageDataRaw : `data:image/jpeg;base64,${screenImageDataRaw}`) : '';
 
+                    let extraPhotosList = [];
+                    if (Array.isArray(op.zdjecia_dodatkowe)) {
+                        extraPhotosList = op.zdjecia_dodatkowe;
+                    } else if (typeof op.zdjecia_dodatkowe === 'string') {
+                        try { 
+                            const parsed = JSON.parse(op.zdjecia_dodatkowe);
+                            if (Array.isArray(parsed)) extraPhotosList = parsed;
+                            else if (parsed) extraPhotosList = [parsed];
+                        } catch(e) {
+                            if (op.zdjecia_dodatkowe.length > 20) extraPhotosList = [op.zdjecia_dodatkowe];
+                        }
+                    } else if (Array.isArray(op.extra_images)) {
+                        extraPhotosList = op.extra_images;
+                    } else if (Array.isArray(op.additional_images)) {
+                        extraPhotosList = op.additional_images;
+                    } else if (Array.isArray(op.zdjecia)) {
+                        extraPhotosList = op.zdjecia;
+                    } else if (Array.isArray(op.images)) {
+                        extraPhotosList = op.images;
+                    } else if (op.parametry && Array.isArray(op.parametry.zdjecia_dodatkowe)) {
+                        extraPhotosList = op.parametry.zdjecia_dodatkowe;
+                    }
+                    if (!Array.isArray(extraPhotosList)) extraPhotosList = [];
+                    const extraImagesCount = extraPhotosList.length;
+                    const firstExtraSrc = extraImagesCount > 0 ? normalizeImageSrc(extraPhotosList[0]) : '';
+
                     listHtml += `
                         <div class="bg-white dark:bg-[#111111]/30 rounded-2xl border border-slate-200/50 dark:border-zinc-800/80 p-4 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                             <div class="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
@@ -2918,7 +3361,23 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                             <div class="absolute bottom-0 inset-x-0 bg-sky-900/80 text-[7px] text-sky-100 text-center font-extrabold py-0.5 uppercase tracking-wider">Ekran</div>
                                         </div>
                                     ` : ''}
-                                    ${!hasPlateImage && !hasScreenImage ? `
+                                    ${extraImagesCount > 0 ? `
+                                        <div class="relative w-14 h-14 rounded-xl bg-purple-950/20 dark:bg-purple-950/40 overflow-hidden border border-purple-500/40 cursor-pointer group flex flex-col items-center justify-center text-center hover:border-purple-400 transition-all shadow-sm" onclick="openOperationDetailsModal('${op.id}', ${isLocal})" title="${extraImagesCount} dodatkowych zdjęć wózka - kliknij, aby otworzyć szczegóły">
+                                            ${firstExtraSrc ? `
+                                                <img src="${firstExtraSrc}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="Dodatkowe">
+                                            ` : `
+                                                <i class="fa-solid fa-camera text-purple-500 dark:text-purple-400 text-sm mb-0.5 group-hover:scale-110 transition-transform"></i>
+                                            `}
+                                            <div class="absolute top-0.5 right-0.5 bg-purple-600/90 text-[7px] text-white font-black px-1 rounded-full">+${extraImagesCount}</div>
+                                            <div class="absolute bottom-0 inset-x-0 bg-purple-900/90 text-[6px] text-purple-100 text-center font-black py-0.5 uppercase tracking-wider">Wózek</div>
+                                        </div>
+                                    ` : ''}
+                                    ${!hasPlateImage && !hasScreenImage && extraImagesCount === 0 ? `
+                                        <div class="w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80 shrink-0 flex items-center justify-center text-slate-400 dark:text-zinc-600">
+                                            <i class="fa-solid fa-image text-lg"></i>
+                                        </div>
+                                    ` : ''}
+                                    ${!hasPlateImage && !hasScreenImage && extraImagesCount === 0 ? `
                                         <div class="w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200/60 dark:border-zinc-800/80 shrink-0 flex items-center justify-center text-slate-400 dark:text-zinc-600">
                                             <i class="fa-solid fa-image text-lg"></i>
                                         </div>
@@ -2940,6 +3399,11 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                         ` : `
                                             <span class="text-[8px] bg-emerald-500/15 text-emerald-500 px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wider">W bazie</span>
                                         `}
+                                        ${extraImagesCount > 0 ? `
+                                            <button onclick="openOperationDetailsModal('${op.id}', ${isLocal})" class="text-[8px] bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded font-extrabold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer" title="Kliknij, aby zobaczyć ${extraImagesCount} dodatkowych zdjęć wózka">
+                                                <i class="fa-solid fa-camera-retro text-[8px]"></i> +${extraImagesCount} zdjęć wózka
+                                            </button>
+                                        ` : ''}
                                     </div>
 
                                     <!-- Dane z połączenia z tabelą 'wozki' (ID <-> wozek_id) -->
@@ -3012,13 +3476,13 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                         <i class="fa-solid fa-magnifying-glass text-[9px]"></i> Brak powiązania
                                     </button>
                                 `}
-                                <button onclick="openOperationDetailsModal('${op.id}', ${isLocal})" class="p-2 bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0" title="Pokaż pełne szczegóły wpisu i duże zdjęcia">
+                                <button onclick="openOperationDetailsModal('${op.id}', ${isLocal})" class="w-8 h-8 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center shrink-0 shadow-sm shadow-brand-500/20 cursor-pointer" title="Szczegóły operacji i zdjęcia">
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
-                                <button onclick="openEditOperationModal('${op.id}', ${isLocal})" class="p-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0" title="Edytuj operację">
+                                <button onclick="openEditOperationModal('${op.id}', ${isLocal})" class="w-8 h-8 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0 cursor-pointer" title="Edytuj operację">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button onclick="deleteOperation('${op.id}', ${isLocal})" class="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0" title="Usuń operację">
+                                <button onclick="deleteOperation('${op.id}', ${isLocal})" class="w-8 h-8 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-500 rounded-xl text-xs transition-all flex items-center justify-center shrink-0 cursor-pointer" title="Usuń operację">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -3189,65 +3653,338 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 }
             }
 
-            // Images Grid
-            const hasPlateImage = op.image_data && op.image_data.length > 50;
-            const plateImgSrc = hasPlateImage ? (op.image_data.startsWith('data:') ? op.image_data : `data:image/jpeg;base64,${op.image_data}`) : '';
-
-            const screenImageDataRaw = op.image_data_screen || op.zdjecie_ekranu || '';
-            const hasScreenImage = screenImageDataRaw && screenImageDataRaw.length > 50;
-            const screenImgSrc = hasScreenImage ? (screenImageDataRaw.startsWith('data:') ? screenImageDataRaw : `data:image/jpeg;base64,${screenImageDataRaw}`) : '';
-
+            // --- Photo Gallery Rendering & Management in Details Modal ---
+            const mainPhotosBadge = document.getElementById('detailsOpMainPhotosCountBadge');
             const imagesGrid = document.getElementById('detailsOpImagesGrid');
-            let imagesHtml = '';
+            const noMainPhotosPlaceholder = document.getElementById('detailsOpNoMainPhotosPlaceholder');
+            const extraPhotosBadge = document.getElementById('detailsOpExtraImagesCountBadge');
+            const extraGrid = document.getElementById('detailsOpExtraImagesGrid');
+            const noExtraPhotosPlaceholder = document.getElementById('detailsOpNoExtraPhotosPlaceholder');
 
-            if (hasPlateImage) {
-                imagesHtml += `
-                    <div class="bg-slate-900 rounded-2xl border border-slate-700/80 p-3 flex flex-col justify-between gap-2.5 relative group">
-                        <div class="w-full flex items-center justify-between text-white text-xs px-1">
-                            <span class="font-bold flex items-center gap-1.5">
-                                <i class="fa-solid fa-id-card text-brand-400"></i> Tabliczka znamionowa
-                            </span>
-                            <button onclick="viewFullImage('${plateImgSrc.replace(/'/g, "\\'")}')" class="text-[10px] bg-slate-800 hover:bg-brand-500 text-slate-200 hover:text-white px-2.5 py-1 rounded-lg transition-all font-bold flex items-center gap-1">
-                                <i class="fa-solid fa-expand"></i> Pełny ekran
-                            </button>
-                        </div>
-                        <div class="w-full h-64 sm:h-80 flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden cursor-pointer" onclick="viewFullImage('${plateImgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby otworzyć na pełnym ekranie">
-                            <img src="${plateImgSrc}" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" alt="Tabliczka znamionowa">
-                        </div>
-                        <span class="text-[10px] text-slate-400 text-center italic">Kliknij w zdjęcie, aby powiększyć</span>
-                    </div>
-                `;
+            function getOpExtraPhotosList() {
+                let list = [];
+                if (Array.isArray(op.zdjecia_dodatkowe)) {
+                    list = op.zdjecia_dodatkowe;
+                } else if (typeof op.zdjecia_dodatkowe === 'string') {
+                    try {
+                        const parsed = JSON.parse(op.zdjecia_dodatkowe);
+                        if (Array.isArray(parsed)) list = parsed;
+                        else if (parsed) list = [parsed];
+                    } catch (e) {
+                        if (op.zdjecia_dodatkowe.trim().length > 20) list = [op.zdjecia_dodatkowe];
+                    }
+                } else if (Array.isArray(op.extra_images)) {
+                    list = op.extra_images;
+                } else if (Array.isArray(op.additional_images)) {
+                    list = op.additional_images;
+                } else if (Array.isArray(op.zdjecia)) {
+                    list = op.zdjecia;
+                } else if (Array.isArray(op.images)) {
+                    list = op.images;
+                } else if (op.parametry && Array.isArray(op.parametry.zdjecia_dodatkowe)) {
+                    list = op.parametry.zdjecia_dodatkowe;
+                }
+                return list;
             }
 
-            if (hasScreenImage) {
-                imagesHtml += `
-                    <div class="bg-sky-950/40 rounded-2xl border border-sky-800/80 p-3 flex flex-col justify-between gap-2.5 relative group">
-                        <div class="w-full flex items-center justify-between text-white text-xs px-1">
-                            <span class="font-bold flex items-center gap-1.5 text-sky-200">
-                                <i class="fa-solid fa-desktop text-sky-400"></i> Ekran / Wyświetlacz
-                            </span>
-                            <button onclick="viewFullImage('${screenImgSrc.replace(/'/g, "\\'")}')" class="text-[10px] bg-sky-900/80 hover:bg-sky-500 text-sky-100 hover:text-white px-2.5 py-1 rounded-lg transition-all font-bold flex items-center gap-1">
-                                <i class="fa-solid fa-expand"></i> Pełny ekran
-                            </button>
+            function updateModalPhotosGallery() {
+                // 1. Plate photo
+                const rawPlate = op.image_data || op.tabliczka_image || op.plate_image || op.photo || '';
+                const plateImgSrc = normalizeImageSrc(rawPlate);
+                const hasPlateImage = !!plateImgSrc;
+
+                // 2. Screen photo
+                const rawScreen = op.image_data_screen || op.zdjecie_ekranu || op.screen_image || (op.parametry && op.parametry._ekran_image) || '';
+                const screenImgSrc = normalizeImageSrc(rawScreen);
+                const hasScreenImage = !!screenImgSrc;
+
+                const mainPhotosCount = (hasPlateImage ? 1 : 0) + (hasScreenImage ? 1 : 0);
+                if (mainPhotosBadge) {
+                    const word = mainPhotosCount === 1 ? 'zdjęcie' : (mainPhotosCount === 2 ? 'zdjęcia' : 'zdjęć');
+                    mainPhotosBadge.textContent = `${mainPhotosCount} ${word}`;
+                }
+
+                // Render main images (Plate + Screen)
+                let mainHtml = '';
+                if (hasPlateImage) {
+                    mainHtml += `
+                        <div class="bg-slate-900 rounded-2xl border border-slate-700/80 p-3.5 flex flex-col justify-between gap-2.5 relative group shadow-sm">
+                            <div class="w-full flex items-center justify-between text-white text-xs px-1">
+                                <span class="font-bold flex items-center gap-1.5 text-brand-300">
+                                    <i class="fa-solid fa-id-card text-brand-400"></i> Tabliczka znamionowa
+                                </span>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" onclick="downloadImageFile('${plateImgSrc.replace(/'/g, "\\'")}', 'tabliczka-${op.nrkatalogowy || op.id}.jpg')" class="text-[10px] bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white px-2 py-1 rounded-lg transition-all font-bold flex items-center gap-1 cursor-pointer" title="Pobierz plik zdjęcia">
+                                        <i class="fa-solid fa-download"></i> Pobierz
+                                    </button>
+                                    <button type="button" onclick="viewFullImage('${plateImgSrc.replace(/'/g, "\\'")}')" class="text-[10px] bg-brand-500 hover:bg-brand-600 text-white px-2.5 py-1 rounded-lg transition-all font-bold flex items-center gap-1 cursor-pointer">
+                                        <i class="fa-solid fa-expand"></i> Pełny ekran
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="w-full h-64 sm:h-80 flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden cursor-pointer" onclick="viewFullImage('${plateImgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby otworzyć na pełnym ekranie">
+                                <img src="${plateImgSrc}" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" alt="Tabliczka znamionowa">
+                            </div>
+                            <span class="text-[10px] text-slate-400 text-center italic">Kliknij w zdjęcie, aby powiększyć</span>
                         </div>
-                        <div class="w-full h-64 sm:h-80 flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden cursor-pointer" onclick="viewFullImage('${screenImgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby otworzyć na pełnym ekranie">
-                            <img src="${screenImgSrc}" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" alt="Zdjęcie ekranu">
+                    `;
+                }
+
+                if (hasScreenImage) {
+                    mainHtml += `
+                        <div class="bg-sky-950/40 rounded-2xl border border-sky-800/80 p-3.5 flex flex-col justify-between gap-2.5 relative group shadow-sm">
+                            <div class="w-full flex items-center justify-between text-white text-xs px-1">
+                                <span class="font-bold flex items-center gap-1.5 text-sky-200">
+                                    <i class="fa-solid fa-desktop text-sky-400"></i> Ekran / Wyświetlacz
+                                </span>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" onclick="downloadImageFile('${screenImgSrc.replace(/'/g, "\\'")}', 'ekran-${op.nrkatalogowy || op.id}.jpg')" class="text-[10px] bg-sky-900/80 hover:bg-sky-800 text-sky-200 hover:text-white px-2 py-1 rounded-lg transition-all font-bold flex items-center gap-1 cursor-pointer" title="Pobierz plik zdjęcia">
+                                        <i class="fa-solid fa-download"></i> Pobierz
+                                    </button>
+                                    <button type="button" onclick="viewFullImage('${screenImgSrc.replace(/'/g, "\\'")}')" class="text-[10px] bg-sky-600 hover:bg-sky-500 text-white px-2.5 py-1 rounded-lg transition-all font-bold flex items-center gap-1 cursor-pointer">
+                                        <i class="fa-solid fa-expand"></i> Pełny ekran
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="w-full h-64 sm:h-80 flex items-center justify-center bg-slate-950 rounded-xl overflow-hidden cursor-pointer" onclick="viewFullImage('${screenImgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby otworzyć na pełnym ekranie">
+                                <img src="${screenImgSrc}" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" alt="Zdjęcie ekranu">
+                            </div>
+                            <span class="text-[10px] text-sky-300/70 text-center italic">Kliknij w zdjęcie, aby powiększyć</span>
                         </div>
-                        <span class="text-[10px] text-sky-300/70 text-center italic">Kliknij w zdjęcie, aby powiększyć</span>
-                    </div>
-                `;
+                    `;
+                }
+
+                if (imagesGrid) {
+                    if (hasPlateImage || hasScreenImage) {
+                        imagesGrid.innerHTML = mainHtml;
+                        imagesGrid.classList.remove('hidden');
+                    } else {
+                        imagesGrid.innerHTML = '';
+                        imagesGrid.classList.add('hidden');
+                    }
+                }
+
+                if (noMainPhotosPlaceholder) {
+                    if (!hasPlateImage && !hasScreenImage) {
+                        noMainPhotosPlaceholder.classList.remove('hidden');
+                    } else {
+                        noMainPhotosPlaceholder.classList.add('hidden');
+                    }
+                }
+
+                // 3. Extra photos from "Dodatkowe zdjęcia wózka"
+                const rawExtras = getOpExtraPhotosList();
+                const normalizedExtras = rawExtras.map(normalizeImageSrc).filter(src => src && src.length > 20);
+                const extraCount = normalizedExtras.length;
+
+                if (extraPhotosBadge) {
+                    const word = extraCount === 1 ? 'zdjęcie' : (extraCount >= 2 && extraCount <= 4 ? 'zdjęcia' : 'zdjęć');
+                    extraPhotosBadge.textContent = `${extraCount} ${word}`;
+                }
+
+                if (extraGrid) {
+                    if (extraCount > 0) {
+                        let extraHtml = '';
+                        normalizedExtras.forEach((imgSrc, idx) => {
+                            extraHtml += `
+                                <div class="bg-white dark:bg-[#151515] rounded-2xl border border-purple-200/80 dark:border-purple-900/50 p-3 flex flex-col justify-between gap-2.5 relative group shadow-sm hover:shadow-md transition-all">
+                                    <div class="w-full flex items-center justify-between text-slate-800 dark:text-white text-[11px] px-1">
+                                        <span class="font-bold flex items-center gap-1.5 text-purple-700 dark:text-purple-300 font-ubuntu">
+                                            <i class="fa-solid fa-camera text-purple-500"></i> Zdjęcie #${idx + 1}
+                                        </span>
+                                        <div class="flex items-center gap-1">
+                                            <button type="button" onclick="downloadImageFile('${imgSrc.replace(/'/g, "\\'")}', 'wozek-${op.nrkatalogowy || op.id}-${idx + 1}.jpg')" class="text-[9px] bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-purple-100 hover:text-purple-700 px-2 py-1 rounded-md transition-all font-bold flex items-center gap-1 cursor-pointer border border-slate-200/60 dark:border-zinc-700" title="Pobierz plik">
+                                                <i class="fa-solid fa-download"></i> Pobierz
+                                            </button>
+                                            <button type="button" onclick="viewFullImage('${imgSrc.replace(/'/g, "\\'")}')" class="text-[9px] bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1 rounded-md transition-all font-bold flex items-center gap-1 cursor-pointer shadow-sm">
+                                                <i class="fa-solid fa-expand"></i> Pełny ekran
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="w-full h-48 sm:h-56 flex items-center justify-center bg-slate-900/90 rounded-xl overflow-hidden cursor-pointer" onclick="viewFullImage('${imgSrc.replace(/'/g, "\\'")}')" title="Kliknij, aby powiększyć zdjęcie #${idx + 1}">
+                                        <img src="${imgSrc}" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105" alt="Dodatkowe zdjęcie #${idx + 1}">
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        extraGrid.innerHTML = extraHtml;
+                        extraGrid.classList.remove('hidden');
+                    } else {
+                        extraGrid.innerHTML = '';
+                        extraGrid.classList.add('hidden');
+                    }
+                }
+
+                if (noExtraPhotosPlaceholder) {
+                    if (extraCount === 0) {
+                        noExtraPhotosPlaceholder.classList.remove('hidden');
+                    } else {
+                        noExtraPhotosPlaceholder.classList.add('hidden');
+                    }
+                }
             }
 
-            if (!hasPlateImage && !hasScreenImage) {
-                imagesHtml = `
-                    <div class="col-span-full bg-slate-100 dark:bg-zinc-900/40 rounded-2xl border border-dashed border-slate-300 dark:border-zinc-800 p-8 text-center text-slate-400 dark:text-slate-500">
-                        <i class="fa-solid fa-image-slash text-3xl mb-2 block text-slate-300 dark:text-zinc-700"></i>
-                        <p class="text-xs font-bold">Brak załączonych zdjęć dla tego wpisu</p>
-                    </div>
-                `;
+            // Initial render of available photos
+            updateModalPhotosGallery();
+
+            // Asynchronously fetch extra photos from database if needed
+            if (!isLocal && op.id && !String(op.id).startsWith('local_')) {
+                (async () => {
+                    try {
+                        let fetchedImages = [];
+                        if (isStaticMode()) {
+                            const zRes = await staticSupabaseRequest(`/rest/v1/zdjecia_operacji?id_operacji=eq.${op.id}&select=*`);
+                            if (zRes.ok) {
+                                const zData = await zRes.json();
+                                if (Array.isArray(zData)) fetchedImages = zData;
+                            }
+                        } else {
+                            const zRes = await fetch(`/api/supabase/operation/${op.id}/images`);
+                            if (zRes.ok) {
+                                const zJson = await zRes.json();
+                                if (zJson.success && Array.isArray(zJson.data)) fetchedImages = zJson.data;
+                            }
+                        }
+
+                        if (fetchedImages.length > 0) {
+                            const newExtraList = fetchedImages.map(z => z.image_dodatkowe || z.image_data || z);
+                            op.zdjecia_dodatkowe = newExtraList;
+                            updateModalPhotosGallery();
+
+                            // Also sync with window.currentOperations cache
+                            if (Array.isArray(window.currentOperations)) {
+                                const targetInList = window.currentOperations.find(o => String(o.id) === String(op.id));
+                                if (targetInList) targetInList.zdjecia_dodatkowe = newExtraList;
+                            }
+                        }
+                    } catch (fetchExtraErr) {
+                        console.warn("Async fetch for extra images in modal failed:", fetchExtraErr);
+                    }
+                })();
             }
 
-            if (imagesGrid) imagesGrid.innerHTML = imagesHtml;
+            // Wire up adding photos directly from the modal
+            const addPhotosInput = document.getElementById('modalAddExtraPhotosInput');
+            if (addPhotosInput) {
+                addPhotosInput.value = '';
+                addPhotosInput.onchange = async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length === 0) return;
+
+                    showToast(`Przetwarzanie ${files.length} zdjęć...`, "info");
+                    try {
+                        const newBase64Images = [];
+                        for (const file of files) {
+                            try {
+                                const compressed = await compressImageFile(file, 1600, 1600, 0.82);
+                                if (compressed && compressed.length > 50) {
+                                    newBase64Images.push(compressed);
+                                }
+                            } catch (cErr) {
+                                console.warn("Compress failed for extra photo in modal:", cErr);
+                            }
+                        }
+
+                        if (newBase64Images.length === 0) {
+                            showToast("Nie udało się przetworzyć wybranych plików zdjęć.", "error");
+                            return;
+                        }
+
+                        if (isLocal || String(op.id).startsWith('local_')) {
+                            let localOps = JSON.parse(localStorage.getItem('sawtrak_local_operations') || '[]');
+                            const idx = localOps.findIndex(o => String(o.id) === String(op.id));
+                            if (idx !== -1) {
+                                if (!Array.isArray(localOps[idx].zdjecia_dodatkowe)) {
+                                    localOps[idx].zdjecia_dodatkowe = [];
+                                }
+                                localOps[idx].zdjecia_dodatkowe.push(...newBase64Images);
+                                localStorage.setItem('sawtrak_local_operations', JSON.stringify(localOps));
+                                op.zdjecia_dodatkowe = localOps[idx].zdjecia_dodatkowe;
+                            }
+                        } else {
+                            if (isStaticMode()) {
+                                let savedStatic = false;
+                                try {
+                                    const records = newBase64Images.map(img => ({
+                                        id_operacji: op.id,
+                                        image_dodatkowe: img
+                                    }));
+                                    const zRes = await staticSupabaseRequest('/rest/v1/zdjecia_operacji', {
+                                        method: 'POST',
+                                        headers: { "Prefer": "return=minimal" },
+                                        body: JSON.stringify(records)
+                                    });
+                                    if (zRes.ok) savedStatic = true;
+                                } catch (zErr) {
+                                    console.warn("Zapis do zdjecia_operacji w trybie static notice:", zErr);
+                                }
+
+                                // Dual persistence: also PATCH parametry in operacje table
+                                try {
+                                    let currentParams = op.parametry || {};
+                                    if (typeof currentParams === 'string') {
+                                        try { currentParams = JSON.parse(currentParams); } catch (e) { currentParams = {}; }
+                                    } else if (!currentParams || typeof currentParams !== 'object') {
+                                        currentParams = {};
+                                    }
+                                    const currentExtra = Array.isArray(currentParams.zdjecia_dodatkowe) ? currentParams.zdjecia_dodatkowe : [];
+                                    currentParams.zdjecia_dodatkowe = Array.from(new Set([...currentExtra, ...newBase64Images]));
+
+                                    const patchRes = await staticSupabaseRequest(`/rest/v1/operacje?id=eq.${op.id}`, {
+                                        method: 'PATCH',
+                                        headers: { "Content-Type": "application/json", "Prefer": "return=minimal" },
+                                        body: JSON.stringify({ parametry: currentParams })
+                                    });
+                                    if (patchRes.ok) savedStatic = true;
+                                } catch (patchErr) {
+                                    console.warn("Patch operacje parametry notice:", patchErr);
+                                }
+                            } else {
+                                const zRes = await fetch("/api/supabase/save-additional-images", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id_operacji: op.id, images: newBase64Images })
+                                });
+                                if (!zRes.ok) {
+                                    const errData = await zRes.json().catch(() => ({}));
+                                    throw new Error(errData.error || "Błąd zapisu na serwerze");
+                                }
+                            }
+
+                            if (!Array.isArray(op.zdjecia_dodatkowe)) {
+                                op.zdjecia_dodatkowe = [];
+                            }
+                            op.zdjecia_dodatkowe.push(...newBase64Images);
+                        }
+
+                        // Update in-memory parametry as well
+                        if (op.parametry && typeof op.parametry === 'object') {
+                            op.parametry.zdjecia_dodatkowe = op.zdjecia_dodatkowe;
+                        }
+
+                        if (Array.isArray(window.currentOperations)) {
+                            const cachedOp = window.currentOperations.find(o => String(o.id) === String(op.id));
+                            if (cachedOp) {
+                                cachedOp.zdjecia_dodatkowe = op.zdjecia_dodatkowe;
+                                if (cachedOp.parametry && typeof cachedOp.parametry === 'object') {
+                                    cachedOp.parametry.zdjecia_dodatkowe = op.zdjecia_dodatkowe;
+                                }
+                            }
+                        }
+
+                        updateModalPhotosGallery();
+                        showToast(`Dołączono ${newBase64Images.length} dodatkowych zdjęć do tego wpisu!`, "success");
+                        
+                        // Silently refresh list view in background to update card thumbnails and badges
+                        loadOperations().catch(() => {});
+                    } catch (uploadErr) {
+                        console.error("Upload extra images failed:", uploadErr);
+                        showToast(`Błąd dodawania zdjęć: ${uploadErr.message}`, "error");
+                    } finally {
+                        addPhotosInput.value = '';
+                    }
+                };
+            }
 
             // Parse parameters
             let paramsObj = {};
@@ -3291,6 +4028,38 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 
             for (const [pk, pv] of Object.entries(paramsObj)) {
                 if (pk === '_ekran') continue;
+                const lowKey = pk.toLowerCase();
+                
+                if (lowKey === 'zdjecia_dodatkowe' || lowKey === '_zdjecia_dodatkowe' || lowKey.includes('zdjecia_dodatkowe')) {
+                    let count = 0;
+                    if (Array.isArray(pv)) count = pv.length;
+                    else if (typeof pv === 'string') {
+                        try {
+                            const parsed = JSON.parse(pv);
+                            count = Array.isArray(parsed) ? parsed.length : (parsed ? 1 : 0);
+                        } catch(e) {
+                            count = pv.trim().length > 0 ? 1 : 0;
+                        }
+                    } else if (typeof pv === 'number') {
+                        count = pv;
+                    }
+                    const label = count === 1 ? '1 zdjęcie' : (count >= 2 && count <= 4 ? `${count} zdjęcia` : `${count} zdjęć`);
+                    plateParamsHtml += `
+                        <div class="bg-purple-50/60 dark:bg-purple-950/20 p-3 rounded-xl border border-purple-200/60 dark:border-purple-900/40 flex flex-col justify-between">
+                            <span class="text-[10px] text-purple-600 dark:text-purple-400 font-bold uppercase block truncate">Dodatkowe zdjęcia</span>
+                            <span class="text-xs font-black text-purple-800 dark:text-purple-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-camera text-purple-500"></i> ${label}
+                            </span>
+                        </div>
+                    `;
+                    continue;
+                }
+
+                // Skip raw base64 data URLs or long strings from displaying as ugly text in parameter boxes
+                if (typeof pv === 'string' && (pv.startsWith('data:image') || pv.length > 200)) {
+                    continue;
+                }
+
                 plateParamsHtml += `
                     <div class="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200/60 dark:border-zinc-800/80 flex flex-col justify-between">
                         <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block truncate">${pk}</span>
@@ -3514,6 +4283,40 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }, 300);
         }
 
+        function downloadImageFile(imgSrc, filename = "zdjecie-wozka.jpg") {
+            if (!imgSrc) return;
+            try {
+                const a = document.createElement('a');
+                a.href = imgSrc;
+                a.download = filename || `zdjecie-wozka-${Date.now()}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast("Pobrano zdjęcie", "success");
+            } catch (err) {
+                console.error("Download image error:", err);
+                window.open(imgSrc, '_blank');
+            }
+        }
+
+        function normalizeImageSrc(val) {
+            if (!val) return '';
+            let raw = '';
+            if (typeof val === 'string') {
+                raw = val.trim();
+            } else if (typeof val === 'object' && val !== null) {
+                raw = val.image_dodatkowe || val.image_data || val.url || val.image || val.data || val.base64 || val.src || '';
+            }
+            if (!raw || typeof raw !== 'string') return '';
+            if (raw.startsWith('data:') || raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('blob:')) {
+                return raw;
+            }
+            if (raw.length > 50) {
+                return `data:image/jpeg;base64,${raw}`;
+            }
+            return '';
+        }
+
         // Clear filtering search inputs
         function clearOperationsFilters() {
             if (document.getElementById('filterId')) document.getElementById('filterId').value = "";
@@ -3580,13 +4383,18 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             const successfullySyncedIds = [];
 
             for (const op of localOps) {
+                const extraPhotos = Array.isArray(op.zdjecia_dodatkowe) ? op.zdjecia_dodatkowe : [];
                 const record = {
                     wozek_id: op.wozek_id || null,
                     nrkatalogowy: op.nrkatalogowy || "",
                     model: op.model || "",
                     klient: op.klient || "",
                     temat: op.temat || "",
-                    parametry: op.parametry || {},
+                    opis: op.opis || "",
+                    parametry: {
+                        ...(op.parametry || {}),
+                        ...(extraPhotos.length > 0 ? { zdjecia_dodatkowe: extraPhotos } : {})
+                    },
                     parametry_ekranu: op.parametry_ekranu || {},
                     image_data: op.image_data || "",
                     image_data_screen: op.image_data_screen || op.zdjecie_ekranu || "",
@@ -3598,15 +4406,35 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     if (isStaticMode()) {
                         const response = await staticSupabaseRequest('/rest/v1/operacje', {
                             method: "POST",
-                            headers: { "Prefer": "return=minimal" },
+                            headers: { "Prefer": "return=representation" },
                             body: JSON.stringify(record)
                         });
                         resOk = response.ok;
+                        if (resOk && extraPhotos.length > 0) {
+                            try {
+                                const savedOpData = await response.json();
+                                const savedId = Array.isArray(savedOpData) && savedOpData[0] ? savedOpData[0].id : savedOpData.id;
+                                if (savedId) {
+                                    const extraRecords = extraPhotos.map(img => ({
+                                        id_operacji: savedId,
+                                        image_dodatkowe: img
+                                    }));
+                                    await staticSupabaseRequest('/rest/v1/zdjecia_operacji', {
+                                        method: "POST",
+                                        headers: { "Prefer": "return=minimal" },
+                                        body: JSON.stringify(extraRecords)
+                                    });
+                                }
+                            } catch (e) {}
+                        }
                     } else {
                         const response = await fetch("/api/supabase/save-operation", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ record })
+                            body: JSON.stringify({ 
+                                record,
+                                additionalImages: extraPhotos 
+                            })
                         });
                         resOk = response.ok;
                     }
