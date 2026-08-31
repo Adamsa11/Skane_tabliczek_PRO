@@ -845,24 +845,45 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
 
                 <div id="geminiKeyContainer" class="border-t border-slate-100 dark:border-slate-800 pt-3">
                     <label for="geminiApiKeyInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between mb-1.5">
-                        <span>Klucz API Gemini (Własny)</span>
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-key text-brand-500"></i> Klucz API Google Gemini
+                        </span>
                         <span id="keyStatusBadge" class="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">Brak klucza</span>
                     </label>
                     <div class="relative">
-                        <input type="password" id="geminiApiKeyInput" placeholder="Wklej klucz AIzaSy..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
+                        <input type="password" id="geminiApiKeyInput" placeholder="Wklej klucz zaczynający się od AIzaSy..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
                         <button id="toggleKeyVisibility" class="absolute right-3 top-3 text-xs text-slate-400 hover:text-slate-600 transition-colors">
                             <i class="fa-solid fa-eye" id="eyeIcon"></i>
                         </button>
                     </div>
-                    <div class="flex items-center justify-between mt-1.5 gap-2">
-                        <p class="text-[10px] text-slate-400 leading-relaxed">
-                            Pobierz bezpłatny klucz na <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-brand-500 font-bold hover:underline inline-flex items-center gap-0.5">Google AI Studio <i class="fa-solid fa-up-right-from-square text-[8px]"></i></a>.
-                        </p>
-                        <button type="button" onclick="testGeminiApiKey()" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all shrink-0 flex items-center gap-1">
-                            <i class="fa-solid fa-bolt text-brand-500"></i> Testuj Gemini
+
+                    <!-- Instrukcja pobierania klucza -->
+                    <div class="mt-2.5 p-3 rounded-2xl bg-brand-50/50 dark:bg-brand-500/5 border border-brand-200/50 dark:border-brand-500/15 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                                <i class="fa-solid fa-circle-question text-brand-500"></i> Skąd pobrać bezpłatny klucz?
+                            </span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-brand-500 hover:bg-brand-600 text-white rounded-md text-[10px] font-bold inline-flex items-center gap-1 shadow-sm transition-all">
+                                Otwórz AI Studio <i class="fa-solid fa-up-right-from-square text-[8px]"></i>
+                            </a>
+                        </div>
+                        <ol class="text-[10px] text-slate-500 dark:text-slate-400 space-y-1 list-decimal pl-4 leading-normal">
+                            <li>Wejdź na stronę <strong class="text-brand-600 dark:text-brand-400">aistudio.google.com/app/apikey</strong> i zaloguj się kontem Google (Gmail).</li>
+                            <li>Kliknij niebieski przycisk <strong class="text-slate-700 dark:text-slate-200">"Create API key"</strong> (lub "Get API key").</li>
+                            <li>Wybierz opcję <em>"Create API key in new project"</em> i zatwierdź.</li>
+                            <li>Skopiuj wygenerowany klucz (zaczyna się od <code class="bg-white dark:bg-zinc-800 px-1 py-0.5 rounded font-mono text-brand-600">AIzaSy...</code>) i wklej go w pole powyżej.</li>
+                        </ol>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-2 gap-2">
+                        <span class="text-[10px] text-slate-400">
+                            Klucz jest bezpłatny i zapisywany tylko w Twojej przeglądarce.
+                        </span>
+                        <button type="button" onclick="testGeminiApiKey()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-[11px] font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-bolt text-brand-500"></i> Testuj połączenie z Gemini
                         </button>
                     </div>
-                    <div id="geminiTestResult" class="hidden mt-2 p-2 rounded-xl text-[11px]"></div>
+                    <div id="geminiTestResult" class="hidden mt-2 p-2.5 rounded-xl text-[11px]"></div>
                 </div>
 
                 <div id="supabaseConfigContainer" class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
@@ -1224,28 +1245,36 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             if (!resEl) return;
 
             if (!keyToTest) {
-                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
                 resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Wprowadź klucz API przed testem.`;
                 resEl.classList.remove('hidden');
                 return;
             }
 
-            resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-blue-500/10 text-blue-500 border border-blue-500/20";
+            if (!keyToTest.startsWith('AIzaSy') && keyToTest.length < 20) {
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Uwaga: Poprawny klucz Google API zwykle zaczyna się od <strong>AIzaSy...</strong>. Sprawdź, czy skopiowano cały klucz.`;
+                resEl.classList.remove('hidden');
+            }
+
+            resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-blue-500/10 text-blue-500 border border-blue-500/20";
             resEl.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-1"></i> Testowanie połączenia z Google Gemini API...`;
             resEl.classList.remove('hidden');
 
             const testModels = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-3.1-flash-lite'];
             let lastError = "";
             let successModel = "";
+            let isQuotaError = false;
+            let isInvalidKey = false;
 
             for (const m of testModels) {
                 try {
-                    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${keyToTest}`;
+                    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(keyToTest)}`;
                     const res = await fetch(testUrl, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: "ping" }] }]
+                            contents: [{ parts: [{ text: "Odpowiedz: OK" }] }]
                         })
                     });
 
@@ -1254,7 +1283,18 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                         break;
                     } else {
                         const err = await res.json().catch(() => ({}));
-                        lastError = err?.error?.message || `HTTP ${res.status}`;
+                        const errMsg = err?.error?.message || `HTTP ${res.status}`;
+                        lastError = errMsg;
+                        
+                        if (errMsg.includes("API key not valid") || errMsg.includes("API_KEY_INVALID") || res.status === 400 || res.status === 403) {
+                            if (errMsg.includes("API key not valid") || errMsg.includes("API_KEY_INVALID")) {
+                                isInvalidKey = true;
+                                break;
+                            }
+                        }
+                        if (res.status === 429 || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
+                            isQuotaError = true;
+                        }
                     }
                 } catch (e) {
                     lastError = e.message || "Błąd sieci";
@@ -1262,11 +1302,17 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             }
 
             if (successModel) {
-                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
-                resEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <b>Klucz poprawny!</b> Połączono z modelem ${successModel}.`;
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5 text-emerald-500"></i> <b>Połączenie udane!</b> Klucz jest w 100% poprawny i aktywny (test modelu: <strong>${successModel}</strong>). Pamiętaj o kliknięciu <em>"Zapisz ustawienia"</em>.`;
+            } else if (isInvalidKey) {
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5"></i> <b>Nieprawidłowy klucz API:</b> Google odrzucił podany klucz. Upewnij się, że skopiowano go w całości z <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline font-bold">aistudio.google.com/app/apikey</a> (zaczyna się od <code>AIzaSy...</code>).`;
+            } else if (isQuotaError) {
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> <b>Limit zapytań (Quota 429):</b> Klucz jest prawidłowy, ale wyczerpał chwilowy limit darmowych zapytań Google. Odczekaj kilkanaście sekund i spróbuj ponownie.`;
             } else {
-                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
-                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Błąd testu: ${escapeHtml(lastError)}`;
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5"></i> <b>Błąd testu:</b> ${escapeHtml(lastError)}`;
             }
         }
 
@@ -1975,7 +2021,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 
             for (const candidate of candidateModels) {
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${geminiApiKey}`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${encodeURIComponent(geminiApiKey)}`;
                     const res = await fetch(url, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -1984,12 +2030,22 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 
                     if (!res.ok) {
                         const errJson = await res.json().catch(() => ({}));
-                        lastErrMessage = errJson?.error?.message || `HTTP ${res.status}`;
+                        const rawMsg = errJson?.error?.message || `HTTP ${res.status}`;
+                        lastErrMessage = rawMsg;
+                        
+                        // Handle invalid key immediately
+                        if (rawMsg.includes("API key not valid") || rawMsg.includes("API_KEY_INVALID")) {
+                            throw new Error("Wprowadzony klucz API Gemini jest nieprawidłowy. Wejdź w Ustawienia (⚙️) i wklej poprawny klucz z aistudio.google.com/app/apikey");
+                        }
+                        // If quota limit reached
+                        if (res.status === 429 || rawMsg.includes("RESOURCE_EXHAUSTED") || rawMsg.includes("quota")) {
+                            throw new Error("Przekroczono limit zapytań dla darmowego konta Google (Quota 429). Odczekaj 10-20 sekund i kliknij ponownie.");
+                        }
                         // If model not found or unsupported, continue to next candidate
-                        if (res.status === 404 || res.status === 400) {
+                        if (res.status === 404 || (res.status === 400 && !rawMsg.includes("API key"))) {
                             continue;
                         }
-                        throw new Error(lastErrMessage);
+                        throw new Error(rawMsg);
                     }
 
                     const data = await res.json();
@@ -2009,6 +2065,9 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     return JSON.parse(responseText.trim());
                 } catch (err) {
                     lastErrMessage = err.message || "Błąd parsowania";
+                    if (err.message.includes("nieprawidłowy") || err.message.includes("limit zapytań")) {
+                        throw err;
+                    }
                     if (!candidateModels[candidateModels.indexOf(candidate) + 1]) {
                         throw err;
                     }
