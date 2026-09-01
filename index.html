@@ -5,13 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skaner Tabliczek - Sawtrak AI OCR</title>
     
-    <!-- Główne ikony przeglądarki (Favicon) zamiast standardowego globusa -->
-    <link rel="icon" type="image/png" href="Forklift.png">
-    <link rel="shortcut icon" type="image/png" href="Forklift.png">
-    
-    <!-- Ikona dla urządzeń mobilnych Apple (po dodaniu do ekranu początkowego) -->
-    <link rel="apple-touch-icon" href="Forklift.png">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
@@ -1131,6 +1124,11 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
     </div>
 
     <script>
+        // Prevent default browser install prompt / Add to home screen banner
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+        });
+
         // HTML escaping utility for safe DOM injection
         function escapeHtml(str) {
             if (str === null || str === undefined) return "";
