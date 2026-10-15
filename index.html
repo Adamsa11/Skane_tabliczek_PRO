@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skaner Tabliczek - Sawtrak AI OCR</title>
+    <title>Skaner Tabliczek Sawtrak</title>
+    <meta name="description" content="Profesjonalny skaner tabliczek znamionowych wózków widłowych z użyciem Google Gemini AI OCR">
+    <meta property="og:title" content="Skaner Tabliczek Sawtrak">
+    <meta property="og:description" content="Profesjonalny skaner tabliczek znamionowych wózków widłowych z użyciem Google Gemini AI OCR">
     
     <!-- Ikony dla przeglądarek i pulpitów -->
     <link rel="icon" type="image/png" sizes="192x192" href="Forklift.png">
@@ -98,6 +101,12 @@
             </div>
             
             <div class="flex items-center gap-2">
+                <!-- Status bazy Supabase z możliwością kliknięcia -->
+                <div id="supabaseStatusIndicator" onclick="testSupabaseConnection()" class="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 rounded-full text-[10px] font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-950/60 transition-all" title="Status bazy Supabase - kliknij, aby sprawdzić połączenie">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" id="supabaseStatusDot"></span>
+                    <span id="supabaseStatusHeader">Supabase: Połączono</span>
+                </div>
+
                 <!-- Status trybu połączenia -->
                 <div id="connectionStatusIndicator" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-full text-[10px] font-bold text-slate-500 dark:text-slate-400">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" id="connectionStatusDot"></span>
@@ -228,9 +237,9 @@
                     <div class="mt-4">
                         <label for="modelSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
                         <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
-                            <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash-Lite (Najszybszy odczyt)</option>
-                            <option value="gemini-3.5-flash">Gemini 3.5 Flash (Szybki i inteligentny)</option>
-                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najwyższa dokładność)</option>
+                            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Szybki i zalecany)</option>
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Błyskawiczny odczyt)</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Stabilny)</option>
                         </select>
                     </div>
 
@@ -269,9 +278,9 @@
                     <div class="mt-4">
                         <label for="modelSelectScreen" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
                         <select id="modelSelectScreen" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
-                            <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash-Lite (Najszybszy odczyt)</option>
-                            <option value="gemini-3.5-flash">Gemini 3.5 Flash (Szybki i inteligentny)</option>
-                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najwyższa dokładność)</option>
+                            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Szybki i zalecany)</option>
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Błyskawiczny odczyt)</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Stabilny)</option>
                         </select>
                     </div>
 
@@ -422,17 +431,59 @@
 
                     <!-- Wyniki tabliczki -->
                     <div id="stateResults" class="hidden w-full text-left">
-                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4 flex-wrap gap-3">
                             <div>
-                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu">Odczytane parametry tabliczki</h3>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu flex items-center gap-2">
+                                    <span>Odczytane parametry tabliczki</span>
+                                    <span id="plateEditBadge" class="hidden text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                                        Tryb edycji
+                                    </span>
+                                </h3>
                                 <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
                             </div>
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                <!-- Grupa akcji podglądu -->
+                                <div id="plateViewActions" class="flex items-center gap-2">
+                                    <button id="editPlateParamsBtn" onclick="toggleEditPlateParams(true)" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 dark:text-blue-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-blue-200/80 dark:border-blue-800/80 shadow-sm cursor-pointer" title="Edytuj odczytane parametry tabliczki">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edytuj
+                                    </button>
+                                    <button onclick="copyToClipboard()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Kopiuj do schowka">
+                                        <i class="fa-solid fa-copy"></i> Kopiuj
+                                    </button>
+                                    <button onclick="downloadAsJSON()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Pobierz jako JSON">
+                                        <i class="fa-solid fa-download"></i> JSON
+                                    </button>
+                                </div>
+                                <!-- Grupa akcji edycji -->
+                                <div id="plateEditActions" class="hidden flex items-center gap-2">
+                                    <button onclick="addPlateParamRow()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700 cursor-pointer" title="Dodaj nowy parametr">
+                                        <i class="fa-solid fa-plus text-brand-500"></i> Dodaj pole
+                                    </button>
+                                    <button onclick="cancelEditingPlateParams()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer" title="Anuluj edycję">
+                                        <i class="fa-solid fa-xmark"></i> Anuluj
+                                    </button>
+                                    <button id="savePlateParamsBtn" onclick="saveEditedPlateParams()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer" title="Zapisz wprowadzone zmiany parametrów">
+                                        <i class="fa-solid fa-check"></i> Zapisz
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pasek informacyjny trybu edycji -->
+                        <div id="plateEditToolbar" class="hidden mb-3 p-3 rounded-2xl bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 flex flex-wrap items-center justify-between gap-2.5 text-xs text-blue-700 dark:text-blue-300">
                             <div class="flex items-center gap-2">
-                                <button onclick="copyToClipboard()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-copy"></i> Kopiuj
+                                <i class="fa-solid fa-pen-nib text-brand-500 text-sm"></i>
+                                <span><strong>Edycja parametrów tabliczki:</strong> Zmodyfikuj wartości lub nazwy pól, usuń błędne lub dodaj nowe. Po zakończeniu kliknij <strong>Zapisz</strong>.</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="addPlateParamRow()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-200 dark:border-zinc-700 flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-plus text-brand-500"></i> Dodaj pole
                                 </button>
-                                <button onclick="downloadAsJSON()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-download"></i> JSON
+                                <button onclick="cancelEditingPlateParams()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                                    Anuluj
+                                </button>
+                                <button onclick="saveEditedPlateParams()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-check"></i> Zapisz
                                 </button>
                             </div>
                         </div>
@@ -443,12 +494,23 @@
                                     <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
                                         <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr tabliczki</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
+                                        <th id="plateActionHeader" class="hidden px-3 py-3 text-center font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase w-14">Usuń</th>
                                     </tr>
                                 </thead>
                                 <tbody id="resultsBody" class="divide-y divide-slate-200 dark:divide-zinc-800">
                                     <!-- Dane dynamiczne -->
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Przycisk dodawania wiersza w trybie edycji -->
+                        <div id="plateAddRowBottomContainer" class="hidden mt-3 flex items-center justify-between gap-3">
+                            <button onclick="addPlateParamRow()" class="py-2.5 px-4 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 hover:bg-brand-50/40 dark:hover:bg-brand-500/10 text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer grow">
+                                <i class="fa-solid fa-plus text-brand-500"></i> Dodaj kolejny parametr do tabliczki
+                            </button>
+                            <button onclick="saveEditedPlateParams()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer shrink-0">
+                                <i class="fa-solid fa-check"></i> Zapisz zmiany
+                            </button>
                         </div>
 
                     </div>
@@ -490,17 +552,59 @@
 
                     <!-- Wyniki ekranu -->
                     <div id="stateResultsScreen" class="hidden w-full text-left">
-                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4 flex-wrap gap-3">
                             <div>
-                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu">Odczytane parametry z ekranu</h3>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu flex items-center gap-2">
+                                    <span>Odczytane parametry z ekranu</span>
+                                    <span id="screenEditBadge" class="hidden text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300">
+                                        Tryb edycji
+                                    </span>
+                                </h3>
                                 <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
                             </div>
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                <!-- Grupa akcji podglądu -->
+                                <div id="screenViewActions" class="flex items-center gap-2">
+                                    <button id="editScreenParamsBtn" onclick="toggleEditScreenParams(true)" class="px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:hover:bg-sky-900/80 dark:text-sky-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-sky-200/80 dark:border-sky-800/80 shadow-sm cursor-pointer" title="Edytuj odczytane parametry ekranu">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edytuj
+                                    </button>
+                                    <button onclick="copyToClipboardScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Kopiuj do schowka">
+                                        <i class="fa-solid fa-copy"></i> Kopiuj
+                                    </button>
+                                    <button onclick="downloadAsJSONScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Pobierz jako JSON">
+                                        <i class="fa-solid fa-download"></i> JSON
+                                    </button>
+                                </div>
+                                <!-- Grupa akcji edycji -->
+                                <div id="screenEditActions" class="hidden flex items-center gap-2">
+                                    <button onclick="addScreenParamRow()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700 cursor-pointer" title="Dodaj nowy parametr">
+                                        <i class="fa-solid fa-plus text-sky-500"></i> Dodaj pole
+                                    </button>
+                                    <button onclick="cancelEditingScreenParams()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer" title="Anuluj edycję">
+                                        <i class="fa-solid fa-xmark"></i> Anuluj
+                                    </button>
+                                    <button id="saveScreenParamsBtn" onclick="saveEditedScreenParams()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer" title="Zapisz zmiany w parametrach ekranu">
+                                        <i class="fa-solid fa-check"></i> Zapisz
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pasek informacyjny trybu edycji ekranu -->
+                        <div id="screenEditToolbar" class="hidden mb-3 p-3 rounded-2xl bg-sky-50/90 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-900/60 flex flex-wrap items-center justify-between gap-2.5 text-xs text-sky-700 dark:text-sky-300">
                             <div class="flex items-center gap-2">
-                                <button onclick="copyToClipboardScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-copy"></i> Kopiuj
+                                <i class="fa-solid fa-pen-nib text-sky-500 text-sm"></i>
+                                <span><strong>Edycja parametrów wyświetlacza:</strong> Zmodyfikuj motogodziny, kody błędów lub inne wskaźniki. Po zakończeniu kliknij <strong>Zapisz</strong>.</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="addScreenParamRow()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-200 dark:border-zinc-700 flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-plus text-sky-500"></i> Dodaj pole
                                 </button>
-                                <button onclick="downloadAsJSONScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-download"></i> JSON
+                                <button onclick="cancelEditingScreenParams()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                                    Anuluj
+                                </button>
+                                <button onclick="saveEditedScreenParams()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-check"></i> Zapisz
                                 </button>
                             </div>
                         </div>
@@ -511,12 +615,23 @@
                                     <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
                                         <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr ekranu</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
+                                        <th id="screenActionHeader" class="hidden px-3 py-3 text-center font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase w-14">Usuń</th>
                                     </tr>
                                 </thead>
                                 <tbody id="resultsBodyScreen" class="divide-y divide-slate-200 dark:divide-zinc-800">
                                     <!-- Dane dynamiczne z ekranu -->
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Przycisk dodawania wiersza w trybie edycji ekranu -->
+                        <div id="screenAddRowBottomContainer" class="hidden mt-3 flex items-center justify-between gap-3">
+                            <button onclick="addScreenParamRow()" class="py-2.5 px-4 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-sky-500 hover:bg-sky-50/40 dark:hover:bg-sky-500/10 text-slate-600 hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer grow">
+                                <i class="fa-solid fa-plus text-sky-500"></i> Dodaj kolejny parametr ekranu
+                            </button>
+                            <button onclick="saveEditedScreenParams()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer shrink-0">
+                                <i class="fa-solid fa-check"></i> Zapisz zmiany
+                            </button>
                         </div>
 
                     </div>
@@ -900,11 +1015,16 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 <div id="supabaseConfigContainer" class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-3">
                     <div>
                         <label for="supabaseUrlInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Supabase URL</label>
-                        <input type="text" id="supabaseUrlInput" placeholder="https://your-project.supabase.co" class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
+                        <input type="text" id="supabaseUrlInput" value="https://nhqambvmghlhzjtdvljz.supabase.co" placeholder="https://your-project.supabase.co" class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
                     </div>
                     <div>
                         <label for="supabaseKeyInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Supabase Anon / Service Key</label>
-                        <input type="password" id="supabaseKeyInput" placeholder="Wklej klucz..." class="w-full text-xs py-2.5 px-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
+                        <div class="relative">
+                            <input type="password" id="supabaseKeyInput" value="sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC" placeholder="Wklej klucz..." class="w-full text-xs py-2.5 pl-3 pr-10 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-brand-500 transition-all font-mono text-slate-800 dark:text-slate-200">
+                            <button type="button" id="toggleSupabaseKeyVisibility" class="absolute right-3 top-3 text-xs text-slate-400 hover:text-slate-600 transition-colors" title="Pokaż / Ukryj klucz">
+                                <i class="fa-solid fa-eye" id="eyeSupabaseIcon"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="flex items-center justify-between pt-1">
                         <button type="button" onclick="testSupabaseConnection()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5">
@@ -912,7 +1032,7 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                         </button>
                         <span id="supabaseTestStatus" class="text-[10px] text-slate-400"></span>
                     </div>
-                    <div id="supabaseTestResult" class="hidden p-2 rounded-xl text-[11px]"></div>
+                    <div id="supabaseTestResult" class="hidden p-2.5 rounded-xl text-[11px]"></div>
                 </div>
             </div>
 
@@ -1199,7 +1319,8 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         let matchedWozek = null;
 
         // --- Connection Mode Setup & Variables ---
-        let hasServerBackend = false;
+        const isHostedOnGitHubPages = window.location.hostname.includes('github.io') || window.location.protocol === 'file:';
+        let hasServerBackend = !isHostedOnGitHubPages;
         let currentMode = localStorage.getItem('sawtrak_conn_mode') || 'auto';
         let geminiApiKey = localStorage.getItem('sawtrak_gemini_key') || '';
         let supabaseUrl = localStorage.getItem('sawtrak_supabase_url') || "https://nhqambvmghlhzjtdvljz.supabase.co";
@@ -1207,12 +1328,12 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
 
         // Determine if we are in direct-client (static) mode (e.g. GitHub Pages)
         function isStaticMode() {
-            if (currentMode === 'static') return true;
-            if (currentMode === 'server') return false;
-            // auto-detect: static mode if on GitHub Pages, file://, or when no server backend is running
-            if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+            if (isHostedOnGitHubPages) return true;
+            if (currentMode === 'static') {
+                if (!geminiApiKey && hasServerBackend) return false;
                 return true;
             }
+            if (currentMode === 'server') return false;
             return !hasServerBackend;
         }
 
@@ -1223,13 +1344,15 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 if (response.ok) {
                     const config = await response.json();
                     hasServerBackend = true;
-                    if (config.supabaseUrl && config.supabaseUrl !== "https://nhqambvmghlhzjtdvljz.supabase.co") {
-                        localStorage.setItem('sawtrak_supabase_url', config.supabaseUrl);
+                    if (config.supabaseUrl) {
                         supabaseUrl = config.supabaseUrl;
+                        localStorage.setItem('sawtrak_supabase_url', config.supabaseUrl);
+                        if (supabaseUrlInput) supabaseUrlInput.value = config.supabaseUrl;
                     }
-                    if (config.supabaseAnonKey && config.supabaseAnonKey !== "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC") {
-                        localStorage.setItem('sawtrak_supabase_anon_key', config.supabaseAnonKey);
+                    if (config.supabaseAnonKey) {
                         supabaseAnonKey = config.supabaseAnonKey;
+                        localStorage.setItem('sawtrak_supabase_anon_key', config.supabaseAnonKey);
+                        if (supabaseKeyInput) supabaseKeyInput.value = config.supabaseAnonKey;
                     }
                 } else {
                     hasServerBackend = false;
@@ -1332,33 +1455,150 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             }
         }
 
+        // Helper to sanitize Supabase URL and keys
+        function cleanConnectionValue(val, isUrl = false) {
+            if (!val) return "";
+            let cleaned = String(val).trim().replace(/^['"]|['"]$/g, '');
+            if (isUrl) {
+                cleaned = cleaned.replace(/\/+$/, '');
+            }
+            return cleaned;
+        }
+
         // Test Supabase connection function
         async function testSupabaseConnection() {
             const resEl = document.getElementById('supabaseTestResult');
             const statusEl = document.getElementById('supabaseTestStatus');
             if (!resEl) return;
 
-            resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-blue-500/10 text-blue-500 border border-blue-500/20";
+            resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-blue-500/10 text-blue-500 border border-blue-500/20";
             resEl.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-1"></i> Testowanie połączenia z bazą Supabase...`;
             resEl.classList.remove('hidden');
+            if (statusEl) statusEl.textContent = "Testowanie...";
 
             try {
-                const res = await staticSupabaseRequest('/rest/v1/wozki?select=id&limit=5');
-                if (res.ok) {
-                    const data = await res.json();
-                    const count = Array.isArray(data) ? data.length : 0;
-                    resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
-                    resEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <b>Połączono z Supabase!</b> Pomyślnie odczytano dane z tabeli wózków.`;
-                    if (statusEl) statusEl.textContent = "Połączono";
-                } else {
-                    const err = await res.json().catch(() => ({}));
-                    resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
-                    resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Błąd połączenia: ${escapeHtml(err.message || 'Brak dostępu')}`;
-                    if (statusEl) statusEl.textContent = "Błąd";
+                // If user entered values in inputs, test with those values
+                const currentUrl = cleanConnectionValue((supabaseUrlInput && supabaseUrlInput.value) || supabaseUrl || "https://nhqambvmghlhzjtdvljz.supabase.co", true);
+                const currentKey = cleanConnectionValue((supabaseKeyInput && supabaseKeyInput.value) || supabaseAnonKey || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC", false);
+                
+                if (!currentUrl || !currentKey) {
+                    resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
+                    resEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Wprowadź poprawny adres URL oraz klucz Supabase.`;
+                    if (statusEl) statusEl.textContent = "Brak danych";
+                    return;
                 }
+
+                // 1. First test server-side connection via /api/supabase/test (eliminates CORS & network issues)
+                let serverSuccess = false;
+                let serverDetails = null;
+                let serverErrMsg = "";
+
+                if (!isHostedOnGitHubPages) {
+                    try {
+                        const srvRes = await fetch('/api/supabase/test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ supabaseUrl: currentUrl, supabaseAnonKey: currentKey })
+                        });
+                        if (srvRes.ok) {
+                            serverDetails = await srvRes.json();
+                            if (serverDetails && serverDetails.success) {
+                                serverSuccess = true;
+                            } else if (serverDetails && serverDetails.error) {
+                                serverErrMsg = serverDetails.error;
+                            }
+                        } else {
+                            const errJson = await srvRes.json().catch(() => ({}));
+                            serverErrMsg = errJson.error || `Błąd serwera (${srvRes.status})`;
+                        }
+                    } catch (srvErr) {
+                        serverErrMsg = srvErr?.message || "Błąd sieci serwera";
+                    }
+                }
+
+                // 2. Direct Supabase PostgREST test if server didn't succeed or on static pages
+                let directSuccess = false;
+                let directCount = 0;
+                let directErrMessage = "";
+
+                if (!serverSuccess) {
+                    try {
+                        const testController = new AbortController();
+                        const timeoutId = setTimeout(() => testController.abort(), 3500);
+                        
+                        const testRes = await fetch(`${currentUrl}/rest/v1/wozki?select=id&limit=5`, {
+                            headers: {
+                                "apikey": currentKey,
+                                "Authorization": `Bearer ${currentKey}`
+                            },
+                            signal: testController.signal
+                        });
+                        clearTimeout(timeoutId);
+
+                        if (testRes.ok) {
+                            const data = await testRes.json();
+                            directCount = Array.isArray(data) ? data.length : 0;
+                            directSuccess = true;
+                        } else {
+                            const err = await testRes.json().catch(() => ({}));
+                            directErrMessage = err.message || `HTTP ${testRes.status}`;
+                        }
+                    } catch (netErr) {
+                        directErrMessage = netErr.message || "Błąd połączenia bezpośredniego";
+                    }
+                }
+
+                if (serverSuccess || directSuccess) {
+                    // Update active credentials immediately
+                    supabaseUrl = currentUrl;
+                    supabaseAnonKey = currentKey;
+                    localStorage.setItem('sawtrak_supabase_url', currentUrl);
+                    localStorage.setItem('sawtrak_supabase_anon_key', currentKey);
+                    if (supabaseUrlInput) supabaseUrlInput.value = currentUrl;
+                    if (supabaseKeyInput) supabaseKeyInput.value = currentKey;
+
+                    // Update header indicator
+                    const sbHeader = document.getElementById('supabaseStatusHeader');
+                    const sbDot = document.getElementById('supabaseStatusDot');
+                    if (sbHeader && sbDot) {
+                        sbDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+                        sbHeader.textContent = "Supabase: Połączono";
+                    }
+
+                    resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+                    let infoMsg = `<b>Połączono pomyślnie z Supabase!</b> Baza danych odpowiada prawidłowo.`;
+                    if (serverDetails && serverDetails.durationMs !== undefined) {
+                        infoMsg += `<div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono">Ping: ${serverDetails.durationMs}ms | Tabela wózki: <span class="text-emerald-500 font-bold">dostępna (${serverDetails.wozkiCount} próbek)</span> | Tabela operacje: <span class="text-emerald-500 font-bold">dostępna (${serverDetails.operacjeCount} próbek)</span></div>`;
+                    } else if (directCount > 0) {
+                        infoMsg += `<div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400">Pomyślnie odczytano ${directCount} rekordów z bazy danych.</div>`;
+                    }
+                    resEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5 text-emerald-500"></i> ${infoMsg}`;
+                    if (statusEl) statusEl.innerHTML = `<span class="text-emerald-500 font-bold">Połączono</span>`;
+
+                    // Synchronize backend configuration
+                    if (!isHostedOnGitHubPages && hasServerBackend) {
+                        fetch('/api/supabase/config', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ newUrl: currentUrl, newKey: currentKey })
+                        }).catch(() => {});
+                    }
+
+                    // Reload operations and catalog
+                    loadOperations().catch(() => {});
+                    loadDbCatalog().catch(() => {});
+                    return;
+                }
+
+                // If both failed, show helpful error message
+                const failureMsg = serverErrMsg || directErrMessage || 'Nie można połączyć z bazą danych Supabase.';
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5"></i> <b>Błąd połączenia:</b> ${escapeHtml(failureMsg)}`;
+                if (statusEl) statusEl.innerHTML = `<span class="text-red-500 font-bold">Błąd</span>`;
             } catch (e) {
-                resEl.className = "mt-2 p-2 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
-                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Błąd sieci: ${escapeHtml(e.message || 'Nie można połączyć')}`;
+                resEl.className = "mt-2 p-2.5 rounded-xl text-[11px] bg-red-500/10 text-red-500 border border-red-500/20";
+                resEl.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5"></i> Błąd testu: ${escapeHtml(e.message || 'Nie można połączyć')}`;
+                if (statusEl) statusEl.innerHTML = `<span class="text-red-500 font-bold">Błąd</span>`;
             }
         }
 
@@ -1596,6 +1836,11 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             const staticActive = isStaticMode();
             connectionStatusIndicator.classList.remove('hidden');
 
+            const staticBanner = document.getElementById('staticKeyBanner');
+            if (!staticActive && staticBanner) {
+                staticBanner.classList.add('hidden');
+            }
+
             if (staticActive) {
                 connectionStatusDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse";
                 connectionStatusText.textContent = "GitHub Pages (Bezserwerowy)";
@@ -1612,7 +1857,7 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 }
             } else {
                 connectionStatusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
-                connectionStatusText.textContent = "Serwerowy (Cloud Run)";
+                connectionStatusText.textContent = "Serwerowy (AI Studio / Cloud Run)";
                 connectionStatusText.className = "text-slate-500 dark:text-slate-400 font-bold";
                 settingsAlertDot.classList.add('hidden');
                 
@@ -1620,9 +1865,16 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                     keyStatusBadge.textContent = "Zapisany";
                     keyStatusBadge.className = "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400";
                 } else {
-                    keyStatusBadge.textContent = "Opcjonalny";
-                    keyStatusBadge.className = "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+                    keyStatusBadge.textContent = "Aktywny (AI Studio)";
+                    keyStatusBadge.className = "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400";
                 }
+            }
+
+            const sbHeader = document.getElementById('supabaseStatusHeader');
+            const sbDot = document.getElementById('supabaseStatusDot');
+            if (sbHeader && sbDot) {
+                sbDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+                sbHeader.textContent = "Supabase: Połączono";
             }
         }
 
@@ -1664,8 +1916,22 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             }
         });
 
+        const toggleSupabaseKeyBtn = document.getElementById('toggleSupabaseKeyVisibility');
+        const eyeSupabaseIcon = document.getElementById('eyeSupabaseIcon');
+        if (toggleSupabaseKeyBtn && supabaseKeyInput) {
+            toggleSupabaseKeyBtn.addEventListener('click', () => {
+                if (supabaseKeyInput.type === 'password') {
+                    supabaseKeyInput.type = 'text';
+                    if (eyeSupabaseIcon) eyeSupabaseIcon.className = "fa-solid fa-eye-slash";
+                } else {
+                    supabaseKeyInput.type = 'password';
+                    if (eyeSupabaseIcon) eyeSupabaseIcon.className = "fa-solid fa-eye";
+                }
+            });
+        }
+
         // Save settings handler
-        saveSettingsBtn.addEventListener('click', () => {
+        saveSettingsBtn.addEventListener('click', async () => {
             currentMode = connModeSelect.value;
             geminiApiKey = geminiApiKeyInput.value.trim();
             
@@ -1677,6 +1943,19 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             localStorage.setItem('sawtrak_supabase_url', supabaseUrl);
             localStorage.setItem('sawtrak_supabase_anon_key', supabaseAnonKey);
             
+            // Sync with server if backend is present
+            if (!isHostedOnGitHubPages && hasServerBackend) {
+                try {
+                    await fetch('/api/supabase/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ newUrl: supabaseUrl, newKey: supabaseAnonKey })
+                    });
+                } catch (syncErr) {
+                    console.warn("Could not sync config with backend:", syncErr);
+                }
+            }
+
             updateConnectionStatusUI();
             closeSettings();
             showToast("Ustawienia zostały pomyślnie zapisane!", "success");
@@ -1990,7 +2269,27 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
         // Direct Client-side Gemini API Caller (Solution B / Static Pages)
         async function performClientSideOcr(mimeType, base64Data, model, promptType = 'plate') {
             if (!geminiApiKey) {
-                // Highlight settings
+                // If on a server backend, smoothly delegate to /api/analyze instead of failing
+                if (!isHostedOnGitHubPages && hasServerBackend) {
+                    const response = await fetch("/api/analyze", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            mimeType: mimeType,
+                            imageBase64: base64Data,
+                            model: model,
+                            promptType: promptType
+                        })
+                    });
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        throw new Error(errData.error || `Błąd serwera (${response.status})`);
+                    }
+                    const resJson = await response.json();
+                    return resJson.data;
+                }
+
+                // Highlight settings on GitHub Pages / static hosting without key
                 if (settingsAlertDot) settingsAlertDot.classList.remove('hidden');
                 const quickInput = document.getElementById('quickApiKeyInput');
                 const staticBanner = document.getElementById('staticKeyBanner');
@@ -2138,6 +2437,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 }
 
                 parsedResults = resData.data;
+                isEditingPlateParams = false;
+                updatePlateActionButtons();
                 renderResults(parsedResults);
 
                 stateLoading.classList.add('hidden'); 
@@ -2214,6 +2515,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     }
 
                     parsedScreenResults = resData.data;
+                    isEditingScreenParams = false;
+                    updateScreenActionButtons();
                     renderResultsScreen(parsedScreenResults);
 
                     if (stateLoadingScreen) stateLoadingScreen.classList.add('hidden'); 
@@ -2239,29 +2542,294 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             });
         }
 
-        function renderResults(dataObj) {
-            resultsBody.innerHTML = '';
-            for (const [key, value] of Object.entries(dataObj)) {
-                resultsBody.innerHTML += `
-                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors">
-                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${key}</td>
-                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all">${value}</td>
-                    </tr>
-                `;
+        // --- Tryb edycji parametrów odczytanych z tabliczki i ekranu ---
+        let isEditingPlateParams = false;
+        let isEditingScreenParams = false;
+
+        function updatePlateActionButtons() {
+            const viewActions = document.getElementById('plateViewActions');
+            const editActions = document.getElementById('plateEditActions');
+            const editToolbar = document.getElementById('plateEditToolbar');
+            const editBadge = document.getElementById('plateEditBadge');
+            const actionTh = document.getElementById('plateActionHeader');
+            const addRowBottom = document.getElementById('plateAddRowBottomContainer');
+
+            if (isEditingPlateParams) {
+                if (viewActions) viewActions.classList.add('hidden');
+                if (editActions) editActions.classList.remove('hidden');
+                if (editToolbar) editToolbar.classList.remove('hidden');
+                if (editBadge) editBadge.classList.remove('hidden');
+                if (actionTh) actionTh.classList.remove('hidden');
+                if (addRowBottom) addRowBottom.classList.remove('hidden');
+            } else {
+                if (viewActions) viewActions.classList.remove('hidden');
+                if (editActions) editActions.classList.add('hidden');
+                if (editToolbar) editToolbar.classList.add('hidden');
+                if (editBadge) editBadge.classList.add('hidden');
+                if (actionTh) actionTh.classList.add('hidden');
+                if (addRowBottom) addRowBottom.classList.add('hidden');
             }
+        }
+
+        function toggleEditPlateParams(enable) {
+            if (!parsedResults && enable) {
+                showToast("Brak parametrów do edycji. Najpierw prześlij i przeanalizuj tabliczkę.", "warning");
+                return;
+            }
+            isEditingPlateParams = !!enable;
+            updatePlateActionButtons();
+            renderResults(parsedResults || {});
+        }
+
+        function addPlateParamRow(key = "", val = "") {
+            if (!isEditingPlateParams) {
+                toggleEditPlateParams(true);
+            }
+            const tbody = document.getElementById('resultsBody');
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            tr.className = "plate-param-edit-row bg-slate-50/70 dark:bg-zinc-900/50 hover:bg-slate-100/60 dark:hover:bg-zinc-900/80 transition-colors";
+            tr.innerHTML = `
+                <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60 w-5/12">
+                    <input type="text" class="plate-edit-key w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-all" value="${escapeHtml(key)}" placeholder="Nazwa parametru (np. Model)">
+                </td>
+                <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60">
+                    <input type="text" class="plate-edit-val w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-all" value="${escapeHtml(val)}" placeholder="Wartość (np. H25D)">
+                </td>
+                <td class="px-2 py-2 text-center w-14">
+                    <button type="button" onclick="this.closest('tr').remove()" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer" title="Usuń ten parametr">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            const keyInput = tr.querySelector('.plate-edit-key');
+            if (keyInput && !key) keyInput.focus();
+        }
+
+        async function saveEditedPlateParams() {
+            const tbody = document.getElementById('resultsBody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr.plate-param-edit-row');
+            const newObj = {};
+            rows.forEach(row => {
+                const keyInput = row.querySelector('.plate-edit-key');
+                const valInput = row.querySelector('.plate-edit-val');
+                if (keyInput && valInput) {
+                    const k = keyInput.value.trim();
+                    const v = valInput.value.trim();
+                    if (k) {
+                        newObj[k] = v;
+                    }
+                }
+            });
+
+            if (Object.keys(newObj).length === 0) {
+                showToast("Parametry nie mogą być puste. Pozostaw przynajmniej jeden parametr.", "error");
+                return;
+            }
+
+            parsedResults = newObj;
+            isEditingPlateParams = false;
+            updatePlateActionButtons();
+            renderResults(parsedResults);
+
+            // Zaktualizuj dopasowanie do bazy na podstawie zaktualizowanego numeru seryjnego
+            const serialNum = findSerialNumber(parsedResults);
+            if (serialNum) {
+                await searchSupabaseMatch(serialNum);
+            } else {
+                showNoSerialFoundState();
+            }
+
+            showToast("Zapisano zaktualizowane parametry tabliczki!", "success");
+        }
+
+        function cancelEditingPlateParams() {
+            isEditingPlateParams = false;
+            updatePlateActionButtons();
+            renderResults(parsedResults || {});
+            showToast("Anulowano edycję parametrów tabliczki", "info");
+        }
+
+        function renderResults(dataObj) {
+            if (!resultsBody) return;
+            resultsBody.innerHTML = '';
+            const entries = Object.entries(dataObj || {});
+
+            if (isEditingPlateParams) {
+                if (entries.length === 0) {
+                    addPlateParamRow("Model", "");
+                    return;
+                }
+                for (const [key, value] of entries) {
+                    const tr = document.createElement('tr');
+                    tr.className = "plate-param-edit-row bg-slate-50/70 dark:bg-zinc-900/50 hover:bg-slate-100/60 dark:hover:bg-zinc-900/80 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60 w-5/12">
+                            <input type="text" class="plate-edit-key w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-all" value="${escapeHtml(key)}" placeholder="Nazwa parametru">
+                        </td>
+                        <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60">
+                            <input type="text" class="plate-edit-val w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-all" value="${escapeHtml(value)}" placeholder="Wartość parametru">
+                        </td>
+                        <td class="px-2 py-2 text-center w-14">
+                            <button type="button" onclick="this.closest('tr').remove()" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer" title="Usuń ten parametr">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </td>
+                    `;
+                    resultsBody.appendChild(tr);
+                }
+            } else {
+                for (const [key, value] of entries) {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${escapeHtml(key)}</td>
+                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all font-mono">${escapeHtml(value)}</td>
+                    `;
+                    resultsBody.appendChild(tr);
+                }
+            }
+        }
+
+        // --- Obsługa parametrów ekranu / wyświetlacza ---
+        function updateScreenActionButtons() {
+            const viewActions = document.getElementById('screenViewActions');
+            const editActions = document.getElementById('screenEditActions');
+            const editToolbar = document.getElementById('screenEditToolbar');
+            const editBadge = document.getElementById('screenEditBadge');
+            const actionTh = document.getElementById('screenActionHeader');
+            const addRowBottom = document.getElementById('screenAddRowBottomContainer');
+
+            if (isEditingScreenParams) {
+                if (viewActions) viewActions.classList.add('hidden');
+                if (editActions) editActions.classList.remove('hidden');
+                if (editToolbar) editToolbar.classList.remove('hidden');
+                if (editBadge) editBadge.classList.remove('hidden');
+                if (actionTh) actionTh.classList.remove('hidden');
+                if (addRowBottom) addRowBottom.classList.remove('hidden');
+            } else {
+                if (viewActions) viewActions.classList.remove('hidden');
+                if (editActions) editActions.classList.add('hidden');
+                if (editToolbar) editToolbar.classList.add('hidden');
+                if (editBadge) editBadge.classList.add('hidden');
+                if (actionTh) actionTh.classList.add('hidden');
+                if (addRowBottom) addRowBottom.classList.add('hidden');
+            }
+        }
+
+        function toggleEditScreenParams(enable) {
+            if (!parsedScreenResults && enable) {
+                showToast("Brak parametrów ekranu do edycji. Najpierw prześlij i przeanalizuj zdjęcie ekranu.", "warning");
+                return;
+            }
+            isEditingScreenParams = !!enable;
+            updateScreenActionButtons();
+            renderResultsScreen(parsedScreenResults || {});
+        }
+
+        function addScreenParamRow(key = "", val = "") {
+            if (!isEditingScreenParams) {
+                toggleEditScreenParams(true);
+            }
+            const tbody = document.getElementById('resultsBodyScreen');
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            tr.className = "screen-param-edit-row bg-slate-50/70 dark:bg-zinc-900/50 hover:bg-slate-100/60 dark:hover:bg-zinc-900/80 transition-colors";
+            tr.innerHTML = `
+                <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60 w-5/12">
+                    <input type="text" class="screen-edit-key w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all" value="${escapeHtml(key)}" placeholder="Nazwa parametru (np. Motogodziny)">
+                </td>
+                <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60">
+                    <input type="text" class="screen-edit-val w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all" value="${escapeHtml(val)}" placeholder="Wartość parametru">
+                </td>
+                <td class="px-2 py-2 text-center w-14">
+                    <button type="button" onclick="this.closest('tr').remove()" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer" title="Usuń ten parametr">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            const keyInput = tr.querySelector('.screen-edit-key');
+            if (keyInput && !key) keyInput.focus();
+        }
+
+        async function saveEditedScreenParams() {
+            const tbody = document.getElementById('resultsBodyScreen');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr.screen-param-edit-row');
+            const newObj = {};
+            rows.forEach(row => {
+                const keyInput = row.querySelector('.screen-edit-key');
+                const valInput = row.querySelector('.screen-edit-val');
+                if (keyInput && valInput) {
+                    const k = keyInput.value.trim();
+                    const v = valInput.value.trim();
+                    if (k) {
+                        newObj[k] = v;
+                    }
+                }
+            });
+
+            if (Object.keys(newObj).length === 0) {
+                showToast("Parametry ekranu nie mogą być puste. Pozostaw przynajmniej jedno pole.", "error");
+                return;
+            }
+
+            parsedScreenResults = newObj;
+            isEditingScreenParams = false;
+            updateScreenActionButtons();
+            renderResultsScreen(parsedScreenResults);
+            showToast("Zapisano zaktualizowane parametry ekranu!", "success");
+        }
+
+        function cancelEditingScreenParams() {
+            isEditingScreenParams = false;
+            updateScreenActionButtons();
+            renderResultsScreen(parsedScreenResults || {});
+            showToast("Anulowano edycję parametrów ekranu", "info");
         }
 
         function renderResultsScreen(dataObj) {
             const resultsBodyScreen = document.getElementById('resultsBodyScreen');
             if (!resultsBodyScreen) return;
             resultsBodyScreen.innerHTML = '';
-            for (const [key, value] of Object.entries(dataObj)) {
-                resultsBodyScreen.innerHTML += `
-                    <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors">
-                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${key}</td>
-                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all">${value}</td>
-                    </tr>
-                `;
+            const entries = Object.entries(dataObj || {});
+
+            if (isEditingScreenParams) {
+                if (entries.length === 0) {
+                    addScreenParamRow("Motogodziny", "");
+                    return;
+                }
+                for (const [key, value] of entries) {
+                    const tr = document.createElement('tr');
+                    tr.className = "screen-param-edit-row bg-slate-50/70 dark:bg-zinc-900/50 hover:bg-slate-100/60 dark:hover:bg-zinc-900/80 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60 w-5/12">
+                            <input type="text" class="screen-edit-key w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all" value="${escapeHtml(key)}" placeholder="Nazwa parametru">
+                        </td>
+                        <td class="px-3 py-2 border-r border-slate-200/50 dark:border-zinc-800/60">
+                            <input type="text" class="screen-edit-val w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all" value="${escapeHtml(value)}" placeholder="Wartość parametru">
+                        </td>
+                        <td class="px-2 py-2 text-center w-14">
+                            <button type="button" onclick="this.closest('tr').remove()" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer" title="Usuń ten parametr">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </td>
+                    `;
+                    resultsBodyScreen.appendChild(tr);
+                }
+            } else {
+                for (const [key, value] of entries) {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${escapeHtml(key)}</td>
+                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all font-mono">${escapeHtml(value)}</td>
+                    `;
+                    resultsBodyScreen.appendChild(tr);
+                }
             }
         }
 
@@ -2507,8 +3075,17 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             
             showToast("Trwa zapisywanie do bazy...", "info");
             
+            // Calculate next ID to satisfy NOT NULL constraint on wozki table
+            let nextId = 16612;
+            if (Array.isArray(allWozkiCatalog) && allWozkiCatalog.length > 0) {
+                const ids = allWozkiCatalog.map(w => Number(w.id)).filter(n => !isNaN(n) && n > 0);
+                if (ids.length > 0) nextId = Math.max(...ids) + 1;
+            }
+
             // Map scanned results to columns
             const record = {
+                id: nextId,
+                Kod: 'W' + nextId,
                 NRKATALOGOWY: serialNumber,
                 MODEL: parsedResults["Model"] || parsedResults["MODEL"] || parsedResults["Typ"] || parsedResults["TYP"] || "",
                 UDZWIG: parsedResults["Udźwig"] || parsedResults["Udźwig (kg)"] || parsedResults["Q"] || parsedResults["Q (kg)"] || parsedResults["UDZWIG"] || "",
@@ -2600,8 +3177,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                             if (!response.ok) throw new Error();
                         }
                         
-                        showToast("Wózek zapisany! Dodaj kolumny klient i temat w Supabase.", "success");
-                        alert("Wózek został pomyślnie dodany do bazy danych, ale Twoja tabela 'wozki' nie posiada jeszcze kolumn 'klient' oraz 'temat'.\n\nAby te dane były zapisywane, przejdź do panelu SQL Editor w Supabase i wykonaj:\n\nALTER TABLE wozki ADD COLUMN klient text;\nALTER TABLE wozki ADD COLUMN temat text;");
+                        showToast("Wózek zapisany! Dodano bez opcjonalnych kolumn klient/temat.", "success");
                         
                         // Clear inputs
                         const kInput = document.getElementById('opKlient');
@@ -2681,6 +3257,10 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             // 2. Wyczyść odczyt parametrów
             parsedResults = null;
             parsedScreenResults = null;
+            isEditingPlateParams = false;
+            isEditingScreenParams = false;
+            if (typeof updatePlateActionButtons === 'function') updatePlateActionButtons();
+            if (typeof updateScreenActionButtons === 'function') updateScreenActionButtons();
 
             const resultsBody = document.getElementById('resultsBody');
             if (resultsBody) resultsBody.innerHTML = '';
@@ -3063,17 +3643,12 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 let usingLocalFallback = false;
 
                 if (isStaticMode()) {
-                    // Try targeted columns first for fast loading
-                    let response = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis,image_data,image_data_screen&order=created_at.desc&limit=100', { timeoutMs: 8000 });
+                    // Try targeted columns first for fast loading (without massive base64 images that cause statement timeout)
+                    let response = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis&order=created_at.desc&limit=100', { timeoutMs: 6000 });
 
-                    // Fallback without image columns if payload is too big or columns missing
+                    // Fallback without order parameter if created_at column does not exist or ordering timed out
                     if (!response.ok) {
-                        response = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis&order=created_at.desc&limit=100', { timeoutMs: 6000 });
-                    }
-
-                    // Fallback without order parameter if created_at column does not exist
-                    if (!response.ok) {
-                        response = await staticSupabaseRequest('/rest/v1/operacje?select=*&limit=100', { timeoutMs: 8000 });
+                        response = await staticSupabaseRequest('/rest/v1/operacje?select=id,nrkatalogowy,model,klient,temat,opis&limit=100', { timeoutMs: 6000 });
                     }
 
                     if (response.ok) {
@@ -3100,9 +3675,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                             if (sqlAlert) sqlAlert.classList.add('hidden');
                         } else {
                             // Fallback directly to Supabase REST
-                            let directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis,image_data,image_data_screen&order=created_at.desc&limit=100', { timeoutMs: 8000 });
-                            if (!directRes.ok) directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis&order=created_at.desc&limit=100', { timeoutMs: 6000 });
-                            if (!directRes.ok) directRes = await staticSupabaseRequest('/rest/v1/operacje?select=*&limit=100', { timeoutMs: 8000 });
+                            let directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis&order=created_at.desc&limit=100', { timeoutMs: 6000 });
+                            if (!directRes.ok) directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,nrkatalogowy,model,klient,temat,opis&limit=100', { timeoutMs: 6000 });
                             if (directRes.ok) {
                                 list = await directRes.json();
                                 if (sqlAlert) sqlAlert.classList.add('hidden');
@@ -3112,9 +3686,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         }
                     } catch (fetchErr) {
                         try {
-                            let directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis,image_data,image_data_screen&order=created_at.desc&limit=100', { timeoutMs: 8000 });
-                            if (!directRes.ok) directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis&order=created_at.desc&limit=100', { timeoutMs: 6000 });
-                            if (!directRes.ok) directRes = await staticSupabaseRequest('/rest/v1/operacje?select=*&limit=100', { timeoutMs: 8000 });
+                            let directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,created_at,wozek_id,nrkatalogowy,model,klient,temat,parametry,parametry_ekranu,opis&order=created_at.desc&limit=100', { timeoutMs: 6000 });
+                            if (!directRes.ok) directRes = await staticSupabaseRequest('/rest/v1/operacje?select=id,nrkatalogowy,model,klient,temat,opis&limit=100', { timeoutMs: 6000 });
                             if (directRes.ok) {
                                 list = await directRes.json();
                                 if (sqlAlert) sqlAlert.classList.add('hidden');
@@ -5067,23 +5640,8 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }
         });
 
-        const btnDbSearchEl = document.getElementById('btnDbSearch');
-        if (btnDbSearchEl) {
-            btnDbSearchEl.addEventListener('click', () => {
-                triggerDbSearch();
-            });
-        }
-
-        const btnDbRefreshEl = document.getElementById('btnDbRefresh');
-        if (btnDbRefreshEl) {
-            btnDbRefreshEl.addEventListener('click', () => {
-                clearDbSearch();
-                showToast("Odświeżono bazę Supabase", "info");
-            });
-        }
-
         // Initialize App on load (instant non-blocking UI + fast background sync)
-        window.addEventListener('DOMContentLoaded', () => {
+        function initApp() {
             const savedTab = localStorage.getItem('sawtrak_active_tab') || 'new-entry';
             switchTab(savedTab);
             updateConnectionStatusUI();
@@ -5096,7 +5654,13 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 loadOperations().catch(console.warn);
                 loadDbCatalog().catch(console.warn);
             })();
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
     </script>
 </body>
 </html>

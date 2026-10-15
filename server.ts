@@ -9,6 +9,12 @@ const PORT = 3000;
 
 // Enable CORS and parse JSON request bodies up to 50MB (necessary for high-res base64 images)
 app.use(cors());
+app.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -16,8 +22,8 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 const defaultSupabaseUrl = "https://nhqambvmghlhzjtdvljz.supabase.co";
 const defaultSupabaseAnonKey = "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
 
-const supabaseUrl = process.env.SUPABASE_URL || defaultSupabaseUrl;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || defaultSupabaseAnonKey;
+let supabaseUrl = process.env.SUPABASE_URL || defaultSupabaseUrl;
+let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || defaultSupabaseAnonKey;
 
 let supabase: any = null;
 try {
@@ -35,8 +41,102 @@ try {
 app.get("/api/supabase/config", (_req, res) => {
   return res.json({
     supabaseUrl: supabaseUrl,
-    supabaseAnonKey: process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || defaultSupabaseAnonKey
+    supabaseAnonKey: supabaseKey || defaultSupabaseAnonKey
   });
+});
+
+// Endpoint to dynamically update Supabase credentials on the server
+app.post("/api/supabase/config", (req, res) => {
+  const { newUrl, newKey } = req.body;
+  if (newUrl && newKey) {
+    try {
+      const cleanUrl = String(newUrl).trim().replace(/\/+$/, "");
+      const cleanKey = String(newKey).trim();
+      supabase = createClient(cleanUrl, cleanKey);
+      supabaseUrl = cleanUrl;
+      supabaseKey = cleanKey;
+      cachedWozkiCatalog = [];
+      lastCatalogFetchTime = 0;
+      fetchFullWozkiCatalog().catch(console.warn);
+      return res.json({ success: true, supabaseUrl, supabaseAnonKey: supabaseKey });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+  return res.status(400).json({ error: "Brak parametrów newUrl lub newKey" });
+});
+
+// Diagnostic endpoint to test Supabase connection and table accessibility
+app.all("/api/supabase/test", async (req, res) => {
+  try {
+    const testUrl = (req.body?.supabaseUrl || req.query?.supabaseUrl || supabaseUrl || defaultSupabaseUrl).trim().replace(/\/+$/, "");
+    const testKey = (req.body?.supabaseAnonKey || req.query?.supabaseAnonKey || supabaseKey || defaultSupabaseAnonKey).trim();
+    
+    let clientToUse = supabase;
+    if (testUrl !== supabaseUrl || testKey !== supabaseKey || !clientToUse) {
+      try {
+        clientToUse = createClient(testUrl, testKey);
+      } catch (clientErr: any) {
+        return res.status(400).json({ success: false, error: "Nieprawidłowy adres URL lub format klucza Supabase." });
+      }
+    }
+
+    const startTime = Date.now();
+    const [wozkiTest, operacjeTest] = await Promise.allSettled([
+      withTimeout(clientToUse.from("wozki").select("id").limit(5), 3500, { error: new Error("Timeout wozki"), data: [] }),
+      withTimeout(clientToUse.from("operacje").select("id").limit(5), 3500, { error: new Error("Timeout operacje"), data: [] })
+    ]);
+    const durationMs = Date.now() - startTime;
+
+    let wozkiCount = 0;
+    let wozkiError = null;
+    if (wozkiTest.status === "fulfilled") {
+      const val: any = wozkiTest.value;
+      if (val && !val.error && Array.isArray(val.data)) {
+        wozkiCount = val.data.length;
+      } else {
+        wozkiError = val?.error?.message || "Błąd zapytania wozki";
+      }
+    } else {
+      wozkiError = wozkiTest.reason?.message || "Błąd połączenia";
+    }
+
+    let operacjeCount = 0;
+    let operacjeError = null;
+    if (operacjeTest.status === "fulfilled") {
+      const val: any = operacjeTest.value;
+      if (val && !val.error && Array.isArray(val.data)) {
+        operacjeCount = val.data.length;
+      } else {
+        operacjeError = val?.error?.message || "Błąd zapytania operacje";
+      }
+    } else {
+      operacjeError = operacjeTest.reason?.message || "Błąd połączenia";
+    }
+
+    const anyAccessible = !wozkiError || !operacjeError;
+
+    if (!anyAccessible) {
+      return res.status(502).json({
+        success: false,
+        durationMs,
+        error: `Nie udało się nawiązać połączenia z tabelami Supabase (${wozkiError || operacjeError}).`,
+        details: { wozkiError, operacjeError }
+      });
+    }
+
+    return res.json({
+      success: true,
+      durationMs,
+      wozkiAccessible: !wozkiError,
+      operacjeAccessible: !operacjeError,
+      wozkiCount,
+      operacjeCount,
+      url: testUrl
+    });
+  } catch (testErr: any) {
+    return res.status(500).json({ success: false, error: testErr.message || "Błąd testu połączenia." });
+  }
 });
 
 // Helper to determine if a Supabase error is due to a missing table
@@ -123,25 +223,46 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 - Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
     }
 
-    const response = await ai.models.generateContent({
-      model: selectedModel,
-      contents: {
-        parts: [
-          { text: promptText },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: imageBase64,
-            },
-          },
-        ],
-      },
-      config: {
-        responseMimeType: "application/json",
-      },
-    });
+    const candidateModels = [selectedModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"].filter((m, i, arr) => m && arr.indexOf(m) === i);
+    let resultText = "";
+    let modelSuccessfullyUsed = selectedModel;
+    let lastErr: any = null;
 
-    const resultText = response.text || "";
+    for (const cand of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model: cand,
+          contents: {
+            parts: [
+              { text: promptText },
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: imageBase64,
+                },
+              },
+            ],
+          },
+          config: {
+            responseMimeType: "application/json",
+          },
+        });
+
+        resultText = response.text || "";
+        if (resultText) {
+          modelSuccessfullyUsed = cand;
+          lastErr = null;
+          break;
+        }
+      } catch (err: any) {
+        lastErr = err;
+        console.warn(`Model ${cand} failed in server.ts: ${err.message}. Trying next fallback...`);
+      }
+    }
+
+    if (!resultText) {
+      throw lastErr || new Error("Nie otrzymano odpowiedzi od modeli AI.");
+    }
     
     // Robust helper to extract and parse JSON from the Gemini response
     function robustJsonParse(text: string): any {
@@ -206,7 +327,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 
     try {
       const parsedData = robustJsonParse(resultText);
-      return res.json({ success: true, data: parsedData, modelUsed: selectedModel });
+      return res.json({ success: true, data: parsedData, modelUsed: modelSuccessfullyUsed });
     } catch (parseError: any) {
       console.error("JSON extraction failed on raw text:", resultText, parseError);
       return res.status(500).json({
@@ -240,17 +361,17 @@ async function fetchFullWozkiCatalog(): Promise<any[]> {
   isFetchingCatalog = true;
 
   try {
-    const supabaseUrl = process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
+    const targetUrl = supabaseUrl || process.env.SUPABASE_URL || "https://nhqambvmghlhzjtdvljz.supabase.co";
+    const targetKey = supabaseKey || process.env.SUPABASE_ANON_KEY || "sb_publishable_Y6F5nGyspeypmyQbanrUEA_r2N2s6PC";
 
     // Fetch initial chunk with strict timeout to prevent startup lag
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-    const res = await fetch(`${supabaseUrl}/rest/v1/wozki?select=*&limit=1000`, {
+    const res = await fetch(`${targetUrl.replace(/\/+$/, "")}/rest/v1/wozki?select=*&limit=1000`, {
       headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`
+        apikey: targetKey,
+        Authorization: `Bearer ${targetKey}`
       },
       signal: controller.signal
     }).catch(() => null);
@@ -462,6 +583,22 @@ app.post("/api/supabase/insert", async (req, res) => {
     const { record } = req.body;
     if (!record || !record.NRKATALOGOWY) {
       return res.status(400).json({ error: "Dane rekordu są niekompletne (wymagany NRKATALOGOWY)." });
+    }
+
+    // Auto-calculate id and Kod if not provided to satisfy not-null constraint on id
+    if (!record.id) {
+      try {
+        const maxQuery = await supabase.from("wozki").select("id").order("id", { ascending: false }).limit(1);
+        const maxId = (maxQuery.data && maxQuery.data[0] && typeof maxQuery.data[0].id === "number") ? maxQuery.data[0].id : 16611;
+        record.id = maxId + 1;
+        if (!record.Kod) {
+          record.Kod = "W" + record.id;
+        }
+      } catch (idErr) {
+        console.warn("Could not calculate next wozki id, attempting with fallback timestamp:", idErr);
+        record.id = Math.floor(Date.now() / 1000);
+        if (!record.Kod) record.Kod = "W" + record.id;
+      }
     }
 
     const { data, error } = await supabase
@@ -1011,16 +1148,16 @@ app.get("/api/supabase/list-operations", async (req, res) => {
     let rawData: any[] = [];
     let queryError: any = null;
 
-    // 1. Query operations metadata + images with generous 6000ms timeout
+    // 1. Query operations metadata (fast, slim payload without heavy base64 images)
     try {
       const resOrdered: any = await withTimeout(
         supabase
           .from("operacje")
-          .select("id, created_at, wozek_id, nrkatalogowy, model, klient, temat, parametry, parametry_ekranu, opis, image_data, image_data_screen")
+          .select("id, created_at, wozek_id, nrkatalogowy, model, klient, temat, parametry, parametry_ekranu, opis")
           .order("created_at", { ascending: false })
           .limit(100),
-        6000,
-        { error: new Error("Timeout"), data: [] }
+        4000,
+        { error: null, data: [] }
       );
 
       if (resOrdered && !resOrdered.error && Array.isArray(resOrdered.data)) {
@@ -1032,16 +1169,15 @@ app.get("/api/supabase/list-operations", async (req, res) => {
       queryError = ordErr;
     }
 
-    // 2. Fallback: try plain select without image_data if full query timed out or had column issue
+    // 2. Fallback: try plain select without order if order by created_at column failed
     if (queryError || rawData.length === 0) {
       try {
         const resPlain: any = await withTimeout(
           supabase
             .from("operacje")
             .select("id, created_at, wozek_id, nrkatalogowy, model, klient, temat, parametry, parametry_ekranu, opis")
-            .order("created_at", { ascending: false })
             .limit(100),
-          4000,
+          3000,
           { error: null, data: [] }
         );
 
@@ -1054,15 +1190,15 @@ app.get("/api/supabase/list-operations", async (req, res) => {
       }
     }
 
-    // 3. Fallback: try select * if specific columns failed
+    // 3. Fallback: try select core columns if parametry or parametry_ekranu failed
     if (queryError || rawData.length === 0) {
       try {
         const resAll: any = await withTimeout(
           supabase
             .from("operacje")
-            .select("*")
+            .select("id, nrkatalogowy, model, klient, temat, opis")
             .limit(100),
-          5000,
+          3000,
           { error: null, data: [] }
         );
 
