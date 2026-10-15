@@ -356,7 +356,7 @@
                 </div>
 
                 <!-- Zapis operacji w bazie z polami dodatkowymi -->
-                <div id="saveOperationSection" class="hidden bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                <div id="saveOperationSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
                     <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
                         <i class="fa-solid fa-floppy-disk"></i> Zapisz operację w bazie
                     </h3>
@@ -396,245 +396,261 @@
                 </div>
             </div>
 
-            <!-- 2a. Oczekiwanie na analizę / Wyniki - Tabliczka znamionowa -->
-            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all flex flex-col">
-                <div id="stateContainer" class="text-center min-h-[340px] flex flex-col items-center justify-center transition-all w-full">
-                    
-                    <!-- Bezczynność tabliczki -->
-                    <div id="stateIdle" class="flex flex-col items-center">
-                        <div class="w-20 h-20 bg-[#F9F9F9] dark:bg-zinc-900 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 mb-5">
-                            <i class="fa-solid fa-id-card text-3xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold font-ubuntu">Oczekiwanie na analizę tabliczki</h3>
-                        <p class="text-sm text-slate-400 max-w-sm mt-2">
-                            Prześlij zdjęcie tabliczki znamionowej z lewej strony i kliknij przycisk „Analizuj zdjęcie tabliczki”.
-                        </p>
-                    </div>
-
-                    <!-- Ładowanie tabliczki -->
-                    <div id="stateLoading" class="hidden flex flex-col items-center w-full">
-                        <div class="relative w-20 h-20 mb-6">
-                            <div class="absolute inset-0 border-4 border-brand-500/10 rounded-full"></div>
-                            <div class="absolute inset-0 border-4 border-t-brand-500 rounded-full animate-spin"></div>
-                            <div class="absolute inset-0 flex items-center justify-center text-brand-500">
-                                <i class="fa-solid fa-brain text-2xl animate-pulse"></i>
-                            </div>
-                        </div>
-                        <h3 class="text-lg font-bold font-ubuntu">Trwa analiza AI tabliczki...</h3>
-                        <p class="text-sm text-slate-400 mt-2 max-w-xs">
-                            Zaawansowany model sztucznej inteligencji skanuje obraz w poszukiwaniu danych technicznych, modeli oraz numerów seryjnych.
-                        </p>
-                        <div class="w-full max-w-xs bg-slate-100 dark:bg-zinc-900 rounded-full h-1.5 mt-6 overflow-hidden">
-                            <div class="bg-brand-500 h-1.5 rounded-full animate-[loading-bar_2.5s_infinite]" style="width: 50%"></div>
+            <!-- 2a. Odczytane parametry tabliczki znamionowej -->
+            <div class="relative bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all flex flex-col">
+                
+                <!-- Ładowanie tabliczki (overlay podczas analizy AI) -->
+                <div id="stateLoading" class="hidden absolute inset-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm rounded-3xl z-30 flex flex-col items-center justify-center p-6 transition-all">
+                    <div class="relative w-16 h-16 mb-4">
+                        <div class="absolute inset-0 border-4 border-brand-500/10 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-t-brand-500 rounded-full animate-spin"></div>
+                        <div class="absolute inset-0 flex items-center justify-center text-brand-500">
+                            <i class="fa-solid fa-brain text-xl animate-pulse"></i>
                         </div>
                     </div>
+                    <h3 class="text-base font-bold font-ubuntu">Trwa analiza AI tabliczki...</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-xs text-center">
+                        Zaawansowany model sztucznej inteligencji skanuje obraz w poszukiwaniu danych technicznych, modelu i numeru seryjnego.
+                    </p>
+                    <div class="w-full max-w-xs bg-slate-100 dark:bg-zinc-900 rounded-full h-1.5 mt-4 overflow-hidden">
+                        <div class="bg-brand-500 h-1.5 rounded-full animate-[loading-bar_2.5s_infinite]" style="width: 50%"></div>
+                    </div>
+                </div>
 
-                    <!-- Wyniki tabliczki -->
-                    <div id="stateResults" class="hidden w-full text-left">
-                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4 flex-wrap gap-3">
-                            <div>
-                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu flex items-center gap-2">
-                                    <span>Odczytane parametry tabliczki</span>
-                                    <span id="plateEditBadge" class="hidden text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                                        Tryb edycji
-                                    </span>
-                                </h3>
-                                <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
-                            </div>
-                            <div class="flex items-center gap-2 flex-wrap justify-end">
-                                <!-- Grupa akcji podglądu -->
-                                <div id="plateViewActions" class="flex items-center gap-2">
-                                    <button id="editPlateParamsBtn" onclick="toggleEditPlateParams(true)" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 dark:text-blue-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-blue-200/80 dark:border-blue-800/80 shadow-sm cursor-pointer" title="Edytuj odczytane parametry tabliczki">
-                                        <i class="fa-solid fa-pen-to-square"></i> Edytuj
-                                    </button>
-                                    <button onclick="copyToClipboard()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Kopiuj do schowka">
-                                        <i class="fa-solid fa-copy"></i> Kopiuj
-                                    </button>
-                                    <button onclick="downloadAsJSON()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Pobierz jako JSON">
-                                        <i class="fa-solid fa-download"></i> JSON
-                                    </button>
-                                </div>
-                                <!-- Grupa akcji edycji -->
-                                <div id="plateEditActions" class="hidden flex items-center gap-2">
-                                    <button onclick="addPlateParamRow()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700 cursor-pointer" title="Dodaj nowy parametr">
-                                        <i class="fa-solid fa-plus text-brand-500"></i> Dodaj pole
-                                    </button>
-                                    <button onclick="cancelEditingPlateParams()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer" title="Anuluj edycję">
-                                        <i class="fa-solid fa-xmark"></i> Anuluj
-                                    </button>
-                                    <button id="savePlateParamsBtn" onclick="saveEditedPlateParams()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer" title="Zapisz wprowadzone zmiany parametrów">
-                                        <i class="fa-solid fa-check"></i> Zapisz
-                                    </button>
-                                </div>
-                            </div>
+                <!-- Elementy zachowane dla kompatybilności selektorów -->
+                <div id="stateIdle" class="hidden"></div>
+                <div id="stateContainer" class="hidden"></div>
+
+                <!-- Wyniki tabliczki (zawsze widoczne w oknie Nowy wpis z możliwością edycji) -->
+                <div id="stateResults" class="w-full text-left">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-3 flex-wrap gap-3">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu flex items-center gap-2">
+                                <i class="fa-solid fa-id-card text-brand-500"></i>
+                                <span>Odczytane parametry tabliczki</span>
+                                <span id="plateEditBadge" class="hidden text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                                    Tryb edycji
+                                </span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI lub wprowadzone ręcznie</p>
                         </div>
-
-                        <!-- Pasek informacyjny trybu edycji -->
-                        <div id="plateEditToolbar" class="hidden mb-3 p-3 rounded-2xl bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 flex flex-wrap items-center justify-between gap-2.5 text-xs text-blue-700 dark:text-blue-300">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-pen-nib text-brand-500 text-sm"></i>
-                                <span><strong>Edycja parametrów tabliczki:</strong> Zmodyfikuj wartości lub nazwy pól, usuń błędne lub dodaj nowe. Po zakończeniu kliknij <strong>Zapisz</strong>.</span>
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
+                            <!-- Grupa akcji podglądu -->
+                            <div id="plateViewActions" class="flex items-center gap-2">
+                                <button id="editPlateParamsBtn" onclick="toggleEditPlateParams(true)" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-brand-500/20 cursor-pointer" title="Edytuj odczytane parametry tabliczki">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edytuj
+                                </button>
+                                <button onclick="copyToClipboard()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Kopiuj do schowka">
+                                    <i class="fa-solid fa-copy"></i> Kopiuj
+                                </button>
+                                <button onclick="downloadAsJSON()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Pobierz jako JSON">
+                                    <i class="fa-solid fa-download"></i> JSON
+                                </button>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="addPlateParamRow()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-200 dark:border-zinc-700 flex items-center gap-1 cursor-pointer">
+                            <!-- Grupa akcji edycji -->
+                            <div id="plateEditActions" class="hidden flex items-center gap-2">
+                                <button onclick="addPlateParamRow()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700 cursor-pointer" title="Dodaj nowy parametr">
                                     <i class="fa-solid fa-plus text-brand-500"></i> Dodaj pole
                                 </button>
-                                <button onclick="cancelEditingPlateParams()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-zinc-700 cursor-pointer">
-                                    Anuluj
+                                <button onclick="cancelEditingPlateParams()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer" title="Anuluj edycję">
+                                    <i class="fa-solid fa-xmark"></i> Anuluj
                                 </button>
-                                <button onclick="saveEditedPlateParams()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 cursor-pointer">
+                                <button id="savePlateParamsBtn" onclick="saveEditedPlateParams()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer" title="Zapisz wprowadzone zmiany parametrów">
                                     <i class="fa-solid fa-check"></i> Zapisz
                                 </button>
                             </div>
                         </div>
-
-                        <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-zinc-800 bg-[#F9F9F9] dark:bg-[#111111]/40 hover:border-brand-500/30 transition-colors duration-500">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
-                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr tabliczki</th>
-                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
-                                        <th id="plateActionHeader" class="hidden px-3 py-3 text-center font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase w-14">Usuń</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="resultsBody" class="divide-y divide-slate-200 dark:divide-zinc-800">
-                                    <!-- Dane dynamiczne -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Przycisk dodawania wiersza w trybie edycji -->
-                        <div id="plateAddRowBottomContainer" class="hidden mt-3 flex items-center justify-between gap-3">
-                            <button onclick="addPlateParamRow()" class="py-2.5 px-4 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 hover:bg-brand-50/40 dark:hover:bg-brand-500/10 text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer grow">
-                                <i class="fa-solid fa-plus text-brand-500"></i> Dodaj kolejny parametr do tabliczki
-                            </button>
-                            <button onclick="saveEditedPlateParams()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer shrink-0">
-                                <i class="fa-solid fa-check"></i> Zapisz zmiany
-                            </button>
-                        </div>
-
                     </div>
+
+                    <!-- Pasek pomocniczy z szybkimi akcjami (widoczny w trybie podglądu) -->
+                    <div id="plateQuickBar" class="mb-3 px-3.5 py-2 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-[11px]">
+                            <i class="fa-solid fa-circle-info text-brand-500"></i>
+                            <span>Kliknij <strong>Edytuj</strong>, aby zmienić lub dodać parametry, albo użyj:</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="loadSamplePlateData()" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:hover:bg-brand-500/25 dark:text-brand-300 transition-colors flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Załaduj Demo
+                            </button>
+                            <button type="button" onclick="toggleEditPlateParams(true)" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-zinc-700 transition-colors flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-pen text-[10px] text-blue-500"></i> Wpisz ręcznie
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pasek informacyjny trybu edycji -->
+                    <div id="plateEditToolbar" class="hidden mb-3 p-3 rounded-2xl bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 flex flex-wrap items-center justify-between gap-2.5 text-xs text-blue-700 dark:text-blue-300">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-pen-nib text-brand-500 text-sm"></i>
+                            <span><strong>Edycja parametrów tabliczki:</strong> Zmodyfikuj wartości lub nazwy pól, usuń błędne lub dodaj nowe. Po zakończeniu kliknij <strong>Zapisz</strong>.</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="addPlateParamRow()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-200 dark:border-zinc-700 flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-plus text-brand-500"></i> Dodaj pole
+                            </button>
+                            <button onclick="cancelEditingPlateParams()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                                Anuluj
+                            </button>
+                            <button onclick="saveEditedPlateParams()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-check"></i> Zapisz
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-zinc-800 bg-[#F9F9F9] dark:bg-[#111111]/40 hover:border-brand-500/30 transition-colors duration-500">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
+                                    <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr tabliczki</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
+                                    <th id="plateActionHeader" class="hidden px-3 py-3 text-center font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase w-14">Usuń</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody" class="divide-y divide-slate-200 dark:divide-zinc-800">
+                                <!-- Dane dynamiczne -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Przycisk dodawania wiersza w trybie edycji -->
+                    <div id="plateAddRowBottomContainer" class="hidden mt-3 flex items-center justify-between gap-3">
+                        <button onclick="addPlateParamRow()" class="py-2.5 px-4 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 hover:bg-brand-50/40 dark:hover:bg-brand-500/10 text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer grow">
+                            <i class="fa-solid fa-plus text-brand-500"></i> Dodaj kolejny parametr do tabliczki
+                        </button>
+                        <button onclick="saveEditedPlateParams()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer shrink-0">
+                            <i class="fa-solid fa-check"></i> Zapisz zmiany
+                        </button>
+                    </div>
+
                 </div>
             </div>
 
-            <!-- 2b. Oczekiwanie na analizę / Wyniki - Zdjęcie ekranu -->
-            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all flex flex-col mt-6">
-                <div id="stateContainerScreen" class="text-center min-h-[340px] flex flex-col items-center justify-center transition-all w-full">
-                    
-                    <!-- Bezczynność ekranu -->
-                    <div id="stateIdleScreen" class="flex flex-col items-center">
-                        <div class="w-20 h-20 bg-[#F9F9F9] dark:bg-zinc-900 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-600 mb-5">
-                            <i class="fa-solid fa-desktop text-3xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold font-ubuntu">Oczekiwanie na analizę ekranu</h3>
-                        <p class="text-sm text-slate-400 max-w-sm mt-2">
-                            Prześlij zdjęcie ekranu / wyświetlacza z lewej strony i kliknij przycisk „Analizuj zdjęcie ekranu”.
-                        </p>
-                    </div>
-
-                    <!-- Ładowanie ekranu -->
-                    <div id="stateLoadingScreen" class="hidden flex flex-col items-center w-full">
-                        <div class="relative w-20 h-20 mb-6">
-                            <div class="absolute inset-0 border-4 border-brand-500/10 rounded-full"></div>
-                            <div class="absolute inset-0 border-4 border-t-brand-500 rounded-full animate-spin"></div>
-                            <div class="absolute inset-0 flex items-center justify-center text-brand-500">
-                                <i class="fa-solid fa-desktop text-2xl animate-pulse"></i>
-                            </div>
-                        </div>
-                        <h3 class="text-lg font-bold font-ubuntu">Trwa analiza AI ekranu...</h3>
-                        <p class="text-sm text-slate-400 mt-2 max-w-xs">
-                            Zaawansowany model sztucznej inteligencji skanuje wyświetlacz pod kątem motogodzin, kodów błędów i wskaźników.
-                        </p>
-                        <div class="w-full max-w-xs bg-slate-100 dark:bg-zinc-900 rounded-full h-1.5 mt-6 overflow-hidden">
-                            <div class="bg-brand-500 h-1.5 rounded-full animate-[loading-bar_2.5s_infinite]" style="width: 50%"></div>
+            <!-- 2b. Odczytane parametry ekranu / wyświetlacza -->
+            <div class="relative bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-6 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all flex flex-col mt-6">
+                
+                <!-- Ładowanie ekranu (overlay podczas analizy AI) -->
+                <div id="stateLoadingScreen" class="hidden absolute inset-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm rounded-3xl z-30 flex flex-col items-center justify-center p-6 transition-all">
+                    <div class="relative w-16 h-16 mb-4">
+                        <div class="absolute inset-0 border-4 border-brand-500/10 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-t-brand-500 rounded-full animate-spin"></div>
+                        <div class="absolute inset-0 flex items-center justify-center text-brand-500">
+                            <i class="fa-solid fa-desktop text-xl animate-pulse"></i>
                         </div>
                     </div>
+                    <h3 class="text-base font-bold font-ubuntu">Trwa analiza AI ekranu...</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-xs text-center">
+                        Zaawansowany model sztucznej inteligencji skanuje wyświetlacz pod kątem motogodzin, kodów błędów i wskaźników.
+                    </p>
+                    <div class="w-full max-w-xs bg-slate-100 dark:bg-zinc-900 rounded-full h-1.5 mt-4 overflow-hidden">
+                        <div class="bg-brand-500 h-1.5 rounded-full animate-[loading-bar_2.5s_infinite]" style="width: 50%"></div>
+                    </div>
+                </div>
 
-                    <!-- Wyniki ekranu -->
-                    <div id="stateResultsScreen" class="hidden w-full text-left">
-                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-4 flex-wrap gap-3">
-                            <div>
-                                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu flex items-center gap-2">
-                                    <span>Odczytane parametry z ekranu</span>
-                                    <span id="screenEditBadge" class="hidden text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300">
-                                        Tryb edycji
-                                    </span>
-                                </h3>
-                                <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI Premium</p>
-                            </div>
-                            <div class="flex items-center gap-2 flex-wrap justify-end">
-                                <!-- Grupa akcji podglądu -->
-                                <div id="screenViewActions" class="flex items-center gap-2">
-                                    <button id="editScreenParamsBtn" onclick="toggleEditScreenParams(true)" class="px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:hover:bg-sky-900/80 dark:text-sky-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-sky-200/80 dark:border-sky-800/80 shadow-sm cursor-pointer" title="Edytuj odczytane parametry ekranu">
-                                        <i class="fa-solid fa-pen-to-square"></i> Edytuj
-                                    </button>
-                                    <button onclick="copyToClipboardScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Kopiuj do schowka">
-                                        <i class="fa-solid fa-copy"></i> Kopiuj
-                                    </button>
-                                    <button onclick="downloadAsJSONScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Pobierz jako JSON">
-                                        <i class="fa-solid fa-download"></i> JSON
-                                    </button>
-                                </div>
-                                <!-- Grupa akcji edycji -->
-                                <div id="screenEditActions" class="hidden flex items-center gap-2">
-                                    <button onclick="addScreenParamRow()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700 cursor-pointer" title="Dodaj nowy parametr">
-                                        <i class="fa-solid fa-plus text-sky-500"></i> Dodaj pole
-                                    </button>
-                                    <button onclick="cancelEditingScreenParams()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer" title="Anuluj edycję">
-                                        <i class="fa-solid fa-xmark"></i> Anuluj
-                                    </button>
-                                    <button id="saveScreenParamsBtn" onclick="saveEditedScreenParams()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer" title="Zapisz zmiany w parametrach ekranu">
-                                        <i class="fa-solid fa-check"></i> Zapisz
-                                    </button>
-                                </div>
-                            </div>
+                <!-- Elementy zachowane dla kompatybilności selektorów -->
+                <div id="stateIdleScreen" class="hidden"></div>
+                <div id="stateContainerScreen" class="hidden"></div>
+
+                <!-- Wyniki ekranu (zawsze widoczne w oknie Nowy wpis) -->
+                <div id="stateResultsScreen" class="w-full text-left">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 mb-3 flex-wrap gap-3">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white font-ubuntu flex items-center gap-2">
+                                <i class="fa-solid fa-desktop text-sky-500"></i>
+                                <span>Odczytane parametry z ekranu</span>
+                                <span id="screenEditBadge" class="hidden text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300">
+                                    Tryb edycji
+                                </span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Wygenerowane z modelu Google Gemini AI lub wprowadzone ręcznie</p>
                         </div>
-
-                        <!-- Pasek informacyjny trybu edycji ekranu -->
-                        <div id="screenEditToolbar" class="hidden mb-3 p-3 rounded-2xl bg-sky-50/90 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-900/60 flex flex-wrap items-center justify-between gap-2.5 text-xs text-sky-700 dark:text-sky-300">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-pen-nib text-sky-500 text-sm"></i>
-                                <span><strong>Edycja parametrów wyświetlacza:</strong> Zmodyfikuj motogodziny, kody błędów lub inne wskaźniki. Po zakończeniu kliknij <strong>Zapisz</strong>.</span>
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
+                            <!-- Grupa akcji podglądu -->
+                            <div id="screenViewActions" class="flex items-center gap-2">
+                                <button id="editScreenParamsBtn" onclick="toggleEditScreenParams(true)" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-sky-600/20 cursor-pointer" title="Edytuj odczytane parametry ekranu">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edytuj
+                                </button>
+                                <button onclick="copyToClipboardScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Kopiuj do schowka">
+                                    <i class="fa-solid fa-copy"></i> Kopiuj
+                                </button>
+                                <button onclick="downloadAsJSONScreen()" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5" title="Pobierz jako JSON">
+                                    <i class="fa-solid fa-download"></i> JSON
+                                </button>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="addScreenParamRow()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-200 dark:border-zinc-700 flex items-center gap-1 cursor-pointer">
+                            <!-- Grupa akcji edycji -->
+                            <div id="screenEditActions" class="hidden flex items-center gap-2">
+                                <button onclick="addScreenParamRow()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700 cursor-pointer" title="Dodaj nowy parametr">
                                     <i class="fa-solid fa-plus text-sky-500"></i> Dodaj pole
                                 </button>
-                                <button onclick="cancelEditingScreenParams()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-zinc-700 cursor-pointer">
-                                    Anuluj
+                                <button onclick="cancelEditingScreenParams()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer" title="Anuluj edycję">
+                                    <i class="fa-solid fa-xmark"></i> Anuluj
                                 </button>
-                                <button onclick="saveEditedScreenParams()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 cursor-pointer">
+                                <button id="saveScreenParamsBtn" onclick="saveEditedScreenParams()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer" title="Zapisz zmiany w parametrach ekranu">
                                     <i class="fa-solid fa-check"></i> Zapisz
                                 </button>
                             </div>
                         </div>
-
-                        <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-zinc-800 bg-[#F9F9F9] dark:bg-[#111111]/40 hover:border-brand-500/30 transition-colors duration-500">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
-                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr ekranu</th>
-                                        <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
-                                        <th id="screenActionHeader" class="hidden px-3 py-3 text-center font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase w-14">Usuń</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="resultsBodyScreen" class="divide-y divide-slate-200 dark:divide-zinc-800">
-                                    <!-- Dane dynamiczne z ekranu -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Przycisk dodawania wiersza w trybie edycji ekranu -->
-                        <div id="screenAddRowBottomContainer" class="hidden mt-3 flex items-center justify-between gap-3">
-                            <button onclick="addScreenParamRow()" class="py-2.5 px-4 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-sky-500 hover:bg-sky-50/40 dark:hover:bg-sky-500/10 text-slate-600 hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer grow">
-                                <i class="fa-solid fa-plus text-sky-500"></i> Dodaj kolejny parametr ekranu
-                            </button>
-                            <button onclick="saveEditedScreenParams()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer shrink-0">
-                                <i class="fa-solid fa-check"></i> Zapisz zmiany
-                            </button>
-                        </div>
-
                     </div>
+
+                    <!-- Pasek pomocniczy ekranu -->
+                    <div id="screenQuickBar" class="mb-3 px-3.5 py-2 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/60 dark:border-zinc-800/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-[11px]">
+                            <i class="fa-solid fa-circle-info text-sky-500"></i>
+                            <span>Kliknij <strong>Edytuj</strong>, aby zmienić parametry ekranu, albo użyj:</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="loadSampleScreenData()" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-600 dark:bg-sky-500/15 dark:hover:bg-sky-500/25 dark:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Załaduj Demo
+                            </button>
+                            <button type="button" onclick="toggleEditScreenParams(true)" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-zinc-700 transition-colors flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-pen text-[10px] text-sky-500"></i> Wpisz ręcznie
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pasek informacyjny trybu edycji ekranu -->
+                    <div id="screenEditToolbar" class="hidden mb-3 p-3 rounded-2xl bg-sky-50/90 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-900/60 flex flex-wrap items-center justify-between gap-2.5 text-xs text-sky-700 dark:text-sky-300">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-pen-nib text-sky-500 text-sm"></i>
+                            <span><strong>Edycja parametrów wyświetlacza:</strong> Zmodyfikuj motogodziny, kody błędów lub inne wskaźniki. Po zakończeniu kliknij <strong>Zapisz</strong>.</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="addScreenParamRow()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-200 dark:border-zinc-700 flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-plus text-sky-500"></i> Dodaj pole
+                            </button>
+                            <button onclick="cancelEditingScreenParams()" class="px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                                Anuluj
+                            </button>
+                            <button onclick="saveEditedScreenParams()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-check"></i> Zapisz
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-zinc-800 bg-[#F9F9F9] dark:bg-[#111111]/40 hover:border-brand-500/30 transition-colors duration-500">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-100/80 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
+                                    <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Parametr ekranu</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase">Wartość</th>
+                                    <th id="screenActionHeader" class="hidden px-3 py-3 text-center font-bold text-slate-500 dark:text-slate-400 text-xs tracking-wider uppercase w-14">Usuń</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBodyScreen" class="divide-y divide-slate-200 dark:divide-zinc-800">
+                                <!-- Dane dynamiczne z ekranu -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Przycisk dodawania wiersza w trybie edycji ekranu -->
+                    <div id="screenAddRowBottomContainer" class="hidden mt-3 flex items-center justify-between gap-3">
+                        <button onclick="addScreenParamRow()" class="py-2.5 px-4 border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-sky-500 hover:bg-sky-50/40 dark:hover:bg-sky-500/10 text-slate-600 hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer grow">
+                            <i class="fa-solid fa-plus text-sky-500"></i> Dodaj kolejny parametr ekranu
+                        </button>
+                        <button onclick="saveEditedScreenParams()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30 cursor-pointer shrink-0">
+                            <i class="fa-solid fa-check"></i> Zapisz zmiany
+                        </button>
+                    </div>
+
                 </div>
             </div>
                 </section>
@@ -1207,12 +1223,45 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
                 </div>
 
                 <!-- 3. PARAMETRY TABLICZKI ZNAMIONOWEJ -->
-                <div>
-                    <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-                        <i class="fa-solid fa-id-card text-brand-500"></i> Odczytane parametry tabliczki znamionowej
-                    </h4>
+                <div class="bg-slate-50 dark:bg-zinc-900/60 rounded-2xl border border-slate-200/60 dark:border-zinc-800/80 p-4 space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200/50 dark:border-zinc-800/60 flex-wrap gap-2">
+                        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 font-ubuntu">
+                            <i class="fa-solid fa-id-card text-brand-500"></i> Odczytane parametry tabliczki znamionowej
+                        </h4>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="detailsOpEditPlateParamsBtn" onclick="toggleDetailsOpPlateParamsEdit(true)" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 dark:text-blue-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-blue-200/80 dark:border-blue-800/80 cursor-pointer shadow-sm">
+                                <i class="fa-solid fa-pen-to-square"></i> Edytuj parametry
+                            </button>
+                            <div id="detailsOpPlateEditActions" class="hidden flex items-center gap-2">
+                                <button type="button" onclick="addDetailsOpPlateParamRow()" class="px-2.5 py-1.5 bg-white dark:bg-zinc-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-200 dark:border-zinc-700 cursor-pointer flex items-center gap-1">
+                                    <i class="fa-solid fa-plus text-brand-500"></i> Dodaj pole
+                                </button>
+                                <button type="button" onclick="toggleDetailsOpPlateParamsEdit(false)" class="px-2.5 py-1.5 bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-lg cursor-pointer">
+                                    Anuluj
+                                </button>
+                                <button type="button" id="detailsOpSavePlateParamsBtn" onclick="saveDetailsOpPlateParams()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-md shadow-emerald-600/30 cursor-pointer flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> Zapisz
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div id="detailsOpPlateParamsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                         <!-- Renderowane dynamicznie -->
+                    </div>
+                    <div id="detailsOpPlateEditContainer" class="hidden space-y-2.5">
+                        <div class="overflow-x-auto rounded-xl border border-slate-200/60 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100/70 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-slate-400">
+                                        <th class="px-3 py-2 text-left font-bold uppercase w-5/12">Parametr</th>
+                                        <th class="px-3 py-2 text-left font-bold uppercase">Wartość</th>
+                                        <th class="px-2 py-2 text-center font-bold uppercase w-12">Usuń</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailsOpPlateEditBody" class="divide-y divide-slate-100 dark:divide-zinc-800">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -1998,11 +2047,8 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             previewWrapper.classList.add('hidden'); 
             uploadPlaceholder.classList.remove('hidden'); 
             processBtn.disabled = true;
-            stateIdle.classList.remove('hidden'); 
-            stateLoading.classList.add('hidden'); 
-            stateResults.classList.add('hidden');
-            const saveOpSec = document.getElementById('saveOperationSection');
-            if (saveOpSec) saveOpSec.classList.add('hidden');
+            if (stateLoading) stateLoading.classList.add('hidden'); 
+            if (typeof updatePhotoBadgesSummary === 'function') updatePhotoBadgesSummary();
         }
 
         // Screen Image DOM references & handlers
@@ -2057,13 +2103,7 @@ ALTER TABLE IF EXISTS wozki DISABLE ROW LEVEL SECURITY;
             if (previewWrapperScreen) previewWrapperScreen.classList.add('hidden'); 
             if (uploadPlaceholderScreen) uploadPlaceholderScreen.classList.remove('hidden'); 
             if (processBtnScreen) processBtnScreen.disabled = true;
-            
-            const stateIdleScreen = document.getElementById('stateIdleScreen');
-            const stateLoadingScreen = document.getElementById('stateLoadingScreen');
-            const stateResultsScreen = document.getElementById('stateResultsScreen');
-            if (stateIdleScreen) stateIdleScreen.classList.remove('hidden'); 
             if (stateLoadingScreen) stateLoadingScreen.classList.add('hidden'); 
-            if (stateResultsScreen) stateResultsScreen.classList.add('hidden');
             if (typeof updatePhotoBadgesSummary === 'function') updatePhotoBadgesSummary();
         }
 
@@ -2543,14 +2583,76 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
         }
 
         // --- Tryb edycji parametrów odczytanych z tabliczki i ekranu ---
+        const DEFAULT_PLATE_PARAMS = {
+            "Model": "",
+            "Numer seryjny": "",
+            "Rok produkcji": "",
+            "Udźwig (kg)": "",
+            "Masa własna (kg)": "",
+            "Napięcie / Napęd": ""
+        };
+
+        const DEFAULT_SCREEN_PARAMS = {
+            "Motogodziny": "",
+            "Kody błędów": "",
+            "Poziom paliwa / baterii": "",
+            "Temperatura silnika": ""
+        };
+
         let isEditingPlateParams = false;
         let isEditingScreenParams = false;
+
+        function loadSamplePlateData() {
+            parsedResults = {
+                "Model": "H25D-02",
+                "Numer seryjny": "H2X393T01842",
+                "Rok produkcji": "2019",
+                "Udźwig (kg)": "2500",
+                "Masa własna (kg)": "4150",
+                "Napięcie / Napęd": "Diesel (VW TDI)"
+            };
+            isEditingPlateParams = false;
+            updatePlateActionButtons();
+            renderResults(parsedResults);
+
+            const serialNum = findSerialNumber(parsedResults);
+            if (serialNum) {
+                searchSupabaseMatch(serialNum);
+            }
+
+            showToast("Załadowano przykładowe parametry tabliczki. Możesz kliknąć „Edytuj” i „Zapisz”.", "info");
+        }
+
+        function openManualPlateEntry() {
+            toggleEditPlateParams(true);
+            showToast("Otwarto tryb edycji parametrów tabliczki.", "info");
+        }
+
+        function loadSampleScreenData() {
+            parsedScreenResults = {
+                "Motogodziny": "4520.8 h",
+                "Kody błędów": "Brak błędów (OK)",
+                "Poziom paliwa / baterii": "85%",
+                "Temperatura silnika": "Normalna (88°C)"
+            };
+            isEditingScreenParams = false;
+            updateScreenActionButtons();
+            renderResultsScreen(parsedScreenResults);
+
+            showToast("Załadowano przykładowe parametry ekranu.", "info");
+        }
+
+        function openManualScreenEntry() {
+            toggleEditScreenParams(true);
+            showToast("Otwarto tryb edycji parametrów ekranu.", "info");
+        }
 
         function updatePlateActionButtons() {
             const viewActions = document.getElementById('plateViewActions');
             const editActions = document.getElementById('plateEditActions');
             const editToolbar = document.getElementById('plateEditToolbar');
             const editBadge = document.getElementById('plateEditBadge');
+            const quickBar = document.getElementById('plateQuickBar');
             const actionTh = document.getElementById('plateActionHeader');
             const addRowBottom = document.getElementById('plateAddRowBottomContainer');
 
@@ -2559,6 +2661,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 if (editActions) editActions.classList.remove('hidden');
                 if (editToolbar) editToolbar.classList.remove('hidden');
                 if (editBadge) editBadge.classList.remove('hidden');
+                if (quickBar) quickBar.classList.add('hidden');
                 if (actionTh) actionTh.classList.remove('hidden');
                 if (addRowBottom) addRowBottom.classList.remove('hidden');
             } else {
@@ -2566,19 +2669,23 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 if (editActions) editActions.classList.add('hidden');
                 if (editToolbar) editToolbar.classList.add('hidden');
                 if (editBadge) editBadge.classList.add('hidden');
+                if (quickBar) quickBar.classList.remove('hidden');
                 if (actionTh) actionTh.classList.add('hidden');
                 if (addRowBottom) addRowBottom.classList.add('hidden');
             }
         }
 
         function toggleEditPlateParams(enable) {
-            if (!parsedResults && enable) {
-                showToast("Brak parametrów do edycji. Najpierw prześlij i przeanalizuj tabliczkę.", "warning");
-                return;
+            if (enable) {
+                if (!parsedResults || Object.keys(parsedResults).length === 0) {
+                    parsedResults = { ...DEFAULT_PLATE_PARAMS };
+                }
+                isEditingPlateParams = true;
+            } else {
+                isEditingPlateParams = false;
             }
-            isEditingPlateParams = !!enable;
             updatePlateActionButtons();
-            renderResults(parsedResults || {});
+            renderResults(parsedResults);
         }
 
         function addPlateParamRow(key = "", val = "") {
@@ -2625,7 +2732,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             });
 
             if (Object.keys(newObj).length === 0) {
-                showToast("Parametry nie mogą być puste. Pozostaw przynajmniej jeden parametr.", "error");
+                showToast("Parametry nie mogą być puste. Wpisz przynajmniej jeden parametr.", "error");
                 return;
             }
 
@@ -2648,13 +2755,14 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
         function cancelEditingPlateParams() {
             isEditingPlateParams = false;
             updatePlateActionButtons();
-            renderResults(parsedResults || {});
+            renderResults(parsedResults || { ...DEFAULT_PLATE_PARAMS });
             showToast("Anulowano edycję parametrów tabliczki", "info");
         }
 
         function renderResults(dataObj) {
-            if (!resultsBody) return;
-            resultsBody.innerHTML = '';
+            const tbody = document.getElementById('resultsBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
             const entries = Object.entries(dataObj || {});
 
             if (isEditingPlateParams) {
@@ -2678,17 +2786,38 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                             </button>
                         </td>
                     `;
-                    resultsBody.appendChild(tr);
+                    tbody.appendChild(tr);
                 }
             } else {
-                for (const [key, value] of entries) {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors";
-                    tr.innerHTML = `
-                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${escapeHtml(key)}</td>
-                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all font-mono">${escapeHtml(value)}</td>
+                if (entries.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="2" class="px-4 py-6 text-center text-xs text-slate-400">
+                                Brak odczytanych parametrów. Kliknij <strong class="text-brand-500 cursor-pointer underline" onclick="toggleEditPlateParams(true)">„Edytuj”</strong> aby uzupełnić dane lub wgraj zdjęcie.
+                            </td>
+                        </tr>
                     `;
-                    resultsBody.appendChild(tr);
+                    return;
+                }
+                for (const [key, value] of entries) {
+                    const hasVal = value !== null && value !== undefined && String(value).trim().length > 0;
+                    const displayVal = hasVal
+                        ? `<span class="font-mono text-slate-900 dark:text-white">${escapeHtml(value)}</span>`
+                        : `<span class="text-slate-400 dark:text-zinc-500 italic text-xs font-sans">— (kliknij Edytuj)</span>`;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-100/60 dark:hover:bg-zinc-900/60 transition-colors cursor-pointer";
+                    tr.title = "Kliknij, aby edytować ten parametr";
+                    tr.onclick = () => {
+                        if (!isEditingPlateParams) toggleEditPlateParams(true);
+                    };
+                    tr.innerHTML = `
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium border-r border-slate-200/40 dark:border-zinc-800/60 flex items-center justify-between">
+                            <span>${escapeHtml(key)}</span>
+                            <i class="fa-solid fa-pen text-[10px] text-slate-300 dark:text-zinc-600 hover:text-brand-500 ml-2"></i>
+                        </td>
+                        <td class="px-4 py-3 select-all">${displayVal}</td>
+                    `;
+                    tbody.appendChild(tr);
                 }
             }
         }
@@ -2699,6 +2828,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             const editActions = document.getElementById('screenEditActions');
             const editToolbar = document.getElementById('screenEditToolbar');
             const editBadge = document.getElementById('screenEditBadge');
+            const quickBar = document.getElementById('screenQuickBar');
             const actionTh = document.getElementById('screenActionHeader');
             const addRowBottom = document.getElementById('screenAddRowBottomContainer');
 
@@ -2707,6 +2837,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 if (editActions) editActions.classList.remove('hidden');
                 if (editToolbar) editToolbar.classList.remove('hidden');
                 if (editBadge) editBadge.classList.remove('hidden');
+                if (quickBar) quickBar.classList.add('hidden');
                 if (actionTh) actionTh.classList.remove('hidden');
                 if (addRowBottom) addRowBottom.classList.remove('hidden');
             } else {
@@ -2714,19 +2845,23 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 if (editActions) editActions.classList.add('hidden');
                 if (editToolbar) editToolbar.classList.add('hidden');
                 if (editBadge) editBadge.classList.add('hidden');
+                if (quickBar) quickBar.classList.remove('hidden');
                 if (actionTh) actionTh.classList.add('hidden');
                 if (addRowBottom) addRowBottom.classList.add('hidden');
             }
         }
 
         function toggleEditScreenParams(enable) {
-            if (!parsedScreenResults && enable) {
-                showToast("Brak parametrów ekranu do edycji. Najpierw prześlij i przeanalizuj zdjęcie ekranu.", "warning");
-                return;
+            if (enable) {
+                if (!parsedScreenResults || Object.keys(parsedScreenResults).length === 0) {
+                    parsedScreenResults = { ...DEFAULT_SCREEN_PARAMS };
+                }
+                isEditingScreenParams = true;
+            } else {
+                isEditingScreenParams = false;
             }
-            isEditingScreenParams = !!enable;
             updateScreenActionButtons();
-            renderResultsScreen(parsedScreenResults || {});
+            renderResultsScreen(parsedScreenResults);
         }
 
         function addScreenParamRow(key = "", val = "") {
@@ -2773,7 +2908,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             });
 
             if (Object.keys(newObj).length === 0) {
-                showToast("Parametry ekranu nie mogą być puste. Pozostaw przynajmniej jedno pole.", "error");
+                showToast("Parametry ekranu nie mogą być puste. Wpisz przynajmniej jeden parametr.", "error");
                 return;
             }
 
@@ -2787,7 +2922,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
         function cancelEditingScreenParams() {
             isEditingScreenParams = false;
             updateScreenActionButtons();
-            renderResultsScreen(parsedScreenResults || {});
+            renderResultsScreen(parsedScreenResults || { ...DEFAULT_SCREEN_PARAMS });
             showToast("Anulowano edycję parametrów ekranu", "info");
         }
 
@@ -2821,12 +2956,33 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     resultsBodyScreen.appendChild(tr);
                 }
             } else {
+                if (entries.length === 0) {
+                    resultsBodyScreen.innerHTML = `
+                        <tr>
+                            <td colspan="2" class="px-4 py-6 text-center text-xs text-slate-400">
+                                Brak odczytanych parametrów ekranu. Kliknij <strong class="text-sky-500 cursor-pointer underline" onclick="toggleEditScreenParams(true)">„Edytuj”</strong> aby uzupełnić dane lub wgraj zdjęcie.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
                 for (const [key, value] of entries) {
+                    const hasVal = value !== null && value !== undefined && String(value).trim().length > 0;
+                    const displayVal = hasVal
+                        ? `<span class="font-mono text-slate-900 dark:text-white">${escapeHtml(value)}</span>`
+                        : `<span class="text-slate-400 dark:text-zinc-500 italic text-xs font-sans">— (kliknij Edytuj)</span>`;
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition-colors";
+                    tr.className = "hover:bg-slate-100/60 dark:hover:bg-zinc-900/60 transition-colors cursor-pointer";
+                    tr.title = "Kliknij, aby edytować ten parametr";
+                    tr.onclick = () => {
+                        if (!isEditingScreenParams) toggleEditScreenParams(true);
+                    };
                     tr.innerHTML = `
-                        <td class="px-4 py-3.5 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200/40 dark:border-slate-800/40">${escapeHtml(key)}</td>
-                        <td class="px-4 py-3.5 font-medium text-slate-900 dark:text-white select-all font-mono">${escapeHtml(value)}</td>
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium border-r border-slate-200/40 dark:border-zinc-800/60 flex items-center justify-between">
+                            <span>${escapeHtml(key)}</span>
+                            <i class="fa-solid fa-pen text-[10px] text-slate-300 dark:text-zinc-600 hover:text-sky-500 ml-2"></i>
+                        </td>
+                        <td class="px-4 py-3 select-all">${displayVal}</td>
                     `;
                     resultsBodyScreen.appendChild(tr);
                 }
@@ -3254,34 +3410,15 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             if (typeof resetScreenUploader === 'function') resetScreenUploader();
             if (typeof clearAllExtraImages === 'function') clearAllExtraImages();
 
-            // 2. Wyczyść odczyt parametrów
-            parsedResults = null;
-            parsedScreenResults = null;
+            // 2. Wyczyść i zresetuj odczyt parametrów do szablonu
+            parsedResults = { ...DEFAULT_PLATE_PARAMS };
+            parsedScreenResults = { ...DEFAULT_SCREEN_PARAMS };
             isEditingPlateParams = false;
             isEditingScreenParams = false;
             if (typeof updatePlateActionButtons === 'function') updatePlateActionButtons();
             if (typeof updateScreenActionButtons === 'function') updateScreenActionButtons();
-
-            const resultsBody = document.getElementById('resultsBody');
-            if (resultsBody) resultsBody.innerHTML = '';
-
-            const resultsBodyScreen = document.getElementById('resultsBodyScreen');
-            if (resultsBodyScreen) resultsBodyScreen.innerHTML = '';
-
-            const stateResults = document.getElementById('stateResults');
-            if (stateResults) stateResults.classList.add('hidden');
-
-            const stateResultsScreen = document.getElementById('stateResultsScreen');
-            if (stateResultsScreen) stateResultsScreen.classList.add('hidden');
-
-            const stateIdle = document.getElementById('stateIdle');
-            if (stateIdle) stateIdle.classList.remove('hidden');
-
-            const stateIdleScreen = document.getElementById('stateIdleScreen');
-            if (stateIdleScreen) stateIdleScreen.classList.remove('hidden');
-
-            const saveOpSec = document.getElementById('saveOperationSection');
-            if (saveOpSec) saveOpSec.classList.add('hidden');
+            if (typeof renderResults === 'function') renderResults(parsedResults);
+            if (typeof renderResultsScreen === 'function') renderResultsScreen(parsedScreenResults);
 
             // Wyczyść pola formularza zapisu
             const kInput = document.getElementById('opKlient');
@@ -4197,6 +4334,10 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 return;
             }
 
+            currentModalOp = op;
+            currentModalOpIsLocal = isLocal;
+            toggleDetailsOpPlateParamsEdit(false);
+
             const opDate = op.created_at ? new Date(op.created_at).toLocaleString('pl-PL') : "Nieznana data";
             const matchedWozek = resolveWozekForOperation(op);
             const rawOpWozekId = getOpWozekId(op);
@@ -4795,6 +4936,185 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 300);
+        }
+
+        let currentModalOp = null;
+        let currentModalOpIsLocal = false;
+        let isEditingModalPlateParams = false;
+
+        function toggleDetailsOpPlateParamsEdit(enable) {
+            isEditingModalPlateParams = !!enable;
+            const editBtn = document.getElementById('detailsOpEditPlateParamsBtn');
+            const editActions = document.getElementById('detailsOpPlateEditActions');
+            const grid = document.getElementById('detailsOpPlateParamsGrid');
+            const editContainer = document.getElementById('detailsOpPlateEditContainer');
+            const tbody = document.getElementById('detailsOpPlateEditBody');
+
+            if (!currentModalOp) return;
+
+            if (isEditingModalPlateParams) {
+                if (editBtn) editBtn.classList.add('hidden');
+                if (editActions) editActions.classList.remove('hidden');
+                if (grid) grid.classList.add('hidden');
+                if (editContainer) editContainer.classList.remove('hidden');
+
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    let paramsObj = {};
+                    if (typeof currentModalOp.parametry === 'string') {
+                        try { paramsObj = JSON.parse(currentModalOp.parametry); } catch (e) { paramsObj = {}; }
+                    } else {
+                        paramsObj = currentModalOp.parametry || {};
+                    }
+
+                    const allParams = { ...paramsObj };
+                    if (currentModalOp.model && !allParams["Model"] && !allParams["MODEL"]) {
+                        allParams["Model"] = currentModalOp.model;
+                    }
+                    if (currentModalOp.nrkatalogowy && !allParams["Nr seryjny"] && !allParams["NRKATALOGOWY"]) {
+                        allParams["Nr seryjny"] = currentModalOp.nrkatalogowy;
+                    }
+
+                    let count = 0;
+                    for (const [k, v] of Object.entries(allParams)) {
+                        if (k === '_ekran' || k === 'zdjecia_dodatkowe') continue;
+                        if (typeof v === 'string' && (v.startsWith('data:image') || v.length > 200)) continue;
+                        addDetailsOpPlateParamRow(k, v);
+                        count++;
+                    }
+                    if (count === 0) {
+                        addDetailsOpPlateParamRow("Model", currentModalOp.model || "");
+                        addDetailsOpPlateParamRow("Numer seryjny", currentModalOp.nrkatalogowy || "");
+                    }
+                }
+            } else {
+                if (editBtn) editBtn.classList.remove('hidden');
+                if (editActions) editActions.classList.add('hidden');
+                if (grid) grid.classList.remove('hidden');
+                if (editContainer) editContainer.classList.add('hidden');
+            }
+        }
+
+        function addDetailsOpPlateParamRow(key = "", val = "") {
+            const tbody = document.getElementById('detailsOpPlateEditBody');
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 dark:hover:bg-zinc-900/60";
+            tr.innerHTML = `
+                <td class="px-2.5 py-2 border-r border-slate-100 dark:border-zinc-800">
+                    <input type="text" class="modal-plate-key w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-brand-500" value="${escapeHtml(key)}" placeholder="Nazwa">
+                </td>
+                <td class="px-2.5 py-2">
+                    <input type="text" class="modal-plate-val w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1 text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500" value="${escapeHtml(val)}" placeholder="Wartość">
+                </td>
+                <td class="px-1 py-2 text-center w-10">
+                    <button type="button" onclick="this.closest('tr').remove()" class="p-1 text-slate-400 hover:text-red-500 rounded transition-colors cursor-pointer" title="Usuń parametr">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            const keyIn = tr.querySelector('.modal-plate-key');
+            if (keyIn && !key) keyIn.focus();
+        }
+
+        async function saveDetailsOpPlateParams() {
+            if (!currentModalOp) return;
+            const tbody = document.getElementById('detailsOpPlateEditBody');
+            if (!tbody) return;
+
+            const rows = tbody.querySelectorAll('tr');
+            const newParams = {};
+            let newModel = currentModalOp.model || "";
+            let newNrKat = currentModalOp.nrkatalogowy || "";
+
+            rows.forEach(r => {
+                const kInput = r.querySelector('.modal-plate-key');
+                const vInput = r.querySelector('.modal-plate-val');
+                if (kInput && vInput) {
+                    const k = kInput.value.trim();
+                    const v = vInput.value.trim();
+                    if (k) {
+                        newParams[k] = v;
+                        const lowK = k.toLowerCase();
+                        if (lowK === 'model' || lowK === 'typ') newModel = v;
+                        if (lowK.includes('seryjn') || lowK.includes('katalogow')) newNrKat = v;
+                    }
+                }
+            });
+
+            if (Object.keys(newParams).length === 0) {
+                showToast("Parametry nie mogą być puste. Pozostaw przynajmniej jeden parametr.", "error");
+                return;
+            }
+
+            // Preserve extra photos in parametry if present
+            if (currentModalOp.zdjecia_dodatkowe && Array.isArray(currentModalOp.zdjecia_dodatkowe)) {
+                newParams.zdjecia_dodatkowe = currentModalOp.zdjecia_dodatkowe;
+            }
+
+            showToast("Zapisywanie parametrów tabliczki...", "info");
+
+            const updatePayload = {
+                parametry: newParams,
+                model: newModel,
+                nrkatalogowy: newNrKat
+            };
+
+            try {
+                if (currentModalOpIsLocal) {
+                    const localOps = JSON.parse(localStorage.getItem('sawtrak_operations_history') || '[]');
+                    const idx = localOps.findIndex(o => String(o.id) === String(currentModalOp.id));
+                    if (idx !== -1) {
+                        localOps[idx] = { ...localOps[idx], ...updatePayload };
+                        localStorage.setItem('sawtrak_operations_history', JSON.stringify(localOps));
+                    }
+                } else if (!isStaticMode()) {
+                    const res = await fetch("/api/supabase/update-operation", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            id: currentModalOp.id,
+                            record: updatePayload
+                        })
+                    });
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.error || `Błąd serwera (${res.status})`);
+                    }
+                } else {
+                    const res = await staticSupabaseRequest(`/rest/v1/operacje?id=eq.${currentModalOp.id}`, {
+                        method: "PATCH",
+                        headers: { "Prefer": "return=representation" },
+                        body: JSON.stringify(updatePayload)
+                    });
+                    if (!res.ok) {
+                        const errText = await res.text();
+                        throw new Error(errText || "Błąd zapisu parametrów.");
+                    }
+                }
+
+                currentModalOp.parametry = newParams;
+                currentModalOp.model = newModel;
+                currentModalOp.nrkatalogowy = newNrKat;
+
+                // Update cache
+                if (window.currentOperations) {
+                    const cached = window.currentOperations.find(o => String(o.id) === String(currentModalOp.id));
+                    if (cached) {
+                        Object.assign(cached, updatePayload);
+                    }
+                }
+
+                toggleDetailsOpPlateParamsEdit(false);
+                openOperationDetailsModal(currentModalOp.id, currentModalOpIsLocal);
+                loadOperations().catch(() => {});
+
+                showToast("Pomyślnie zaktualizowano i zapisano parametry w podglądzie!", "success");
+            } catch (err) {
+                console.error("Save modal plate params error:", err);
+                showToast(`Nie udało się zapisać parametrów: ${err.message}`, "error");
+            }
         }
 
         // Edit operations management functions
@@ -5645,6 +5965,18 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             const savedTab = localStorage.getItem('sawtrak_active_tab') || 'new-entry';
             switchTab(savedTab);
             updateConnectionStatusUI();
+
+            // Domyślna inicjalizacja widoku parametrów w oknie Nowy wpis (widoczna od razu w podglądzie)
+            if (!parsedResults) {
+                parsedResults = { ...DEFAULT_PLATE_PARAMS };
+            }
+            if (!parsedScreenResults) {
+                parsedScreenResults = { ...DEFAULT_SCREEN_PARAMS };
+            }
+            if (typeof renderResults === 'function') renderResults(parsedResults);
+            if (typeof updatePlateActionButtons === 'function') updatePlateActionButtons();
+            if (typeof renderResultsScreen === 'function') renderResultsScreen(parsedScreenResults);
+            if (typeof updateScreenActionButtons === 'function') updateScreenActionButtons();
 
             // Background async fetch
             (async () => {
