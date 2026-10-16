@@ -223,7 +223,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
 - Zwróć WYŁĄCZNIE poprawny, czysty JSON. Bez Markdown, bez bloku kodu \`\`\`json i bez dodatkowych komentarzy. Jeśli jakieś cyfry lub litery są niejasne, odczytaj je najlepiej jak potrafisz.`;
     }
 
-    const candidateModels = [selectedModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"].filter((m, i, arr) => m && arr.indexOf(m) === i);
+    const candidateModels = [selectedModel, "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash"].filter((m, i, arr) => m && arr.indexOf(m) === i);
     let resultText = "";
     let modelSuccessfullyUsed = selectedModel;
     let lastErr: any = null;
