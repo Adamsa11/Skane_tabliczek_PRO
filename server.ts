@@ -206,8 +206,8 @@ app.post("/api/analyze", async (req, res) => {
       });
     }
 
-    // Select the requested model or fallback to gemini-3.5-flash
-    const selectedModel = model || "gemini-3.5-flash";
+    // Select the requested model or fallback to gemini-3.1-flash-lite
+    const selectedModel = model || "gemini-3.1-flash-lite";
 
     let promptText = `Odczytaj dane z tej tabliczki znamionowej wózka widłowego (lub paleciaka).
 Wydobądź wszystkie widoczne parametry i zwróć je jako prosty obiekt JSON.
