@@ -558,11 +558,12 @@ app.post("/api/supabase/lookup", async (req, res) => {
   }
 });
 
-// Endpoint to fetch forklift model image from Model and Model_zdjecia tables
+// Endpoint to fetch forklift model image from Model and Model_zdjecia tables,
+// strictly connecting wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia
 app.get("/api/supabase/model-image", async (req, res) => {
   try {
-    const rawModel = String(req.query.model || "").trim();
-    if (!rawModel) {
+    const rawInput = String(req.query.model || req.query.query || req.query.kod || req.query.serial || "").trim();
+    if (!rawInput) {
       return res.status(400).json({ error: "Brak parametru model" });
     }
 
@@ -570,38 +571,141 @@ app.get("/api/supabase/model-image", async (req, res) => {
       return res.status(500).json({ error: "Klient Supabase nie jest zainicjalizowany" });
     }
 
-    // 1. Find model in 'Model' table
-    let modelRow: any = null;
-    try {
-      const { data: models, error: mErr } = await supabase
-        .from("Model")
-        .select("id, Model")
-        .ilike("Model", rawModel)
-        .limit(3);
+    const norm = (s: any) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const rawNorm = norm(rawInput);
 
-      if (models && models.length > 0) {
-        modelRow = models[0];
-      } else {
-        // Fallback: search with cleaned alphanumerics or partial match
-        const clean = rawModel.replace(/[^a-zA-Z0-9]/g, "");
-        const { data: fuzzy } = await supabase
-          .from("Model")
-          .select("id, Model")
-          .or(`Model.ilike.*${rawModel}*,Model.ilike.*${clean}*`)
-          .limit(3);
-        if (fuzzy && fuzzy.length > 0) {
-          modelRow = fuzzy[0];
+    // Common brand prefixes & filler words to strip when isolating the pure model designation
+    const brandPrefixes = [
+      "wozek widlowy", "wozek", "widlowy", "heli", "toyota", "linde", "still", "jungheinrich",
+      "mitsubishi", "nissan", "komatsu", "yale", "hyster", "bt", "manitou", "clark", "tcm"
+    ];
+
+    let candidateModels: string[] = [rawInput];
+
+    // Strip brand prefixes / suffixes
+    let stripped = rawInput;
+    for (const b of brandPrefixes) {
+      const reg = new RegExp("^" + b + "\\s+", "i");
+      stripped = stripped.replace(reg, "").trim();
+      const endReg = new RegExp("\\s+" + b + "$", "i");
+      stripped = stripped.replace(endReg, "").trim();
+    }
+    if (stripped && stripped !== rawInput) {
+      candidateModels.push(stripped);
+    }
+
+    // 0. Lookup in 'wozki' table / memory cache first:
+    // User requirement: "obrazek weź z tabeli wozki.MODEL połącz z Model.Model połącz Model_zdjecia.model_id weź z url_zdjecia"
+    let wozekModelFromDb: string | null = null;
+    
+    // Check in cached catalog
+    if (cachedWozkiCatalog && cachedWozkiCatalog.length > 0) {
+      const foundInCache = cachedWozkiCatalog.find((w: any) => {
+        const kNorm = norm(w.Kod || w.kod);
+        const sNorm = norm(w.NRKATALOGOWY || w.nrkatalogowy);
+        const mNorm = norm(w.MODEL || w.model);
+        return kNorm === rawNorm || sNorm === rawNorm || mNorm === rawNorm || (mNorm.length >= 3 && rawNorm.includes(mNorm));
+      });
+      if (foundInCache && (foundInCache.MODEL || foundInCache.model)) {
+        wozekModelFromDb = String(foundInCache.MODEL || foundInCache.model).trim();
+        if (!candidateModels.includes(wozekModelFromDb)) {
+          candidateModels.unshift(wozekModelFromDb);
         }
       }
-    } catch (modelQueryErr) {
-      console.warn("Model query error:", modelQueryErr);
+    }
+
+    // If not found in memory, query wozki table directly
+    if (!wozekModelFromDb) {
+      try {
+        const encQ = rawInput.replace(/['"*%,]/g, "");
+        if (encQ.length > 0) {
+          const { data: wozkiRows } = await supabase
+            .from("wozki")
+            .select("Kod, MODEL, NRKATALOGOWY, Marka, Nazwa")
+            .or(`Kod.ilike.*${encQ}*,NRKATALOGOWY.ilike.*${encQ}*,MODEL.ilike.*${encQ}*`)
+            .limit(5);
+
+          if (wozkiRows && wozkiRows.length > 0) {
+            const matchedWozek = wozkiRows.find((w: any) => {
+              const kNorm = norm(w.Kod);
+              const sNorm = norm(w.NRKATALOGOWY);
+              const mNorm = norm(w.MODEL);
+              return kNorm === rawNorm || sNorm === rawNorm || mNorm === rawNorm || (mNorm.length >= 3 && rawNorm.includes(mNorm));
+            }) || wozkiRows[0];
+
+            if (matchedWozek && matchedWozek.MODEL) {
+              wozekModelFromDb = String(matchedWozek.MODEL).trim();
+              if (!candidateModels.includes(wozekModelFromDb)) {
+                candidateModels.unshift(wozekModelFromDb);
+              }
+            }
+          }
+        }
+      } catch (wErr) {
+        console.warn("Wozki lookup for model-image notice:", wErr);
+      }
+    }
+
+    // 1. Fetch available models from 'Model' table
+    let allModels: any[] = [];
+    try {
+      const { data: mData } = await supabase.from("Model").select("id, Model").limit(100);
+      if (mData && Array.isArray(mData)) {
+        allModels = mData;
+      }
+    } catch (mErr) {
+      console.warn("Error fetching Model table:", mErr);
+    }
+
+    // 2. Find matching model in 'Model' table
+    let modelRow: any = null;
+    if (allModels.length > 0) {
+      for (const cand of candidateModels) {
+        const candNorm = norm(cand);
+        if (!candNorm) continue;
+
+        // Exact normalized match
+        modelRow = allModels.find((m: any) => norm(m.Model) === candNorm);
+        if (modelRow) break;
+
+        // Substring / token match (e.g. "CBD15J-LI3" in "HELI CBD15J-LI3" or vice versa)
+        modelRow = allModels.find((m: any) => {
+          const mNorm = norm(m.Model);
+          return mNorm.length >= 3 && (candNorm.includes(mNorm) || mNorm.includes(candNorm));
+        });
+        if (modelRow) break;
+      }
+    }
+
+    // Direct ilike query fallback if not found in cache
+    if (!modelRow) {
+      for (const cand of candidateModels) {
+        const cleanCand = cand.replace(/['"*%,]/g, "");
+        if (!cleanCand) continue;
+        try {
+          const { data: directModels } = await supabase
+            .from("Model")
+            .select("id, Model")
+            .ilike("Model", `%${cleanCand}%`)
+            .limit(1);
+          if (directModels && directModels.length > 0) {
+            modelRow = directModels[0];
+            break;
+          }
+        } catch (e) {}
+      }
     }
 
     if (!modelRow) {
-      return res.json({ success: true, found: false, model: rawModel, imageUrl: null });
+      return res.json({
+        success: true,
+        found: false,
+        model: wozekModelFromDb || stripped || rawInput,
+        imageUrl: null
+      });
     }
 
-    // 2. Find photo in 'Model_zdjecia' table
+    // 3. Find photo in 'Model_zdjecia' table
     let imageUrl: string | null = null;
     let allPhotos: any[] = [];
     try {

@@ -2972,13 +2972,21 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             return null;
         }
 
-        // Helper to find the forklift model key in scanned/edited results
+        // Helper to find the forklift model key in scanned/edited results or forklift record
         function findModelName(dataObj) {
             if (!dataObj) return null;
+            // 1. Direct model property check (e.g. from wozki row: MODEL)
+            if (dataObj.MODEL && String(dataObj.MODEL).trim() && String(dataObj.MODEL).toLowerCase() !== "brak") {
+                return String(dataObj.MODEL).trim();
+            }
+            if (dataObj.model && String(dataObj.model).trim() && String(dataObj.model).toLowerCase() !== "brak") {
+                return String(dataObj.model).trim();
+            }
+            
             const candidates = ["model", "typ", "typ wózka", "model wózka", "oznaczenie", "kod"];
             for (const [key, val] of Object.entries(dataObj)) {
                 const lowerKey = key.toLowerCase().trim();
-                if (candidates.some(c => lowerKey === c || lowerKey.startsWith(c) || lowerKey.endsWith(c))) {
+                if (candidates.some(c => lowerKey === c || lowerKey.startsWith(c) || lowerKey.endsWith(c) || lowerKey.includes("model") || lowerKey.includes("typ"))) {
                     const cleanVal = String(val || "").trim();
                     if (cleanVal && cleanVal !== "—" && cleanVal.toLowerCase() !== "brak") {
                         return cleanVal;
@@ -3015,11 +3023,13 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 return;
             }
 
-            // Check cache
+            // Check cache (only if valid photo was found)
             if (modelImageMemoryCache.has(cleanModel.toLowerCase())) {
                 const cached = modelImageMemoryCache.get(cleanModel.toLowerCase());
-                renderModelImageResult(cached, cleanModel);
-                return;
+                if (cached && cached.imageUrl) {
+                    renderModelImageResult(cached, cleanModel);
+                    return;
+                }
             }
 
             if (badge) {
@@ -3047,7 +3057,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         const res = await fetch('/api/supabase/model-image?model=' + encodeURIComponent(cleanModel));
                         if (res.ok) {
                             const data = await res.json();
-                            if (data && data.success) {
+                            if (data && data.success && data.found && data.imageUrl) {
                                 result = data;
                             }
                         }
@@ -3059,7 +3069,15 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 // 2. Direct static client query fallback
                 if (!result || !result.imageUrl) {
                     try {
-                        const mRes = await staticSupabaseRequest('/rest/v1/Model?Model=ilike.*' + encodeURIComponent(cleanModel) + '*&limit=1');
+                        // Strip common brand prefixes
+                        let stripped = cleanModel;
+                        const brandWords = ["heli", "toyota", "linde", "still", "jungheinrich", "mitsubishi", "nissan", "komatsu", "yale", "hyster", "wozek widlowy", "wozek"];
+                        for (const b of brandWords) {
+                            stripped = stripped.replace(new RegExp("^" + b + "\\s+", "i"), "").trim();
+                        }
+                        const searchTarget = stripped || cleanModel;
+
+                        const mRes = await staticSupabaseRequest('/rest/v1/Model?Model=ilike.*' + encodeURIComponent(searchTarget) + '*&limit=1');
                         if (mRes.ok) {
                             const mData = await mRes.json();
                             if (Array.isArray(mData) && mData.length > 0) {
@@ -3084,7 +3102,12 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     }
                 }
 
-                modelImageMemoryCache.set(cleanModel.toLowerCase(), result);
+                if (result && result.imageUrl) {
+                    modelImageMemoryCache.set(cleanModel.toLowerCase(), result);
+                    if (result.model) {
+                        modelImageMemoryCache.set(result.model.toLowerCase(), result);
+                    }
+                }
                 renderModelImageResult(result, cleanModel);
 
             } catch (e) {
@@ -3151,6 +3174,68 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             }
         }
 
+        // Asynchronously load forklift model photo for cards in database explorer
+        async function loadCatalogItemThumbnail(cardUid, modelOrWozek, kod) {
+            const imgEl = document.getElementById('catalog-card-img-' + cardUid);
+            const phEl = document.getElementById('catalog-card-placeholder-' + cardUid);
+            const badgeEl = document.getElementById('catalog-card-badge-' + cardUid);
+            const linkEl = document.getElementById('catalog-card-link-' + cardUid);
+            const boxEl = document.getElementById('catalog-card-box-' + cardUid);
+            if (!imgEl) return;
+
+            const rawTarget = String(modelOrWozek || kod || "").trim();
+            if (!rawTarget) {
+                if (badgeEl) badgeEl.textContent = "Brak modelu";
+                return;
+            }
+
+            try {
+                let result = null;
+                if (modelImageMemoryCache.has(rawTarget.toLowerCase())) {
+                    const cached = modelImageMemoryCache.get(rawTarget.toLowerCase());
+                    if (cached && cached.imageUrl) result = cached;
+                }
+
+                if (!result && !isStaticMode()) {
+                    try {
+                        const res = await fetch('/api/supabase/model-image?model=' + encodeURIComponent(rawTarget));
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.success && data.found && data.imageUrl) {
+                                result = data;
+                                modelImageMemoryCache.set(rawTarget.toLowerCase(), result);
+                                if (data.model) modelImageMemoryCache.set(data.model.toLowerCase(), result);
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                if (result && result.imageUrl) {
+                    imgEl.src = result.imageUrl;
+                    imgEl.classList.remove('hidden');
+                    if (phEl) phEl.classList.add('hidden');
+                    if (linkEl) {
+                        linkEl.href = result.imageUrl;
+                        linkEl.classList.remove('hidden');
+                    }
+                    if (badgeEl) {
+                        badgeEl.className = "text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-500/20";
+                        badgeEl.innerHTML = '<i class="fa-solid fa-check text-[8px]"></i> Model_zdjecia';
+                    }
+                    if (boxEl) {
+                        boxEl.classList.add('border-emerald-500/30');
+                    }
+                } else {
+                    if (badgeEl) {
+                        badgeEl.className = "text-[9px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-slate-400";
+                        badgeEl.textContent = "Brak zdjęcia w Model_zdjecia";
+                    }
+                }
+            } catch (err) {
+                console.warn("loadCatalogItemThumbnail error:", err);
+            }
+        }
+
         // Show state when no serial number is found in the scan
         function showNoSerialFoundState() {
             const badge = document.getElementById('supabaseStatusBadge');
@@ -3188,8 +3273,15 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 if (memoryList.length > 0 && normSearch) {
                     const localFound = memoryList.filter(row => {
                         const dbSerial = String(row.NRKATALOGOWY || row.nrkatalogowy || row.Kod || row.kod || "").trim();
+                        const dbModel = String(row.MODEL || row.model || "").trim();
+                        const dbNazwa = String(row.Nazwa || row.nazwa || "").trim();
                         const normDbSerial = dbSerial.toLowerCase().replace(/[^a-z0-9]/g, "");
-                        return normDbSerial === normSearch || (normDbSerial.length >= 4 && (normDbSerial.includes(normSearch) || normSearch.includes(normDbSerial)));
+                        const normDbModel = dbModel.toLowerCase().replace(/[^a-z0-9]/g, "");
+                        const normDbNazwa = dbNazwa.toLowerCase().replace(/[^a-z0-9]/g, "");
+                        return normDbSerial === normSearch || normDbModel === normSearch || 
+                               (normDbSerial.length >= 4 && (normDbSerial.includes(normSearch) || normSearch.includes(normDbSerial))) ||
+                               (normDbModel.length >= 3 && (normDbModel.includes(normSearch) || normSearch.includes(normDbModel))) ||
+                               (normDbNazwa.length >= 4 && (normDbNazwa.includes(normSearch) || normSearch.includes(normDbNazwa)));
                     });
                     if (localFound.length > 0) {
                         matchedRows = localFound;
@@ -3222,7 +3314,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     if (matchedRows.length === 0) {
                         try {
                             const directRes = await staticSupabaseRequest(
-                                `/rest/v1/wozki?or=(NRKATALOGOWY.ilike.*${enc}*,Kod.ilike.*${enc}*,MODEL.ilike.*${enc}*)&limit=10`,
+                                `/rest/v1/wozki?or=(NRKATALOGOWY.ilike.*${enc}*,Kod.ilike.*${enc}*,MODEL.ilike.*${enc}*,Nazwa.ilike.*${enc}*)&limit=10`,
                                 { timeoutMs: 3000 }
                             );
                             if (directRes.ok) {
@@ -3244,7 +3336,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     if (wozkiModel) {
                         updateForkliftModelImage(wozkiModel);
                     } else {
-                        const fallbackModel = findModelName(parsedResults);
+                        const fallbackModel = findModelName(parsedResults) || cleanSerial;
                         if (fallbackModel) updateForkliftModelImage(fallbackModel);
                     }
 
@@ -3269,7 +3361,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                         <div class="space-y-3">
                             <div class="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded-xl border border-emerald-200/30">
                                 <i class="fa-solid fa-circle-check text-sm"></i>
-                                <span>Sukces! Rekord powiązany po NRKATALOGOWY: ${serialNumber}</span>
+                                <span>Sukces! Rekord powiązany po: ${serialNumber}</span>
                             </div>
                             <div class="overflow-x-auto rounded-xl border border-slate-200/50 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/40">
                                 <table class="w-full text-xs text-left">
@@ -3293,13 +3385,19 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Brak wózka w bazie danych</p>
-                                <p class="text-[11px] text-slate-400 mt-1">Wózek o NRKATALOGOWY: <span class="font-bold text-brand-500 select-all">${serialNumber}</span> nie widnieje jeszcze w katalogu.</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Wózek o kodzie / numerze: <span class="font-bold text-brand-500 select-all">${serialNumber}</span> nie widnieje jeszcze w katalogu.</p>
                             </div>
                             <button onclick="insertCurrentRecordToSupabase('${serialNumber}')" class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/15 hover:shadow-brand-500/25 transition-all flex items-center gap-1.5">
                                 <i class="fa-solid fa-plus"></i> Dodaj ten wózek do katalogu Supabase
                             </button>
                         </div>
                     `;
+
+                    // Pobierz zdjęcie modelu jeśli model jest znany lub podany w zapytaniu
+                    const fallbackModel = findModelName(parsedResults) || cleanSerial;
+                    if (fallbackModel) {
+                        updateForkliftModelImage(fallbackModel);
+                    }
                 }
             } catch (err) {
                 console.error(err);
@@ -5910,9 +6008,16 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 }
 
                 let listHtml = "";
-                matched.forEach(item => {
+                const cardThumbQueue = [];
+
+                matched.forEach((item, idx) => {
+                    const rawWozkiModel = String(item.MODEL || item.model || "").trim();
                     const modelName = getWozekModel(item) || item.Nazwa || "Brak modelu";
                     const serialNum = getWozekCode(item) || (item.id ? 'W' + item.id : "Brak numeru");
+                    const pureTargetModel = rawWozkiModel || modelName;
+                    const cardUid = 'cat_img_' + idx + '_' + Math.random().toString(36).substring(2, 7);
+
+                    cardThumbQueue.push({ uid: cardUid, model: pureTargetModel, kod: serialNum });
                     
                     let fieldsHtml = "";
                     Object.entries(item).forEach(([rawKey, val]) => {
@@ -5934,22 +6039,48 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                     const highlightedSerial = highlightMatchText(serialNum, searchTokens);
 
                     listHtml += `
-                        <div class="p-3 rounded-xl bg-brand-50/30 dark:bg-brand-500/5 border border-brand-500/30 text-xs transition-all space-y-2">
-                            <div class="flex items-center justify-between gap-2 border-b border-brand-500/10 pb-1.5">
+                        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#161616] border border-brand-500/30 text-xs transition-all space-y-2.5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2 border-b border-brand-500/10 pb-2">
                                 <div class="flex items-center gap-1.5 min-w-0">
-                                    <span class="font-bold text-[10px] bg-brand-500 text-white px-1.5 py-0.5 rounded">${highlightedSerial}</span>
-                                    <span class="font-bold text-[11px] text-slate-800 dark:text-white truncate">${highlightedModel}</span>
+                                    <span class="font-bold text-[10px] bg-brand-500 text-white px-2 py-0.5 rounded-lg shadow-sm">${highlightedSerial}</span>
+                                    <span class="font-bold text-[12px] text-slate-800 dark:text-white truncate font-ubuntu">${highlightedModel}</span>
                                 </div>
-                                <span class="text-[9px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-md font-bold uppercase shrink-0">Wynik</span>
+                                <span class="text-[9px] bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded-full font-bold uppercase shrink-0">Wózek</span>
                             </div>
-                            <div class="space-y-0.5 text-[10px]">
+
+                            <!-- Dedykowane zdjęcie modelu wózka z tabeli Model_zdjecia -->
+                            <div id="catalog-card-box-${cardUid}" class="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950/40 border border-slate-200/60 dark:border-zinc-800/80 flex items-center gap-3 transition-all">
+                                <div class="w-20 h-16 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-center shrink-0 overflow-hidden border border-slate-200/50 dark:border-zinc-800 relative group/thumb shadow-inner">
+                                    <img id="catalog-card-img-${cardUid}" class="w-full h-full object-contain hidden transition-transform duration-300 group-hover/thumb:scale-110" alt="Zdjęcie modelu: ${escapeHtml(pureTargetModel)}">
+                                    <div id="catalog-card-placeholder-${cardUid}" class="text-slate-300 dark:text-zinc-600 text-lg">
+                                        <i class="fa-solid fa-truck-ramp-box"></i>
+                                    </div>
+                                    <a id="catalog-card-link-${cardUid}" href="#" target="_blank" rel="noopener noreferrer" class="hidden absolute top-1 right-1 p-1 bg-black/60 text-white rounded text-[8px] hover:bg-black/90 transition-colors" title="Otwórz zdjęcie w pełnym rozmiarze">
+                                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                                    </a>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-1 mb-1">
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex items-center gap-1.5 font-ubuntu">
+                                            <i class="fa-solid fa-camera text-brand-500 text-[10px]"></i> Zdjęcie wózka (Model)
+                                        </span>
+                                        <span id="catalog-card-badge-${cardUid}" class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400">Ładowanie...</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                        Model: <strong class="text-brand-500 font-mono">${escapeHtml(pureTargetModel)}</strong>
+                                    </p>
+                                    <p class="text-[9px] text-slate-400 truncate mt-0.5">Łączenie: <code class="font-mono text-brand-500">wozki.MODEL &rarr; Model_zdjecia</code></p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-0.5 text-[10px] bg-slate-50/50 dark:bg-zinc-950/20 p-2 rounded-xl border border-slate-100 dark:border-zinc-800/40">
                                 ${fieldsHtml}
                             </div>
-                            <div class="flex gap-1.5 pt-1">
-                                <button onclick="searchSupabaseMatch('${serialNum}'); if ('${modelName}' && '${modelName}' !== 'Brak modelu') updateForkliftModelImage('${modelName}'); switchTab('new-entry');" class="flex-1 py-1 px-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-[9px] font-bold transition-all flex items-center justify-center gap-1">
-                                    <i class="fa-solid fa-link"></i> Powiąż ze skanerem
+                            <div class="flex gap-2 pt-1">
+                                <button onclick="searchSupabaseMatch('${escapeHtml(serialNum)}'); updateForkliftModelImage('${escapeHtml(pureTargetModel)}'); switchTab('new-entry');" class="flex-1 py-2 px-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/15 cursor-pointer">
+                                    <i class="fa-solid fa-link"></i> Powiąż ze skanerem i pokaż zdjęcie
                                 </button>
-                                <button onclick="clearDbSearch()" class="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold transition-all">
+                                <button onclick="clearDbSearch()" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-all cursor-pointer">
                                     Wszystkie
                                 </button>
                             </div>
@@ -5958,6 +6089,11 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 });
                 
                 listContainer.innerHTML = listHtml;
+
+                // Asynchronously load forklift thumbnails for all displayed cards
+                cardThumbQueue.forEach(q => {
+                    loadCatalogItemThumbnail(q.uid, q.model, q.kod);
+                });
             };
 
             // 1. Instant client-side filtering if catalog is already cached (0ms)
