@@ -182,73 +182,118 @@
                 <!-- 1. SEKCJA: NOWY WPIS -->
                 <section id="tabView-new-entry" class="tab-view-content space-y-6">
 
-                    <!-- RZĄD 1: TABLICZKA ZNAMIONOWA (Zdjęcie + Bezpośrednia edycja parametrów) -->
+                    <!-- RZĄD 1: TABLICZKA ZNAMIONOWA (Zdjęcie + Status dopasowania + Bezpośrednia edycja parametrów) -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                         
-                        <!-- 1a. Wprowadź zdjęcie tabliczki -->
-                        <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
-                            <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
-                                <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie tabliczki
-                            </h3>
-                            
-                            <!-- Baner klucza API dla trybu GitHub Pages / Bezserwerowego -->
-                            <div id="staticKeyBanner" class="hidden mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs">
-                                <div class="flex items-start gap-2.5">
-                                    <i class="fa-solid fa-key text-amber-500 text-sm mt-0.5"></i>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center justify-between">
-                                            <p class="font-bold text-slate-800 dark:text-slate-100">Tryb GitHub Pages / Bezserwerowy</p>
-                                            <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded">Wymaga klucza AI</span>
-                                        </div>
-                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                                            Na hostingu statycznym (GitHub Pages) do odczytu tabliczek potrzebny jest darmowy klucz Google Gemini API.
-                                        </p>
-                                        <div class="flex flex-wrap items-center gap-2 mt-2.5">
-                                            <input type="password" id="quickApiKeyInput" placeholder="Wklej klucz AIzaSy..." class="text-xs py-1.5 px-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 flex-1 min-w-[160px] text-slate-800 dark:text-slate-200 font-mono">
-                                            <button onclick="saveQuickApiKey()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
-                                                <i class="fa-solid fa-check"></i> Zapisz
-                                            </button>
-                                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] text-brand-500 hover:underline font-bold flex items-center gap-1">
-                                                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Pobierz darmowy klucz
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
-                                <input type="file" id="imageInput" accept="image/*" class="hidden">
+                        <!-- Kolumna 1: Wprowadź zdjęcie tabliczki + Poniżej Status dopasowania -->
+                        <div class="flex flex-col gap-6">
+                            <!-- 1a. Wprowadź zdjęcie tabliczki -->
+                            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                                <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
+                                    <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie tabliczki
+                                </h3>
                                 
-                                <div id="uploadPlaceholder" class="flex flex-col items-center">
-                                    <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
-                                        <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                                <!-- Baner klucza API dla trybu GitHub Pages / Bezserwerowego -->
+                                <div id="staticKeyBanner" class="hidden mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs">
+                                    <div class="flex items-start gap-2.5">
+                                        <i class="fa-solid fa-key text-amber-500 text-sm mt-0.5"></i>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between">
+                                                <p class="font-bold text-slate-800 dark:text-slate-100">Tryb GitHub Pages / Bezserwerowy</p>
+                                                <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded">Wymaga klucza AI</span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                                Na hostingu statycznym (GitHub Pages) do odczytu tabliczek potrzebny jest darmowy klucz Google Gemini API.
+                                            </p>
+                                            <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                                                <input type="password" id="quickApiKeyInput" placeholder="Wklej klucz AIzaSy..." class="text-xs py-1.5 px-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 flex-1 min-w-[160px] text-slate-800 dark:text-slate-200 font-mono">
+                                                <button onclick="saveQuickApiKey()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
+                                                    <i class="fa-solid fa-check"></i> Zapisz
+                                                </button>
+                                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] text-brand-500 hover:underline font-bold flex items-center gap-1">
+                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Pobierz darmowy klucz
+                                                </a>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p class="text-sm font-semibold">Wybierz zdjęcie tabliczki</p>
-                                    <p class="text-xs text-slate-400 mt-1">z aparatu lub pamięci urządzenia</p>
                                 </div>
 
-                                <!-- Podgląd zdjęcia -->
-                                <div id="previewWrapper" class="hidden relative w-full h-full max-h-[260px] rounded-lg overflow-hidden">
-                                    <img id="imagePreview" class="w-full h-full object-contain rounded-lg max-h-[200px]" alt="Podgląd">
-                                    <button id="removeImageBtn" class="absolute top-2 right-2 bg-[#161616]/80 hover:bg-[#CC0000] text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
+                                <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
+                                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                                    
+                                    <div id="uploadPlaceholder" class="flex flex-col items-center">
+                                        <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
+                                            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                                        </div>
+                                        <p class="text-sm font-semibold">Wybierz zdjęcie tabliczki</p>
+                                        <p class="text-xs text-slate-400 mt-1">z aparatu lub pamięci urządzenia</p>
+                                    </div>
+
+                                    <!-- Podgląd zdjęcia -->
+                                    <div id="previewWrapper" class="hidden relative w-full h-full max-h-[260px] rounded-lg overflow-hidden">
+                                        <img id="imagePreview" class="w-full h-full object-contain rounded-lg max-h-[200px]" alt="Podgląd">
+                                        <button id="removeImageBtn" class="absolute top-2 right-2 bg-[#161616]/80 hover:bg-[#CC0000] text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Wybór Modelu AI -->
+                                <div class="mt-4">
+                                    <label for="modelSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
+                                    <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
+                                        <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash (Błyskawiczny - domyślny)</option>
+                                        <option value="gemini-3.5-flash">Gemini 3.5 Flash (Wysoka precyzja)</option>
+                                        <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najdokładniejszy)</option>
+                                    </select>
+                                </div>
+
+                                <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
+                                    <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie tabliczki
+                                </button>
+                            </div>
+
+                            <!-- 1c. Status dopasowania Supabase ze zdjęciem modelu pod spodem w dodatkowym div -->
+                            <div id="supabaseMatchSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                                    <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
+                                        <i class="fa-solid fa-link"></i> Status dopasowania
+                                    </h3>
+                                    <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                        Oczekiwanie
+                                    </span>
+                                </div>
+
+                                <div id="supabaseMatchContent" class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 transition-all">
+                                    <p class="text-xs text-slate-400 text-center py-4">
+                                        Wprowadź lub odczytaj numer seryjny tabliczki, aby automatycznie wyszukać wózek w katalogu Saw-Trak.
+                                    </p>
+                                </div>
+
+                                <!-- Dodatkowy div ze zdjęciem wózka pod spodem (wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia) -->
+                                <div id="wozekModelImageSection" class="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex flex-col transition-all">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-bold text-sm flex items-center gap-2 text-slate-700 dark:text-slate-200 font-ubuntu">
+                                            <i class="fa-solid fa-truck-ramp-box text-brand-500"></i>
+                                            <span>Zdjęcie wózka (Model)</span>
+                                        </h4>
+                                        <span id="modelImageBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400">
+                                            Brak modelu
+                                        </span>
+                                    </div>
+
+                                    <div id="wozekModelImageContainer" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-zinc-950/40 border border-slate-200/40 dark:border-zinc-900/40 min-h-[170px] text-center transition-all">
+                                        <div class="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center text-xl mb-2">
+                                            <i class="fa-solid fa-image"></i>
+                                        </div>
+                                        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Zdjęcie modelu wózka</p>
+                                        <p class="text-[10px] text-slate-400 mt-1 max-w-[220px]">
+                                            Pojawi się automatycznie z tabeli <code class="text-brand-500 font-mono">Model_zdjecia</code> po odczytaniu lub powiązaniu wózka.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-
-                            <!-- Wybór Modelu AI -->
-                            <div class="mt-4">
-                                <label for="modelSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
-                                <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
-                                    <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash (Błyskawiczny - domyślny)</option>
-                                    <option value="gemini-3.5-flash">Gemini 3.5 Flash (Wysoka precyzja)</option>
-                                    <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najdokładniejszy)</option>
-                                </select>
-                            </div>
-
-                            <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
-                                <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie tabliczki
-                            </button>
                         </div>
 
                         <!-- 1b. Odczytane parametry tabliczki (BEZPOŚREDNIA EDYCJA I ZAPIS) -->
@@ -471,29 +516,10 @@
 
                     </div>
 
-                    <!-- RZĄD 3: DOPASOWANIE SAW-TRAK, DODATKOWE ZDJĘCIA, ZAPIS DO BAZY -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <!-- RZĄD 3: DODATKOWE ZDJĘCIA, ZAPIS DO BAZY -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                         
-                        <!-- 3a. Status dopasowania Supabase -->
-                        <div id="supabaseMatchSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
-                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
-                                <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
-                                    <i class="fa-solid fa-link"></i> Status dopasowania
-                                </h3>
-                                <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                    Oczekiwanie
-                                </span>
-                            </div>
-
-                            <div id="supabaseMatchContent" class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 transition-all">
-                                <p class="text-xs text-slate-400 text-center py-4">
-                                    Wprowadź lub odczytaj numer seryjny tabliczki, aby automatycznie wyszukać wózek w katalogu Saw-Trak.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- 3b. Dodatkowe zdjęcia wózka / uszkodzeń / osprzętu -->
+                        <!-- 3a. Dodatkowe zdjęcia wózka / uszkodzeń / osprzętu -->
                         <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
@@ -2747,6 +2773,12 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 showNoSerialFoundState();
             }
 
+            // Pobierz/zaktualizuj zdjęcie modelu wózka z tabeli Model_zdjecia
+            const currentModel = findModelName(parsedResults);
+            if (currentModel) {
+                updateForkliftModelImage(currentModel);
+            }
+
             if (typeof updatePhotoBadgesSummary === 'function') updatePhotoBadgesSummary();
             showToast("Zapisano parametry tabliczki!", "success");
         }
@@ -2809,6 +2841,12 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 markPlateSaved(entries.length);
             } else {
                 markPlateDirty();
+            }
+
+            // Pobierz zdjęcie modelu jeśli wykryto model
+            const detectedModel = findModelName(dataToRender);
+            if (detectedModel) {
+                updateForkliftModelImage(detectedModel);
             }
         }
 
@@ -2934,6 +2972,185 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
             return null;
         }
 
+        // Helper to find the forklift model key in scanned/edited results
+        function findModelName(dataObj) {
+            if (!dataObj) return null;
+            const candidates = ["model", "typ", "typ wózka", "model wózka", "oznaczenie", "kod"];
+            for (const [key, val] of Object.entries(dataObj)) {
+                const lowerKey = key.toLowerCase().trim();
+                if (candidates.some(c => lowerKey === c || lowerKey.startsWith(c) || lowerKey.endsWith(c))) {
+                    const cleanVal = String(val || "").trim();
+                    if (cleanVal && cleanVal !== "—" && cleanVal.toLowerCase() !== "brak") {
+                        return cleanVal;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Global cache for fetched model images
+        const modelImageMemoryCache = new Map();
+
+        // Fetch and display forklift image connecting wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia
+        async function updateForkliftModelImage(modelName) {
+            const container = document.getElementById('wozekModelImageContainer');
+            const badge = document.getElementById('modelImageBadge');
+            if (!container) return;
+
+            const cleanModel = String(modelName || "").trim();
+            if (!cleanModel || cleanModel === "—" || cleanModel.toLowerCase() === "brak") {
+                if (badge) {
+                    badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400";
+                    badge.textContent = "Brak modelu";
+                }
+                container.innerHTML = `
+                    <div class="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center text-xl mb-2">
+                        <i class="fa-solid fa-image"></i>
+                    </div>
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Zdjęcie modelu wózka</p>
+                    <p class="text-[10px] text-slate-400 mt-1 max-w-[220px]">
+                        Pojawi się automatycznie z tabeli <code class="text-brand-500 font-mono">Model_zdjecia</code> po odczytaniu lub powiązaniu wózka.
+                    </p>
+                `;
+                return;
+            }
+
+            // Check cache
+            if (modelImageMemoryCache.has(cleanModel.toLowerCase())) {
+                const cached = modelImageMemoryCache.get(cleanModel.toLowerCase());
+                renderModelImageResult(cached, cleanModel);
+                return;
+            }
+
+            if (badge) {
+                badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400";
+                badge.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-[9px]"></i> Szukam: ${escapeHtml(cleanModel)}`;
+            }
+
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-6 text-slate-400">
+                    <div class="relative w-10 h-10 mb-2">
+                        <div class="absolute inset-0 border-2 border-brand-500/20 rounded-full"></div>
+                        <div class="absolute inset-0 border-2 border-t-brand-500 rounded-full animate-spin"></div>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Pobieranie zdjęcia dla modelu: <strong>${escapeHtml(cleanModel)}</strong></p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Łączenie: wozki.MODEL &rarr; Model.Model &rarr; Model_zdjecia.url_zdjecia</p>
+                </div>
+            `;
+
+            try {
+                let result = null;
+
+                // 1. Try server endpoint
+                if (!isStaticMode()) {
+                    try {
+                        const res = await fetch('/api/supabase/model-image?model=' + encodeURIComponent(cleanModel));
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.success) {
+                                result = data;
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("Server model-image error:", err);
+                    }
+                }
+
+                // 2. Direct static client query fallback
+                if (!result || !result.imageUrl) {
+                    try {
+                        const mRes = await staticSupabaseRequest('/rest/v1/Model?Model=ilike.*' + encodeURIComponent(cleanModel) + '*&limit=1');
+                        if (mRes.ok) {
+                            const mData = await mRes.json();
+                            if (Array.isArray(mData) && mData.length > 0) {
+                                const mId = mData[0].id;
+                                const pRes = await staticSupabaseRequest('/rest/v1/Model_zdjecia?model_id=eq.' + mId + '&order=czy_glowne.desc,kolejnosc.asc&limit=1');
+                                if (pRes.ok) {
+                                    const pData = await pRes.json();
+                                    if (Array.isArray(pData) && pData.length > 0) {
+                                        result = {
+                                            success: true,
+                                            found: true,
+                                            model: mData[0].Model,
+                                            modelId: mId,
+                                            imageUrl: pData[0].url_zdjecia
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    } catch (staticErr) {
+                        console.warn("Client static model-image error:", staticErr);
+                    }
+                }
+
+                modelImageMemoryCache.set(cleanModel.toLowerCase(), result);
+                renderModelImageResult(result, cleanModel);
+
+            } catch (e) {
+                console.error("Error updating forklift model image:", e);
+                if (badge) {
+                    badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400";
+                    badge.textContent = "Błąd zdjęcia";
+                }
+                container.innerHTML = `
+                    <div class="text-center p-3 text-red-500 text-xs">
+                        <i class="fa-solid fa-triangle-exclamation mb-1 text-base"></i>
+                        <p>Nie udało się pobrać zdjęcia modelu.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderModelImageResult(result, requestedModel) {
+            const container = document.getElementById('wozekModelImageContainer');
+            const badge = document.getElementById('modelImageBadge');
+            if (!container) return;
+
+            if (result && result.imageUrl) {
+                if (badge) {
+                    badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-500/20";
+                    badge.innerHTML = `<i class="fa-solid fa-circle-check text-[9px]"></i> Model: ` + escapeHtml(result.model || requestedModel);
+                }
+
+                container.innerHTML = `
+                    <div class="relative w-full flex flex-col items-center group">
+                        <div class="relative w-full max-h-[220px] h-[180px] rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-center p-2 shadow-inner">
+                            <img src="` + escapeHtml(result.imageUrl) + `" alt="Model: ` + escapeHtml(result.model || requestedModel) + `" class="max-w-full max-h-full object-contain rounded-lg transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/400x300?text=Brak+obrazu';">
+                            <a href="` + escapeHtml(result.imageUrl) + `" target="_blank" rel="noopener noreferrer" class="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[10px] transition-colors" title="Otwórz zdjęcie w pełnym rozmiarze">
+                                <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                            </a>
+                        </div>
+                        <div class="w-full mt-2.5 flex items-center justify-between text-xs px-1">
+                            <span class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 truncate">
+                                <i class="fa-solid fa-tag text-brand-500 text-[10px]"></i> ` + escapeHtml(result.model || requestedModel) + `
+                            </span>
+                            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0">
+                                <i class="fa-solid fa-check text-[9px]"></i> Model_zdjecia
+                            </span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                if (badge) {
+                    badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
+                    badge.textContent = "Brak: " + requestedModel;
+                }
+
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-4 text-center text-slate-400">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl mb-2">
+                            <i class="fa-solid fa-camera-slash"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Brak zdjęcia dla modelu ` + escapeHtml(requestedModel) + `</p>
+                        <p class="text-[10px] text-slate-400 mt-1 max-w-[220px]">
+                            W tabeli <code class="text-brand-500 font-mono">Model_zdjecia</code> brak wpisu dla model_id modelu "` + escapeHtml(requestedModel) + `".
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
         // Show state when no serial number is found in the scan
         function showNoSerialFoundState() {
             const badge = document.getElementById('supabaseStatusBadge');
@@ -3021,6 +3238,16 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                 if (matchedRows && matchedRows.length > 0) {
                     const match = matchedRows[0];
                     matchedWozek = match;
+                    
+                    // Automatyczne pobranie zdjęcia modelu wózka (wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia)
+                    const wozkiModel = match.MODEL || match.model || match.Model || "";
+                    if (wozkiModel) {
+                        updateForkliftModelImage(wozkiModel);
+                    } else {
+                        const fallbackModel = findModelName(parsedResults);
+                        if (fallbackModel) updateForkliftModelImage(fallbackModel);
+                    }
+
                     badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400";
                     badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ZNAJDZIONO DOPASOWANIE`;
                     
@@ -5719,7 +5946,7 @@ Wydobądź wszystkie widoczne parametry, odczyty i błędy, np. Motogodziny, Kod
                                 ${fieldsHtml}
                             </div>
                             <div class="flex gap-1.5 pt-1">
-                                <button onclick="searchSupabaseMatch('${serialNum}')" class="flex-1 py-1 px-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-[9px] font-bold transition-all flex items-center justify-center gap-1">
+                                <button onclick="searchSupabaseMatch('${serialNum}'); if ('${modelName}' && '${modelName}' !== 'Brak modelu') updateForkliftModelImage('${modelName}'); switchTab('new-entry');" class="flex-1 py-1 px-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-[9px] font-bold transition-all flex items-center justify-center gap-1">
                                     <i class="fa-solid fa-link"></i> Powiąż ze skanerem
                                 </button>
                                 <button onclick="clearDbSearch()" class="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold transition-all">

@@ -558,6 +558,83 @@ app.post("/api/supabase/lookup", async (req, res) => {
   }
 });
 
+// Endpoint to fetch forklift model image from Model and Model_zdjecia tables
+app.get("/api/supabase/model-image", async (req, res) => {
+  try {
+    const rawModel = String(req.query.model || "").trim();
+    if (!rawModel) {
+      return res.status(400).json({ error: "Brak parametru model" });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({ error: "Klient Supabase nie jest zainicjalizowany" });
+    }
+
+    // 1. Find model in 'Model' table
+    let modelRow: any = null;
+    try {
+      const { data: models, error: mErr } = await supabase
+        .from("Model")
+        .select("id, Model")
+        .ilike("Model", rawModel)
+        .limit(3);
+
+      if (models && models.length > 0) {
+        modelRow = models[0];
+      } else {
+        // Fallback: search with cleaned alphanumerics or partial match
+        const clean = rawModel.replace(/[^a-zA-Z0-9]/g, "");
+        const { data: fuzzy } = await supabase
+          .from("Model")
+          .select("id, Model")
+          .or(`Model.ilike.*${rawModel}*,Model.ilike.*${clean}*`)
+          .limit(3);
+        if (fuzzy && fuzzy.length > 0) {
+          modelRow = fuzzy[0];
+        }
+      }
+    } catch (modelQueryErr) {
+      console.warn("Model query error:", modelQueryErr);
+    }
+
+    if (!modelRow) {
+      return res.json({ success: true, found: false, model: rawModel, imageUrl: null });
+    }
+
+    // 2. Find photo in 'Model_zdjecia' table
+    let imageUrl: string | null = null;
+    let allPhotos: any[] = [];
+    try {
+      const { data: photos, error: pErr } = await supabase
+        .from("Model_zdjecia")
+        .select("*")
+        .eq("model_id", modelRow.id)
+        .order("czy_glowne", { ascending: false })
+        .order("kolejnosc", { ascending: true })
+        .limit(10);
+
+      if (photos && photos.length > 0) {
+        allPhotos = photos;
+        imageUrl = photos[0].url_zdjecia || null;
+      }
+    } catch (photoErr) {
+      console.warn("Model_zdjecia query error:", photoErr);
+    }
+
+    return res.json({
+      success: true,
+      found: Boolean(imageUrl),
+      model: modelRow.Model,
+      modelId: modelRow.id,
+      imageUrl: imageUrl,
+      photos: allPhotos
+    });
+  } catch (err: any) {
+    console.error("Error in /api/supabase/model-image:", err);
+    return res.status(500).json({ error: err.message || "Błąd pobierania zdjęcia modelu." });
+  }
+});
+
 // 2. Endpoint for listing all forklifts
 app.get("/api/supabase/list", async (req, res) => {
   try {
