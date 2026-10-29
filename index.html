@@ -132,45 +132,52 @@
     </header>
 
     <main class="flex-grow max-w-[1600px] w-full mx-auto px-4 py-6">
-        <div class="flex flex-col lg:flex-row gap-6 items-start">
+        <div class="flex flex-col gap-6 items-start w-full">
             
-            <!-- BOCZNE MENU (Sidebar Navigation) -->
-            <aside class="w-full lg:w-72 shrink-0 bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-4 shadow-xl shadow-slate-200/40 dark:shadow-none sticky top-6 z-20">
-                <div class="px-3 py-2 mb-2 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
-                    <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2 font-ubuntu">
-                        <i class="fa-solid fa-bars-staggered text-brand-500"></i> Menu główne
-                    </h2>
-                    <span class="text-[9px] font-bold bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded-full">v2.5</span>
+            <!-- POZIOME MENU GŁÓWNE (Horizontal Navigation Bar) -->
+            <aside class="w-full bg-white/95 dark:bg-[#1c1c1c]/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-2.5 sm:p-3 shadow-lg shadow-slate-200/50 dark:shadow-black/40 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 sticky top-[66px] sm:top-[70px] z-20 transition-all">
+                <!-- Tytuł / Etykieta menu -->
+                <div class="flex items-center gap-2.5 px-2 shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-500">
+                        <i class="fa-solid fa-bars-staggered text-sm"></i>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider font-ubuntu flex items-center gap-2">
+                            Menu główne
+                        </h2>
+                        <span class="text-[9px] font-bold bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded-full">v2.5</span>
+                    </div>
                 </div>
 
-                <nav class="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-none">
+                <!-- Przyciski nawigacyjne (poziomo) -->
+                <nav class="flex flex-row items-center gap-2 overflow-x-auto scrollbar-none py-1 flex-1 justify-start md:justify-center">
                     <!-- 1. Nowy wpis -->
-                    <button id="navBtn-new-entry" onclick="switchTab('new-entry')" class="nav-tab-btn flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap bg-brand-500 text-white shadow-lg shadow-brand-500/20 active-nav-tab">
+                    <button id="navBtn-new-entry" onclick="switchTab('new-entry')" class="nav-tab-btn flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap bg-brand-500 text-white shadow-lg shadow-brand-500/20 active-nav-tab cursor-pointer">
                         <i class="fa-solid fa-plus-circle text-base"></i>
                         <span>1. Nowy wpis</span>
                     </button>
 
                     <!-- 2. Katalog Saw-Trak -->
-                    <button id="navBtn-catalog" onclick="switchTab('catalog')" class="nav-tab-btn flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800/60">
+                    <button id="navBtn-catalog" onclick="switchTab('catalog')" class="nav-tab-btn flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800/60 cursor-pointer">
                         <i class="fa-solid fa-truck-front text-base text-brand-500"></i>
                         <span>2. Katalog Saw-Trak</span>
                     </button>
 
                     <!-- 3. Rejestr wykonanych operacji -->
-                    <button id="navBtn-registry" onclick="switchTab('registry')" class="nav-tab-btn flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800/60">
+                    <button id="navBtn-registry" onclick="switchTab('registry')" class="nav-tab-btn flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800/60 cursor-pointer">
                         <i class="fa-solid fa-clock-rotate-left text-base text-brand-500"></i>
                         <span>3. Rejestr operacji</span>
                     </button>
                 </nav>
 
                 <!-- Status pomocniczy w menu -->
-                <div class="hidden lg:block mt-6 pt-4 border-t border-slate-100 dark:border-zinc-800/80 text-[11px] text-slate-400 dark:text-slate-500 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <span>Baza Saw-Trak:</span>
-                        <span class="font-bold text-emerald-500 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Połączono</span>
+                <div class="hidden lg:flex items-center gap-4 pl-3 border-l border-slate-100 dark:border-zinc-800/80 text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">Baza:</span>
+                        <span class="font-bold text-emerald-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Saw-Trak</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span>Model AI:</span>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">AI:</span>
                         <span class="font-bold text-brand-500">Google Gemini</span>
                     </div>
                 </div>
@@ -182,118 +189,73 @@
                 <!-- 1. SEKCJA: NOWY WPIS -->
                 <section id="tabView-new-entry" class="tab-view-content space-y-6">
 
-                    <!-- RZĄD 1: TABLICZKA ZNAMIONOWA (Zdjęcie + Status dopasowania + Bezpośrednia edycja parametrów) -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    <!-- RZĄD 1: TABLICZKA ZNAMIONOWA (Zdjęcie + Odczytane parametry + Status dopasowania - 3 kolumny koło siebie) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                         
-                        <!-- Kolumna 1: Wprowadź zdjęcie tabliczki + Poniżej Status dopasowania -->
-                        <div class="flex flex-col gap-6">
-                            <!-- 1a. Wprowadź zdjęcie tabliczki -->
-                            <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
-                                <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
-                                    <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie tabliczki
-                                </h3>
-                                
-                                <!-- Baner klucza API dla trybu GitHub Pages / Bezserwerowego -->
-                                <div id="staticKeyBanner" class="hidden mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs">
-                                    <div class="flex items-start gap-2.5">
-                                        <i class="fa-solid fa-key text-amber-500 text-sm mt-0.5"></i>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center justify-between">
-                                                <p class="font-bold text-slate-800 dark:text-slate-100">Tryb GitHub Pages / Bezserwerowy</p>
-                                                <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded">Wymaga klucza AI</span>
-                                            </div>
-                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                                                Na hostingu statycznym (GitHub Pages) do odczytu tabliczek potrzebny jest darmowy klucz Google Gemini API.
-                                            </p>
-                                            <div class="flex flex-wrap items-center gap-2 mt-2.5">
-                                                <input type="password" id="quickApiKeyInput" placeholder="Wklej klucz AIzaSy..." class="text-xs py-1.5 px-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 flex-1 min-w-[160px] text-slate-800 dark:text-slate-200 font-mono">
-                                                <button onclick="saveQuickApiKey()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
-                                                    <i class="fa-solid fa-check"></i> Zapisz
-                                                </button>
-                                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] text-brand-500 hover:underline font-bold flex items-center gap-1">
-                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Pobierz darmowy klucz
-                                                </a>
-                                            </div>
+                        <!-- 1a. Wprowadź zdjęcie tabliczki -->
+                        <div class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                            <h3 class="font-bold text-base mb-4 flex items-center gap-2 text-brand-500 font-ubuntu">
+                                <i class="fa-solid fa-file-image"></i> Wprowadź zdjęcie tabliczki
+                            </h3>
+                            
+                            <!-- Baner klucza API dla trybu GitHub Pages / Bezserwerowego -->
+                            <div id="staticKeyBanner" class="hidden mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs">
+                                <div class="flex items-start gap-2.5">
+                                    <i class="fa-solid fa-key text-amber-500 text-sm mt-0.5"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <p class="font-bold text-slate-800 dark:text-slate-100">Tryb GitHub Pages / Bezserwerowy</p>
+                                            <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded">Wymaga klucza AI</span>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
-                                    <input type="file" id="imageInput" accept="image/*" class="hidden">
-                                    
-                                    <div id="uploadPlaceholder" class="flex flex-col items-center">
-                                        <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
-                                            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
-                                        </div>
-                                        <p class="text-sm font-semibold">Wybierz zdjęcie tabliczki</p>
-                                        <p class="text-xs text-slate-400 mt-1">z aparatu lub pamięci urządzenia</p>
-                                    </div>
-
-                                    <!-- Podgląd zdjęcia -->
-                                    <div id="previewWrapper" class="hidden relative w-full h-full max-h-[260px] rounded-lg overflow-hidden">
-                                        <img id="imagePreview" class="w-full h-full object-contain rounded-lg max-h-[200px]" alt="Podgląd">
-                                        <button id="removeImageBtn" class="absolute top-2 right-2 bg-[#161616]/80 hover:bg-[#CC0000] text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Wybór Modelu AI -->
-                                <div class="mt-4">
-                                    <label for="modelSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
-                                    <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
-                                        <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash (Błyskawiczny - domyślny)</option>
-                                        <option value="gemini-3.5-flash">Gemini 3.5 Flash (Wysoka precyzja)</option>
-                                        <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najdokładniejszy)</option>
-                                    </select>
-                                </div>
-
-                                <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
-                                    <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie tabliczki
-                                </button>
-                            </div>
-
-                            <!-- 1c. Status dopasowania Supabase ze zdjęciem modelu pod spodem w dodatkowym div -->
-                            <div id="supabaseMatchSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
-                                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
-                                    <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
-                                        <i class="fa-solid fa-link"></i> Status dopasowania
-                                    </h3>
-                                    <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                        Oczekiwanie
-                                    </span>
-                                </div>
-
-                                <div id="supabaseMatchContent" class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 transition-all">
-                                    <p class="text-xs text-slate-400 text-center py-4">
-                                        Wprowadź lub odczytaj numer seryjny tabliczki, aby automatycznie wyszukać wózek w katalogu Saw-Trak.
-                                    </p>
-                                </div>
-
-                                <!-- Dodatkowy div ze zdjęciem wózka pod spodem (wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia) -->
-                                <div id="wozekModelImageSection" class="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex flex-col transition-all">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <h4 class="font-bold text-sm flex items-center gap-2 text-slate-700 dark:text-slate-200 font-ubuntu">
-                                            <i class="fa-solid fa-truck-ramp-box text-brand-500"></i>
-                                            <span>Zdjęcie wózka (Model)</span>
-                                        </h4>
-                                        <span id="modelImageBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400">
-                                            Brak modelu
-                                        </span>
-                                    </div>
-
-                                    <div id="wozekModelImageContainer" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-zinc-950/40 border border-slate-200/40 dark:border-zinc-900/40 min-h-[170px] text-center transition-all">
-                                        <div class="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center text-xl mb-2">
-                                            <i class="fa-solid fa-image"></i>
-                                        </div>
-                                        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Zdjęcie modelu wózka</p>
-                                        <p class="text-[10px] text-slate-400 mt-1 max-w-[220px]">
-                                            Pojawi się automatycznie z tabeli <code class="text-brand-500 font-mono">Model_zdjecia</code> po odczytaniu lub powiązaniu wózka.
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                            Na hostingu statycznym (GitHub Pages) do odczytu tabliczek potrzebny jest darmowy klucz Google Gemini API.
                                         </p>
+                                        <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                                            <input type="password" id="quickApiKeyInput" placeholder="Wklej klucz AIzaSy..." class="text-xs py-1.5 px-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:border-brand-500 flex-1 min-w-[160px] text-slate-800 dark:text-slate-200 font-mono">
+                                            <button onclick="saveQuickApiKey()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
+                                                <i class="fa-solid fa-check"></i> Zapisz
+                                            </button>
+                                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] text-brand-500 hover:underline font-bold flex items-center gap-1">
+                                                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Pobierz darmowy klucz
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div id="dropzone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#F9F9F9] dark:bg-[#111111] flex flex-col items-center justify-center min-h-[220px]">
+                                <input type="file" id="imageInput" accept="image/*" class="hidden">
+                                
+                                <div id="uploadPlaceholder" class="flex flex-col items-center">
+                                    <div class="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 mb-4 transition-transform">
+                                        <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                                    </div>
+                                    <p class="text-sm font-semibold">Wybierz zdjęcie tabliczki</p>
+                                    <p class="text-xs text-slate-400 mt-1">z aparatu lub pamięci urządzenia</p>
+                                </div>
+
+                                <!-- Podgląd zdjęcia -->
+                                <div id="previewWrapper" class="hidden relative w-full h-full max-h-[260px] rounded-lg overflow-hidden">
+                                    <img id="imagePreview" class="w-full h-full object-contain rounded-lg max-h-[200px]" alt="Podgląd">
+                                    <button id="removeImageBtn" class="absolute top-2 right-2 bg-[#161616]/80 hover:bg-[#CC0000] text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Wybór Modelu AI -->
+                            <div class="mt-4">
+                                <label for="modelSelect" class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">Wybór Modelu AI (Darmowy Tier):</label>
+                                <select id="modelSelect" class="w-full text-sm font-medium py-2.5 px-4 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl transition-all focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
+                                    <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash (Błyskawiczny - domyślny)</option>
+                                    <option value="gemini-3.5-flash">Gemini 3.5 Flash (Wysoka precyzja)</option>
+                                    <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Najdokładniejszy)</option>
+                                </select>
+                            </div>
+
+                            <button id="processBtn" disabled class="w-full mt-4 py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-slate-300 disabled:dark:bg-zinc-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2.5">
+                                <i class="fa-solid fa-magnifying-glass text-base"></i> Analizuj zdjęcie tabliczki
+                            </button>
                         </div>
 
                         <!-- 1b. Odczytane parametry tabliczki (BEZPOŚREDNIA EDYCJA I ZAPIS) -->
@@ -377,6 +339,48 @@
                                     <button type="button" onclick="saveEditedPlateParams()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 cursor-pointer grow sm:grow-0">
                                         <i class="fa-solid fa-check"></i> Zapisz parametry tabliczki
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1c. Status dopasowania Supabase ze zdjęciem modelu wózka pod spodem -->
+                        <div id="supabaseMatchSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
+                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                                <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
+                                    <i class="fa-solid fa-link"></i> Status dopasowania
+                                </h3>
+                                <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                    Oczekiwanie
+                                </span>
+                            </div>
+
+                            <div id="supabaseMatchContent" class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 transition-all">
+                                <p class="text-xs text-slate-400 text-center py-4">
+                                    Wprowadź lub odczytaj numer seryjny tabliczki, aby automatycznie wyszukać wózek w katalogu Saw-Trak.
+                                </p>
+                            </div>
+
+                            <!-- Dodatkowy div ze zdjęciem wózka pod spodem (wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia) -->
+                            <div id="wozekModelImageSection" class="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex flex-col transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-bold text-sm flex items-center gap-2 text-slate-700 dark:text-slate-200 font-ubuntu">
+                                        <i class="fa-solid fa-truck-ramp-box text-brand-500"></i>
+                                        <span>Zdjęcie wózka (Model)</span>
+                                    </h4>
+                                    <span id="modelImageBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400">
+                                        Brak modelu
+                                    </span>
+                                </div>
+
+                                <div id="wozekModelImageContainer" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-zinc-950/40 border border-slate-200/40 dark:border-zinc-900/40 min-h-[170px] text-center transition-all">
+                                    <div class="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center text-xl mb-2">
+                                        <i class="fa-solid fa-image"></i>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Zdjęcie modelu wózka</p>
+                                    <p class="text-[10px] text-slate-400 mt-1 max-w-[220px]">
+                                        Pojawi się automatycznie z tabeli <code class="text-brand-500 font-mono">Model_zdjecia</code> po odczytaniu lub powiązaniu wózka.
+                                    </p>
                                 </div>
                             </div>
                         </div>
