@@ -343,29 +343,13 @@
                             </div>
                         </div>
 
-                        <!-- 1c. Status dopasowania Supabase ze zdjęciem modelu wózka pod spodem -->
+                        <!-- 1c. Zdjęcie modelu wózka (u góry) + Status dopasowania Supabase (na dole) -->
                         <div id="supabaseMatchSection" class="bg-white dark:bg-[#1c1c1c] rounded-3xl border border-slate-200/60 dark:border-zinc-800/80 p-5 shadow-xl shadow-slate-200/40 dark:shadow-none flex flex-col transition-all">
-                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
-                                <h3 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
-                                    <i class="fa-solid fa-link"></i> Status dopasowania
-                                </h3>
-                                <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                    Oczekiwanie
-                                </span>
-                            </div>
-
-                            <div id="supabaseMatchContent" class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 transition-all">
-                                <p class="text-xs text-slate-400 text-center py-4">
-                                    Wprowadź lub odczytaj numer seryjny tabliczki, aby automatycznie wyszukać wózek w katalogu Saw-Trak.
-                                </p>
-                            </div>
-
-                            <!-- Dodatkowy div ze zdjęciem wózka pod spodem (wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia) -->
-                            <div id="wozekModelImageSection" class="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex flex-col transition-all">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="font-bold text-sm flex items-center gap-2 text-slate-700 dark:text-slate-200 font-ubuntu">
-                                        <i class="fa-solid fa-truck-ramp-box text-brand-500"></i>
+                            <!-- Zdjęcie wózka (Model) u góry (wozki.MODEL -> Model.Model -> Model_zdjecia.url_zdjecia) -->
+                            <div id="wozekModelImageSection" class="flex flex-col transition-all">
+                                <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+                                    <h4 class="font-bold text-base flex items-center gap-2 text-brand-500 font-ubuntu">
+                                        <i class="fa-solid fa-truck-ramp-box"></i>
                                         <span>Zdjęcie wózka (Model)</span>
                                     </h4>
                                     <span id="modelImageBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400">
@@ -380,6 +364,26 @@
                                     <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Zdjęcie modelu wózka</p>
                                     <p class="text-[10px] text-slate-400 mt-1 max-w-[220px]">
                                         Pojawi się automatycznie z tabeli <code class="text-brand-500 font-mono">Model_zdjecia</code> po odczytaniu lub powiązaniu wózka.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Status dopasowania na dole -->
+                            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800/80 flex flex-col transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-bold text-sm flex items-center gap-2 text-slate-700 dark:text-slate-200 font-ubuntu">
+                                        <i class="fa-solid fa-link text-brand-500"></i>
+                                        <span>Status dopasowania</span>
+                                    </h3>
+                                    <span id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                        Oczekiwanie
+                                    </span>
+                                </div>
+
+                                <div id="supabaseMatchContent" class="bg-slate-50 dark:bg-zinc-950/40 rounded-2xl border border-slate-200/40 dark:border-zinc-900/40 p-4 transition-all">
+                                    <p class="text-xs text-slate-400 text-center py-4">
+                                        Wprowadź lub odczytaj numer seryjny tabliczki, aby automatycznie wyszukać wózek w katalogu Saw-Trak.
                                     </p>
                                 </div>
                             </div>
